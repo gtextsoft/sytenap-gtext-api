@@ -12,6 +12,7 @@
     </style>
 </head>
 <body>
+    
     <div class="container">
         <h2>{{ $type === 'email_verification' ? 'Email Verification' : 'OTP Code' }}</h2>
         
