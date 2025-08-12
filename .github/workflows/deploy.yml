@@ -1,0 +1,56 @@
+name: Deploy API on PR to development
+
+on:
+  push:
+    branches:
+      - staging
+
+jobs:
+  web-deploy:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Get latest code
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, bcmath, curl, openssl, pdo, tokenizer, xml, zip
+
+      - name: Install Composer
+        run: |
+          php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+          php composer-setup.php --install-dir=/usr/local/bin --filename=composer
+
+      - name: Create .env from secret
+        run: |
+          echo "${{ secrets.STAGING_ENV }}" > .env
+
+      - name: Install Dependencies
+        run: composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
+
+      - name: Generate App Key
+        run: php artisan key:generate
+
+      - name: Generate Storage Link
+        run: php artisan storage:link || true
+
+      - name: Set Directory Permissions
+        run: chmod -R 775 storage bootstrap/cache
+
+      - name: Sync files via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          server-dir: ${{ secrets.FTP_TARGET }}
+          exclude: |
+            .git*
+            .github*
+            node_modules/
+            vendor/
+            .env
