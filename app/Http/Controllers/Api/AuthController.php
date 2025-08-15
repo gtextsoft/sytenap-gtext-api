@@ -124,7 +124,7 @@ class AuthController extends Controller
 
     /**
      * @OA\Post(
-     *     path="/auth/verify-email",
+     *     path="/api/auth/verify-email",
      *     summary="Verify user email address via OTP",
      *     description="Verifies a user's email address using a One-Time Password (OTP) sent to their email. 
      *     If verification is successful, the user's email_verified_at timestamp is updated.",
@@ -241,7 +241,7 @@ class AuthController extends Controller
 
     /**
      * @OA\Post(
-     *     path="/auth/resend-otp",
+     *     path="/api/auth/resend-otp",
      *     summary="Resend email verification OTP",
      *     description="Resends a One-Time Password (OTP) to the provided email address for email verification. 
      *     If the email is already verified, the request will fail.",
