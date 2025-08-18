@@ -444,6 +444,7 @@ class AuthController extends Controller
                         'state' => $user->state,
                         'country' => $user->country,
                         'email_verified' => true,
+                        'account_type' => $user->account_type,
                         'email_verified_at' => $user->email_verified_at,
                         //'last_login_at' => $user->last_login_at,
                         'created_at' => $user->created_at
