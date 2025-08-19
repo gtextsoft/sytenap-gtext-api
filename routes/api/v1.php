@@ -24,6 +24,17 @@ Route::prefix('v1')->group(function () {
         Route::post('new', [EstateController::class, 'store']);
         Route::get('/estates/top-rated', [EstateController::class, 'getTopRatedEstates']);
         Route::get('/estates/top-rated-alt', [EstateController::class, 'getTopRatedEstatesAlternative']);
+        Route::get('/estates/detail', [EstateController::class, 'getTopRatedEstatesWithAvailability']);
+      
+        
+    });
+
+    Route::prefix('estate-plot-details')->group(function () {
+        Route::post('plot-detail', [EstateController::class, 'plot_detail']);
+        Route::get('all', [EstateController::class, 'index']);
+        Route::get('/estate/{estateId}', [EstateController::class, 'getByEstate']);
+        Route::put('/{id}', [EstateController::class, 'update']);
+        Route::delete('/{id}', [EstateController::class, 'destroy']);
     });
 
 });
