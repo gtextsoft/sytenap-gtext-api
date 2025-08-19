@@ -1139,4 +1139,242 @@ class EstateController extends Controller
             ], 500);
         }
     }
+
+  
+    /**
+     * @OA\Post(
+     *     path="/api/v1/estate/nearby",
+     *     tags={"Estate Management"},
+     *     summary="Get nearby estates based on user coordinates",
+     *     description="Retrieve a list of estates within a specified radius of the user's latitude and longitude",
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"user_id", "latitude", "longitude"},
+     *             @OA\Property(property="user_id", type="integer", example=1, description="ID of the user"),
+     *             @OA\Property(property="latitude", type="number", format="float", example=6.4281, description="User's latitude"),
+     *             @OA\Property(property="longitude", type="number", format="float", example=3.4219, description="User's longitude"),
+     *             @OA\Property(property="radius", type="number", format="float", example=10, description="Search radius in kilometers", minimum=1, maximum=100)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Nearby estates retrieved successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Nearby estates retrieved successfully"),
+     *             @OA\Property(property="total_count", type="integer", example=5),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="array",
+     *                 @OA\Items(
+     *                     type="object",
+     *                     @OA\Property(property="id", type="integer", example=1),
+     *                     @OA\Property(property="title", type="string", example="Luxury Estate Gardens"),
+     *                     @OA\Property(property="town_or_city", type="string", example="Lekki"),
+     *                     @OA\Property(property="state", type="string", example="Lagos"),
+     *                     @OA\Property(property="coordinates", type="string", example="6.4281,3.4219"),
+     *                     @OA\Property(property="distance_km", type="number", format="float", example=2.5, description="Distance from user location in kilometers"),
+     *                     @OA\Property(property="rating", type="integer", example=5),
+     *                     @OA\Property(property="status", type="string", example="publish"),
+     *                     @OA\Property(property="description", type="string", example="Beautiful estate with modern amenities"),
+     *                     @OA\Property(property="amenities", type="array", @OA\Items(type="string"), example={"Swimming Pool", "Gym"}),
+     *                     @OA\Property(property="map_background_image", type="string", format="uri", example="https://res.cloudinary.com/estates/map.jpg"),
+     *                     @OA\Property(property="preview_display_image", type="string", format="uri", example="https://res.cloudinary.com/estates/preview.jpg"),
+     *                     @OA\Property(
+     *                         property="media",
+     *                         type="object",
+     *                         nullable=true,
+     *                         @OA\Property(property="id", type="integer", example=1),
+     *                         @OA\Property(property="photos", type="array", @OA\Items(type="string", format="uri")),
+     *                         @OA\Property(property="third_dimension_model_images", type="array", @OA\Items(type="string", format="uri")),
+     *                         @OA\Property(property="third_dimension_model_video", type="string", format="uri", nullable=true),
+     *                         @OA\Property(property="virtual_tour_video_url", type="string", format="uri", nullable=true),
+     *                         @OA\Property(property="status", type="string", example="publish"),
+     *                         @OA\Property(property="created_at", type="string", format="date-time"),
+     *                         @OA\Property(property="updated_at", type="string", format="date-time")
+     *                     ),
+     *                     @OA\Property(
+     *                         property="plot_detail",
+     *                         type="object",
+     *                         nullable=true,
+     *                         @OA\Property(property="id", type="integer", example=1),
+     *                         @OA\Property(property="available_plot", type="integer", example=25),
+     *                         @OA\Property(property="available_acre", type="number", format="float", example=12.5),
+     *                         @OA\Property(property="price_per_plot", type="number", format="float", example=150000.00),
+     *                         @OA\Property(property="percentage_increase", type="number", format="float", example=5.0),
+     *                         @OA\Property(property="installment_plan", type="array", @OA\Items(type="string"), example={"12 months", "6 months"}),
+     *                         @OA\Property(property="promotion_price", type="number", format="float", nullable=true, example=135000.00),
+     *                         @OA\Property(property="effective_price", type="number", format="float", example=135000.00),
+     *                         @OA\Property(property="has_promotion", type="boolean", example=true),
+     *                         @OA\Property(property="savings_amount", type="number", format="float", example=15000.00),
+     *                         @OA\Property(property="total_plot_value", type="number", format="float", example=3375000.00),
+     *                         @OA\Property(property="created_at", type="string", format="date-time"),
+     *                         @OA\Property(property="updated_at", type="string", format="date-time")
+     *                     )
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=422, description="Validation error"),
+     *     @OA\Response(response=500, description="Server error")
+     * )
+     */
+    public function getNearbyEstates(Request $request): JsonResponse
+    {
+        try {
+            // Validate the request
+            $validator = \Validator::make($request->all(), [
+                'user_id' => 'required|integer|exists:users,id',
+                'latitude' => 'required|numeric|between:-90,90',
+                'longitude' => 'required|numeric|between:-180,180',
+                'radius' => 'nullable|numeric|min:1|max:100', // Radius in kilometers
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation error',
+                    'errors' => $validator->errors(),
+                ], 422);
+            }
+
+            $userId = $request->input('user_id');
+            $latitude = $request->input('latitude');
+            $longitude = $request->input('longitude');
+            $radius = $request->input('radius', 10); // Default radius: 10km
+
+            // Query estates with their media and plot details
+            $estates = Estate::with(['media', 'plotDetail'])
+                ->where('status', 'publish')
+                ->get()
+                ->filter(function ($estate) use ($latitude, $longitude, $radius) {
+                    // Parse estate coordinates
+                    if (!$estate->cordinates) {
+                        return false;
+                    }
+
+                    [$estateLat, $estateLng] = explode(',', $estate->cordinates);
+
+                    // Calculate distance using Haversine formula
+                    $distance = $this->haversineDistance(
+                        $latitude,
+                        $longitude,
+                        (float) $estateLat,
+                        (float) $estateLng
+                    );
+
+                    // Include estates within the specified radius
+                    return $distance <= $radius;
+                })
+                ->map(function ($estate) use ($latitude, $longitude) {
+                    // Parse estate coordinates for distance calculation
+                    [$estateLat, $estateLng] = explode(',', $estate->cordinates);
+
+                    // Calculate distance
+                    $distance = $this->haversineDistance(
+                        $latitude,
+                        $longitude,
+                        (float) $estateLat,
+                        (float) $estateLng
+                    );
+
+                    // Format media data
+                    $media = $estate->media ? [
+                        'id' => $estate->media->id,
+                        'photos' => $estate->media->photos,
+                        'third_dimension_model_images' => $estate->media->third_dimension_model_images,
+                        'third_dimension_model_video' => $estate->media->third_dimension_model_video,
+                        'virtual_tour_video_url' => $estate->media->virtual_tour_video_url,
+                        'status' => $estate->media->status,
+                        'created_at' => $estate->media->created_at,
+                        'updated_at' => $estate->media->updated_at,
+                    ] : null;
+
+                    // Format plot detail data
+                    $plotDetail = $estate->plotDetail ? [
+                        'id' => $estate->plotDetail->id,
+                        'available_plot' => $estate->plotDetail->available_plot,
+                        'available_acre' => $estate->plotDetail->available_acre,
+                        'price_per_plot' => $estate->plotDetail->price_per_plot,
+                        'percentage_increase' => $estate->plotDetail->percentage_increase,
+                        'installment_plan' => $estate->plotDetail->installment_plan,
+                        'promotion_price' => $estate->plotDetail->promotion_price,
+                        'effective_price' => $estate->plotDetail->effective_price,
+                        'has_promotion' => $estate->plotDetail->has_promotion,
+                        'savings_amount' => $estate->plotDetail->savings_amount,
+                        'total_plot_value' => $estate->plotDetail->total_plot_value,
+                        'created_at' => $estate->plotDetail->created_at,
+                        'updated_at' => $estate->plotDetail->updated_at,
+                    ] : null;
+
+                    return [
+                        'id' => $estate->id,
+                        'title' => $estate->title,
+                        'town_or_city' => $estate->town_or_city,
+                        'state' => $estate->state,
+                        'coordinates' => $estate->cordinates,
+                        'distance_km' => round($distance, 2),
+                        'rating' => $estate->rating,
+                        'status' => $estate->status,
+                        'description' => $estate->description,
+                        'amenities' => $estate->amenities,
+                        'map_background_image' => $estate->map_background_image,
+                        'preview_display_image' => $estate->preview_display_image,
+                        'media' => $media,
+                        'plot_detail' => $plotDetail,
+                    ];
+                })
+                ->sortBy('distance_km') // Sort by distance (closest first)
+                ->values(); // Reset collection keys
+
+            if ($estates->isEmpty()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'No estates found within the specified radius',
+                    'total_count' => 0,
+                    'data' => [],
+                ], 200);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Nearby estates retrieved successfully',
+                'total_count' => $estates->count(),
+                'data' => $estates,
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error retrieving nearby estates',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Calculate the distance between two coordinates using the Haversine formula.
+     *
+     * @param float $lat1 User's latitude
+     * @param float $lon1 User's longitude
+     * @param float $lat2 Estate's latitude
+     * @param float $lon2 Estate's longitude
+     * @return float Distance in kilometers
+     */
+    private function haversineDistance(float $lat1, float $lon1, float $lat2, float $lon2): float
+    {
+        $earthRadius = 6371; // Earth's radius in kilometers
+
+        $latDiff = deg2rad($lat2 - $lat1);
+        $lonDiff = deg2rad($lon2 - $lon1);
+
+        $a = sin($latDiff / 2) * sin($latDiff / 2) +
+            cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
+            sin($lonDiff / 2) * sin($lonDiff / 2);
+
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+
+        return $earthRadius * $c; // Distance in kilometers
+    }
 }
