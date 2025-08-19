@@ -1143,7 +1143,7 @@ class EstateController extends Controller
   
     /**
      * @OA\Post(
-     *     path="/api/v1/estate/nearby",
+     *     path="/api/v1/estate/estates/nearby",
      *     tags={"Estate Management"},
      *     summary="Get nearby estates based on user coordinates",
      *     description="Retrieve a list of estates within a specified radius of the user's latitude and longitude",
