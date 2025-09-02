@@ -217,7 +217,7 @@ class AuthController extends Controller
 
             // Update user's email_verified_at timestamp
             $user = User::where('email', $request->email)->first();
-            $user->update(['email_verified_at' => now()]);
+            $user->update(['verified_at' => now()]);
 
             return response()->json([
                 'message' => 'Email verified successfully',
