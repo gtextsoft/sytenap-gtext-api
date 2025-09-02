@@ -12,6 +12,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 
+
 class AuthController extends Controller
 {
    protected $otpService;
@@ -121,6 +122,68 @@ class AuthController extends Controller
         }
     }
 
+    /**
+     * @OA\Post(
+     *     path="/api/auth/verify-email",
+     *     summary="Verify user email address via OTP",
+     *     description="Verifies a user's email address using a One-Time Password (OTP) sent to their email. 
+     *     If verification is successful, the user's email_verified_at timestamp is updated.",
+     *     tags={"Authentication"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"email", "otp"},
+     *             @OA\Property(property="email", type="string", format="email", example="johndoe@example.com", description="The registered email address of the user."),
+     *             @OA\Property(property="otp", type="string", minLength=6, maxLength=6, example="123456", description="The 6-digit OTP sent to the user's email.")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Email verified successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Email verified successfully"),
+     *             @OA\Property(
+     *                 property="user",
+     *                 type="object",
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="email", type="string", example="johndoe@example.com"),
+     *                 @OA\Property(property="first_name", type="string", example="John"),
+     *                 @OA\Property(property="last_name", type="string", example="Doe"),
+     *                 @OA\Property(property="email_verified", type="boolean", example=true),
+     *                 @OA\Property(property="verified_at", type="string", format="date-time", example="2025-08-15T10:23:45Z")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="OTP verification failed",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Invalid OTP")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation failed",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Validation failed"),
+     *             @OA\Property(property="status", type="integer", example=0),
+     *             @OA\Property(
+     *                 property="errors",
+     *                 type="object",
+     *                 example={"email": {"The email field is required."}, "otp": {"The otp field must be 6 characters."}}
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Email verification failed"),
+     *             @OA\Property(property="error", type="string", example="Unexpected error occurred")
+     *         )
+     *     )
+     * )
+     */
       
     public function verifyEmail(Request $request): JsonResponse
     {
@@ -154,7 +217,7 @@ class AuthController extends Controller
 
             // Update user's email_verified_at timestamp
             $user = User::where('email', $request->email)->first();
-            $user->update(['email_verified_at' => now()]);
+            $user->update(['verified_at' => now()]);
 
             return response()->json([
                 'message' => 'Email verified successfully',
@@ -176,7 +239,54 @@ class AuthController extends Controller
         }
     }
 
-     
+    /**
+     * @OA\Post(
+     *     path="/api/auth/resend-otp",
+     *     summary="Resend email verification OTP",
+     *     description="Resends a One-Time Password (OTP) to the provided email address for email verification. 
+     *     If the email is already verified, the request will fail.",
+     *     tags={"Authentication"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"email"},
+     *             @OA\Property(property="email", type="string", format="email", example="johndoe@example.com", description="The registered email address of the user.")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="OTP resent successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Verification code sent successfully"),
+     *             @OA\Property(property="otp_expires_in_minutes", type="integer", example=5)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Email already verified",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Email is already verified")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation failed",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="The email field is required."),
+     *             @OA\Property(property="errors", type="object", example={"email": {"The selected email is invalid or does not exist."}})
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Failed to send OTP",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Failed to send verification email"),
+     *             @OA\Property(property="error", type="string", example="Mail server not responding")
+     *         )
+     *     )
+     * )
+    */
+
     public function resendOtp(Request $request): JsonResponse
     {
         $request->validate([
@@ -334,6 +444,7 @@ class AuthController extends Controller
                         'state' => $user->state,
                         'country' => $user->country,
                         'email_verified' => true,
+                        'account_type' => $user->account_type,
                         'email_verified_at' => $user->email_verified_at,
                         //'last_login_at' => $user->last_login_at,
                         'created_at' => $user->created_at
