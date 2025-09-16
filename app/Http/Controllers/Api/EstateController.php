@@ -1377,6 +1377,101 @@ class EstateController extends Controller
 
         return $earthRadius * $c; // Distance in kilometers
     }
+    /**
+     * @OA\Post(
+     *     path="/api/v1/estate/estates/search",
+     *     tags={"Estate Management"},
+     *     summary="Search and filter estates based on specified criteria",
+     *     description="Retrieve a paginated list of estates filtered by minimum price, maximum price, state, town or city, and amenities",
+     *     @OA\RequestBody(
+     *         required=false,
+     *         @OA\JsonContent(
+     *             @OA\Property(property="min_price", type="number", format="float", example=100000, description="Minimum price per plot", nullable=true),
+     *             @OA\Property(property="max_price", type="number", format="float", example=500000, description="Maximum price per plot", nullable=true),
+     *             @OA\Property(property="state", type="string", example="Lagos", description="State where the estate is located", nullable=true),
+     *             @OA\Property(property="town_or_city", type="string", example="Lekki", description="Town or city where the estate is located", nullable=true),
+     *             @OA\Property(property="amenities", type="string", example="Swimming Pool,Gym", description="Comma-separated list of amenities", nullable=true),
+     *             @OA\Property(property="per_page", type="integer", example=15, description="Number of results per page", nullable=true, minimum=1)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Estates filtered successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Estates filtered successfully"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(property="current_page", type="integer", example=1),
+     *                 @OA\Property(property="data", type="array", @OA\Items(
+     *                     type="object",
+     *                     @OA\Property(property="id", type="integer", example=1),
+     *                     @OA\Property(property="title", type="string", example="Luxury Estate Gardens"),
+     *                     @OA\Property(property="town_or_city", type="string", example="Lekki"),
+     *                     @OA\Property(property="state", type="string", example="Lagos"),
+     *                     @OA\Property(property="coordinates", type="string", example="6.4281,3.4219"),
+     *                     @OA\Property(property="rating", type="integer", example=5),
+     *                     @OA\Property(property="status", type="string", example="publish"),
+     *                     @OA\Property(property="description", type="string", example="Beautiful estate with modern amenities"),
+     *                     @OA\Property(property="amenities", type="array", @OA\Items(type="string"), example={"Swimming Pool", "Gym"}),
+     *                     @OA\Property(property="map_background_image", type="string", format="uri", example="https://res.cloudinary.com/estates/map.jpg"),
+     *                     @OA\Property(property="preview_display_image", type="string", format="uri", example="https://res.cloudinary.com/estates/preview.jpg"),
+     *                     @OA\Property(
+     *                         property="media",
+     *                         type="object",
+     *                         nullable=true,
+     *                         @OA\Property(property="id", type="integer", example=1),
+     *                         @OA\Property(property="photos", type="array", @OA\Items(type="string", format="uri")),
+     *                         @OA\Property(property="third_dimension_model_images", type="array", @OA\Items(type="string", format="uri")),
+     *                         @OA\Property(property="third_dimension_model_video", type="string", format="uri", nullable=true),
+     *                         @OA\Property(property="virtual_tour_video_url", type="string", format="uri", nullable=true),
+     *                         @OA\Property(property="status", type="string", example="publish")
+     *                     ),
+     *                     @OA\Property(
+     *                         property="plot_detail",
+     *                         type="object",
+     *                         nullable=true,
+     *                         @OA\Property(property="id", type="integer", example=1),
+     *                         @OA\Property(property="available_plot", type="integer", example=25),
+     *                         @OA\Property(property="available_acre", type="number", format="float", example=12.5),
+     *                         @OA\Property(property="price_per_plot", type="number", format="float", example=150000.00),
+     *                         @OA\Property(property="percentage_increase", type="number", format="float", example=5.0),
+     *                         @OA\Property(property="installment_plan", type="array", @OA\Items(type="string"), example={"12 months", "6 months"}),
+     *                         @OA\Property(property="promotion_price", type="number", format="float", nullable=true, example=135000.00),
+     *                         @OA\Property(property="effective_price", type="number", format="float", example=135000.00),
+     *                         @OA\Property(property="has_promotion", type="boolean", example=true),
+     *                         @OA\Property(property="savings_amount", type="number", format="float", example=15000.00),
+     *                         @OA\Property(property="total_plot_value", type="number", format="float", example=3375000.00),
+     *                         @OA\Property(property="created_at", type="string", format="date-time"),
+     *                         @OA\Property(property="updated_at", type="string", format="date-time")
+     *                     )
+     *                 )),
+     *                 @OA\Property(property="first_page_url", type="string", example="https://api.stephenakintayotv.com/api/v1/estate/estates/search?page=1"),
+     *                 @OA\Property(property="from", type="integer", example=1),
+     *                 @OA\Property(property="last_page", type="integer", example=5),
+     *                 @OA\Property(property="last_page_url", type="string", example="https://api.stephenakintayotv.com/api/v1/estate/estates/search?page=5"),
+     *                 @OA\Property(property="links", type="array", @OA\Items(type="object")),
+     *                 @OA\Property(property="next_page_url", type="string", nullable=true, example="https://api.stephenakintayotv.com/api/v1/estate/estates/search?page=2"),
+     *                 @OA\Property(property="path", type="string", example="https://api.stephenakintayotv.com/api/v1/estate/estates/search"),
+     *                 @OA\Property(property="per_page", type="integer", example=15),
+     *                 @OA\Property(property="prev_page_url", type="string", nullable=true, example=null),
+     *                 @OA\Property(property="to", type="integer", example=15),
+     *                 @OA\Property(property="total", type="integer", example=75)
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Failed to filter and search estates"),
+     *             @OA\Property(property="error", type="string", example="Internal server error")
+     *         )
+     *     )
+     * )
+     */
 
     public function filterSearch(Request $request): JsonResponse
     {
