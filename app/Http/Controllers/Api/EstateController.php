@@ -1377,4 +1377,83 @@ class EstateController extends Controller
 
         return $earthRadius * $c; // Distance in kilometers
     }
+
+    public function filterSearch(Request $request): JsonResponse
+    {
+        try {
+            $query = Estate::with(['media', 'plotDetail'])->where('status', 'publish');
+
+            // Apply filters based on request parameters
+            if ($request->has('min_price')) {
+                $query->whereHas('plotDetail', function ($q) use ($request) {
+                    $q->where('price_per_plot', '>=', $request->min_price);
+                });
+            }
+
+            if ($request->has('max_price')) {
+                $query->whereHas('plotDetail', function ($q) use ($request) {
+                    $q->where('price_per_plot', '<=', $request->max_price);
+                });
+            }
+
+            if ($request->has('state')) {
+                $query->where('state', $request->state);
+            }
+
+            if ($request->has('town_or_city')) {
+                $query->where('town_or_city', $request->town_or_city);
+            }
+
+            if ($request->has('amenities')) {
+                $amenities = explode(',', $request->amenities);
+                foreach ($amenities as $amenity) {
+                    $query->whereJsonContains('amenities', trim($amenity));
+                }
+            }
+
+            // Pagination
+            $perPage = $request->get('per_page', 15);
+            $estates = $query->paginate($perPage);
+
+            // Transform the data
+            $estates->getCollection()->transform(function ($estate) {
+                return [
+                    'id' => $estate->id,
+                    'title' => $estate->title,
+                    'town_or_city' => $estate->town_or_city,
+                    'state' => $estate->state,
+                    'coordinates' => $estate->coordinates, // fixed typo
+                    'rating' => $estate->rating,
+                    'status' => $estate->status,
+                    'description' => $estate->description,
+                    'amenities' => $estate->amenities,
+                    'map_background_image' => $estate->map_background_image,
+                    'preview_display_image' => $estate->preview_display_image,
+                    'media' => $estate->media ? [
+                        'id' => $estate->media->id,
+                        'photos' => $estate->media->photos,
+                        'third_dimension_model_images' => $estate->media->third_dimension_model_images,
+                        'third_dimension_model_video' => $estate->media->third_dimension_model_video,
+                        'virtual_tour_video_url' => $estate->media->virtual_tour_video_url,
+                        'status' => $estate->media->status,
+                    ] : null,
+                    'plot_detail' => $estate->plotDetail,
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Estates filtered successfully',
+                'data' => $estates
+            ], 200);
+
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to filter and search estates',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
 }

@@ -26,6 +26,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/estates/top-rated-alt', [EstateController::class, 'getTopRatedEstatesAlternative']);
         Route::get('/estates/detail', [EstateController::class, 'getTopRatedEstatesWithAvailability']);
         Route::post('/estates/nearby', [EstateController::class, 'getNearbyEstates']);
+        Route::post('/estates/search', [EstateController::class, 'filterSearch']);
         
     });
 

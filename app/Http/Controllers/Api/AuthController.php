@@ -1,5 +1,6 @@
 <?php
 
+
 namespace App\Http\Controllers\Api;
 
 use Illuminate\Http\Request;
@@ -11,7 +12,7 @@ use App\Services\OtpService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
-
+use Carbon\Carbon;
 
 class AuthController extends Controller
 {
@@ -217,7 +218,8 @@ class AuthController extends Controller
 
             // Update user's email_verified_at timestamp
             $user = User::where('email', $request->email)->first();
-            $user->update(['verified_at' => now()]);
+            $user->email_verified_at = Carbon::now();
+            $user->save();
 
             return response()->json([
                 'message' => 'Email verified successfully',
