@@ -1551,4 +1551,186 @@ class EstateController extends Controller
         }
     }
 
+
+    /**
+     * @OA\Get(
+     *     path="/api/v1/estate/estates/{id}",
+     *     tags={"Estate Management"},
+     *     summary="Get full details of a specific estate",
+     *     description="Retrieve complete details of an estate by its ID, including associated media and plot details",
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="ID of the estate to retrieve",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Estate details retrieved successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Estate details retrieved successfully"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="title", type="string", example="Luxury Estate Gardens"),
+     *                 @OA\Property(property="town_or_city", type="string", example="Lekki"),
+     *                 @OA\Property(property="state", type="string", example="Lagos"),
+     *                 @OA\Property(property="cordinates", type="string", example="6.4281,3.4219"),
+     *                 @OA\Property(property="zoning", type="string", example="Residential", nullable=true),
+     *                 @OA\Property(property="size", type="string", example="500 sqm", nullable=true),
+     *                 @OA\Property(property="direction", type="string", example="North-facing", nullable=true),
+     *                 @OA\Property(property="description", type="string", example="Beautiful estate with modern amenities", nullable=true),
+     *                 @OA\Property(property="rating", type="integer", example=5, nullable=true),
+     *                 @OA\Property(property="status", type="string", enum={"draft", "publish", "unpublish"}, example="publish"),
+     *                 @OA\Property(property="has_cerificate_of_occupancy", type="boolean", example=true),
+     *                 @OA\Property(property="amenities", type="array", @OA\Items(type="string"), example={"Swimming Pool", "Gym"}),
+     *                 @OA\Property(property="map_background_image", type="string", format="uri", example="https://res.cloudinary.com/estates/map.jpg", nullable=true),
+     *                 @OA\Property(property="preview_display_image", type="string", format="uri", example="https://res.cloudinary.com/estates/preview.jpg", nullable=true),
+     *                 @OA\Property(property="created_at", type="string", format="date-time", example="2025-09-16T10:52:00Z"),
+     *                 @OA\Property(property="updated_at", type="string", format="date-time", example="2025-09-16T10:52:00Z"),
+     *                 @OA\Property(
+     *                     property="media",
+     *                     type="object",
+     *                     nullable=true,
+     *                     @OA\Property(property="id", type="integer", example=1),
+     *                     @OA\Property(property="photos", type="array", @OA\Items(type="string", format="uri"), example={"https://res.cloudinary.com/estates/photo1.jpg"}),
+     *                     @OA\Property(property="third_dimension_model_images", type="array", @OA\Items(type="string", format="uri"), example={"https://res.cloudinary.com/estates/model1.jpg"}),
+     *                     @OA\Property(property="third_dimension_model_video", type="string", format="uri", example="https://res.cloudinary.com/estates/model_video.mp4", nullable=true),
+     *                     @OA\Property(property="virtual_tour_video_url", type="string", format="uri", example="https://youtube.com/watch?v=xyz", nullable=true),
+     *                     @OA\Property(property="status", type="string", enum={"draft", "publish", "unpublish"}, example="publish"),
+     *                     @OA\Property(property="created_at", type="string", format="date-time", example="2025-09-16T10:52:00Z"),
+     *                     @OA\Property(property="updated_at", type="string", format="date-time", example="2025-09-16T10:52:00Z")
+     *                 ),
+     *                 @OA\Property(
+     *                     property="plot_detail",
+     *                     type="object",
+     *                     nullable=true,
+     *                     @OA\Property(property="id", type="integer", example=1),
+     *                     @OA\Property(property="estate_id", type="integer", example=1),
+     *                     @OA\Property(property="available_plot", type="integer", example=25),
+     *                     @OA\Property(property="available_acre", type="number", format="float", example=12.50),
+     *                     @OA\Property(property="price_per_plot", type="number", format="float", example=150000.00),
+     *                     @OA\Property(property="percentage_increase", type="number", format="float", example=5.00),
+     *                     @OA\Property(property="installment_plan", type="array", @OA\Items(type="string"), example={"12 months", "6 months"}),
+     *                     @OA\Property(property="promotion_price", type="number", format="float", example=135000.00, nullable=true),
+     *                     @OA\Property(property="effective_price", type="number", format="float", example=135000.00),
+     *                     @OA\Property(property="has_promotion", type="boolean", example=true),
+     *                     @OA\Property(property="savings_amount", type="number", format="float", example=15000.00),
+     *                     @OA\Property(property="total_plot_value", type="number", format="float", example=3375000.00),
+     *                     @OA\Property(property="formatted_price", type="string", example="150000.00"),
+     *                     @OA\Property(property="formatted_promotion_price", type="string", example="135000.00", nullable=true),
+     *                     @OA\Property(property="created_at", type="string", format="date-time", example="2025-09-16T10:52:00Z"),
+     *                     @OA\Property(property="updated_at", type="string", format="date-time", example="2025-09-16T10:52:00Z")
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Estate not found",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Estate not found"),
+     *             @OA\Property(property="error", type="string", example="No estate found with the provided ID")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Failed to retrieve estate details"),
+     *             @OA\Property(property="error", type="string", example="Internal server error")
+     *         )
+     *     )
+     * )
+     */
+    public function EstateDetails($id): JsonResponse
+    {
+        try {
+            // Fetch the estate with its media and plot details
+            $estate = Estate::with(['media', 'plotDetail'])
+                ->where('status', 'publish')
+                ->findOrFail($id);
+
+            // Format media data
+            $media = $estate->media ? [
+                'id' => $estate->media->id,
+                'photos' => $estate->media->photos,
+                'third_dimension_model_images' => $estate->media->third_dimension_model_images,
+                'third_dimension_model_video' => $estate->media->third_dimension_model_video,
+                'virtual_tour_video_url' => $estate->media->virtual_tour_video_url,
+                'status' => $estate->media->status,
+                'created_at' => $estate->media->created_at,
+                'updated_at' => $estate->media->updated_at,
+            ] : null;
+
+            // Format plot detail data
+            $plotDetail = $estate->plotDetail ? [
+                'id' => $estate->plotDetail->id,
+                'estate_id' => $estate->plotDetail->estate_id,
+                'available_plot' => $estate->plotDetail->available_plot,
+                'available_acre' => $estate->plotDetail->available_acre,
+                'price_per_plot' => $estate->plotDetail->price_per_plot,
+                'percentage_increase' => $estate->plotDetail->percentage_increase,
+                'installment_plan' => $estate->plotDetail->installment_plan,
+                'promotion_price' => $estate->plotDetail->promotion_price,
+                'effective_price' => $estate->plotDetail->effective_price,
+                'has_promotion' => $estate->plotDetail->has_promotion,
+                'savings_amount' => $estate->plotDetail->savings_amount,
+                'total_plot_value' => $estate->plotDetail->total_plot_value,
+                'formatted_price' => $estate->plotDetail->formatted_price,
+                'formatted_promotion_price' => $estate->plotDetail->formatted_promotion_price,
+                'created_at' => $estate->plotDetail->created_at,
+                'updated_at' => $estate->plotDetail->updated_at,
+            ] : null;
+
+            // Format the response data
+            $responseData = [
+                'id' => $estate->id,
+                'title' => $estate->title,
+                'town_or_city' => $estate->town_or_city,
+                'state' => $estate->state,
+                'cordinates' => $estate->cordinates,
+                'zoning' => $estate->zoning,
+                'size' => $estate->size,
+                'direction' => $estate->direction,
+                'description' => $estate->description,
+                'rating' => $estate->rating,
+                'status' => $estate->status,
+                'has_cerificate_of_occupancy' => $estate->has_cerificate_of_occupancy,
+                'amenities' => $estate->amenities,
+                'map_background_image' => $estate->map_background_image,
+                'preview_display_image' => $estate->preview_display_image,
+                'created_at' => $estate->created_at,
+                'updated_at' => $estate->updated_at,
+                'media' => $media,
+                'plot_detail' => $plotDetail,
+            ];
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Estate details retrieved successfully',
+                'data' => $responseData
+            ], 200);
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Estate not found',
+                'error' => 'No estate found with the provided ID'
+            ], 404);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve estate details',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    
 }
