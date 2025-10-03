@@ -301,7 +301,94 @@ class PlotController extends Controller
         ]);
     }
 
-
+        /**
+     * @OA\Post(
+     *     path="/api/v1/estate/plots/finalize-purchase",
+     *     tags={"Estate Plots"},
+     *     summary="Finalize and purchase estate plots",
+     *     description="Confirms customer selection of plots, calculates pricing, generates a payment schedule, initializes a Paystack transaction, reserves the plots (mark as sold), and returns the payment link + reference.",
+     *     security={{"bearerAuth":{}}},
+     *
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"estate_id","plots","installment_months"},
+     *             @OA\Property(property="estate_id", type="integer", example=1, description="The ID of the estate."),
+     *             @OA\Property(
+     *                 property="plots",
+     *                 type="array",
+     *                 description="Array of plot IDs to purchase",
+     *                 @OA\Items(type="integer", example=101)
+     *             ),
+     *             @OA\Property(property="installment_months", type="integer", minimum=1, maximum=12, example=6, description="Number of months for installment payments (1–12).")
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Purchase confirmed and Paystack payment link generated",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Purchase confirmed. Proceed to payment."),
+     *             @OA\Property(
+     *                 property="estate",
+     *                 type="object",
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="title", type="string", example="Palm Gardens Estate"),
+     *                 @OA\Property(property="town_or_city", type="string", example="Lekki"),
+     *                 @OA\Property(property="state", type="string", example="Lagos")
+     *             ),
+     *             @OA\Property(
+     *                 property="plots",
+     *                 type="array",
+     *                 @OA\Items(
+     *                     type="object",
+     *                     example={"id": 101, "plot_number": "PG-45", "status": "sold"}
+     *                 )
+     *             ),
+     *             @OA\Property(
+     *                 property="pricing",
+     *                 type="object",
+     *                 @OA\Property(property="total_price", type="number", example=12000000),
+     *                 @OA\Property(property="installment_months", type="integer", example=6),
+     *                 @OA\Property(property="monthly_payment", type="number", example=2000000),
+     *                 @OA\Property(
+     *                     property="payment_schedule",
+     *                     type="array",
+     *                     @OA\Items(
+     *                         type="object",
+     *                         example={"month": 1, "due_date": "2025-10-03", "amount": 2000000}
+     *                     )
+     *                 )
+     *             ),
+     *             @OA\Property(
+     *                 property="payment",
+     *                 type="object",
+     *                 @OA\Property(property="reference", type="string", example="PLOT-AB12CD34EF"),
+     *                 @OA\Property(property="link", type="string", example="https://checkout.paystack.com/abcd1234"),
+     *                 @OA\Property(property="status", type="string", example="pending")
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=400,
+     *         description="Some plots are unavailable or customer email missing"
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Authentication required"
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error in request payload"
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Failed to initialize Paystack payment"
+     *     )
+     * )
+     */
     public function finalizePurchase(Request $request)
     {
         $validator = \Validator::make($request->all(), [
