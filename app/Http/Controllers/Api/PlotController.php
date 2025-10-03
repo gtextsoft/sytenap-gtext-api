@@ -6,8 +6,13 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Estate;
 use App\Models\Plot;
+use App\Models\PlotPurchase;
 use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\DB;
+
 
 class PlotController extends Controller
 {
@@ -292,6 +297,145 @@ class PlotController extends Controller
                 'installment_months' => $installmentMonths,
                 'monthly_payment' => $monthlyPayment,
                 'payment_schedule' => $paymentSchedule
+            ]
+        ]);
+    }
+
+
+    public function finalizePurchase(Request $request)
+    {
+        $validator = \Validator::make($request->all(), [
+            'estate_id' => 'required|integer|exists:estates,id',
+            'plots' => 'required|array|min:1',
+            'plots.*' => 'integer|exists:plots,id',
+            'installment_months' => 'required|integer|min:1|max:12',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $estate = Estate::with('plotDetail')->find($request->estate_id);
+        $plots = Plot::whereIn('id', $request->plots)
+                    ->where('estate_id', $estate->id)
+                    ->where('status', 'available')
+                    ->lockForUpdate()
+                    ->get();
+
+        if ($plots->count() !== count($request->plots)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Some selected plots are not available'
+            ], 400);
+        }
+
+        // Pricing
+        $effectivePrice = $estate->plotDetail->promotion_price ?? $estate->plotDetail->price_per_plot;
+        $plotsCount = $plots->count();
+        $totalPrice = $effectivePrice * $plotsCount;
+        $installmentMonths = $request->installment_months;
+        $monthlyPayment = round($totalPrice / $installmentMonths, 2);
+
+
+        $customer_id = $request->user()->id ?? null; // if using auth
+        if (!$customer_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Authentication required to finalize purchase'
+            ], 401);
+        }
+
+        $customer_email = $request->user()->email ?? null; // if using auth
+        if (!$customer_email) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Customer email is required for payment processing'
+            ], 400);
+        }
+
+        // Payment schedule
+        $paymentSchedule = [];
+        $startDate = now();
+        for ($i = 1; $i <= $installmentMonths; $i++) {
+            $paymentSchedule[] = [
+                'month' => $i,
+                'due_date' => $startDate->copy()->addMonths($i - 1)->format('Y-m-d'),
+                'amount' => $monthlyPayment
+            ];
+        }
+
+        // Generate Paystack Reference
+        $paymentReference = 'PLOT-' . Str::upper(Str::random(10));
+
+        // Call Paystack API (first installment or full payment)
+        $paystackResponse = Http::withToken(env('PAYSTACK_SECRET_KEY'))
+            ->post('https://api.paystack.co/transaction/initialize', [
+                'email' => $customer_email,
+                'amount' => $monthlyPayment * 100, // kobo
+                'reference' => $paymentReference,
+                'callback_url' => env('PAYSTACK_CALLBACK_URL', url('/api/v1/payments/callback')),
+                'metadata' => [
+                    'estate_id' => $estate->id,
+                    'plots' => $plots->pluck('id')->toArray(),
+                    'installments' => $installmentMonths
+                ]
+            ]);
+
+        if (!$paystackResponse->successful()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to initialize payment',
+                'error' => $paystackResponse->json()
+            ], 500);
+        }
+
+        $paymentData = $paystackResponse->json()['data'];
+        $paymentLink = $paymentData['authorization_url'];
+
+        // Save Purchase + Update Plots
+        DB::transaction(function () use ($request, $estate, $plots, $totalPrice, $installmentMonths, $monthlyPayment, $paymentSchedule, $paymentReference, $paymentLink) {
+            PlotPurchase::create([
+                'estate_id' => $estate->id,
+                'user_id' => $request->user()->id,
+                'plots' => $plots->pluck('id')->toArray(),
+                'total_price' => $totalPrice,
+                'installment_months' => $installmentMonths,
+                'monthly_payment' => $monthlyPayment,
+                'payment_schedule' => $paymentSchedule,
+                'payment_reference' => $paymentReference,
+                'payment_link' => $paymentLink,
+                'payment_status' => 'pending'
+            ]);
+
+            foreach ($plots as $plot) {
+                $plot->update(['status' => 'sold']);
+            }
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Purchase confirmed. Proceed to payment.',
+            'estate' => [
+                'id' => $estate->id,
+                'title' => $estate->title,
+                'town_or_city' => $estate->town_or_city,
+                'state' => $estate->state,
+            ],
+            'plots' => $plots,
+            'pricing' => [
+                'total_price' => $totalPrice,
+                'installment_months' => $installmentMonths,
+                'monthly_payment' => $monthlyPayment,
+                'payment_schedule' => $paymentSchedule
+            ],
+            'payment' => [
+                'reference' => $paymentReference,
+                'link' => $paymentLink,
+                'status' => 'pending'
             ]
         ]);
     }

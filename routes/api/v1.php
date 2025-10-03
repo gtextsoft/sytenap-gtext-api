@@ -34,6 +34,8 @@ Route::prefix('v1')->group(function () {
 
         // Preview purchase of plots
         Route::post('/plots/preview-purchase', [PlotController::class, 'previewPurchase']);
+        // Purchase plots
+        Route::post('/plots/purchase', [PlotController::class, 'finalizePurchase'])->middleware('auth:sanctum');
         
     });
 
