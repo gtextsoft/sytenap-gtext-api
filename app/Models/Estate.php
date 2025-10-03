@@ -100,5 +100,11 @@ class Estate extends Model
         return $this->plotDetails()->max('price_per_plot');
     }
 
+    public function plots()
+    {
+        return $this->hasMany(Plot::class, 'estate_id');
+    }
+
+
    
 }
