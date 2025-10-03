@@ -118,4 +118,80 @@ class PlotController extends Controller
             'data'    => $createdPlots
         ]);
     }
+
+    /**
+     * @OA\Get(
+     *     path="/api/v1/estate/{estateId}/plots",
+     *     tags={"Plot Management"},
+     *     summary="Get all plots for an estate",
+     *     description="Retrieve all plots belonging to a specific estate by estate ID",
+     *     @OA\Parameter(
+     *         name="estateId",
+     *         in="path",
+     *         required=true,
+     *         description="The ID of the estate",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="List of plots retrieved successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="estate", type="object",
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="title", type="string", example="Beryl Estate Lagos"),
+     *                 @OA\Property(property="size", type="string", example="500sqm"),
+     *                 @OA\Property(property="town_or_city", type="string", example="Ibeju-Lekki"),
+     *                 @OA\Property(property="state", type="string", example="Lagos")
+     *             ),
+     *             @OA\Property(
+     *                 property="plots",
+     *                 type="array",
+     *                 @OA\Items(
+     *                     @OA\Property(property="id", type="integer", example=1),
+     *                     @OA\Property(property="plot_id", type="string", example="BERYL-001"),
+     *                     @OA\Property(property="coordinate", type="string", example="6.5119104, 3.6348072"),
+     *                     @OA\Property(property="status", type="string", enum={"available", "sold", "reserved"}, example="available"),
+     *                     @OA\Property(property="created_at", type="string", format="date-time", example="2025-10-03T10:25:36.000000Z"),
+     *                     @OA\Property(property="updated_at", type="string", format="date-time", example="2025-10-03T10:25:36.000000Z")
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Estate not found",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Estate not found")
+     *         )
+     *     )
+     * )
+     */
+    public function getPlotsByEstate($estateId)
+    {
+        $estate = Estate::find($estateId);
+
+        if (!$estate) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Estate not found'
+            ], 404);
+        }
+
+        $plots = $estate->plots; // relationship in Estate model: hasMany(Plot::class)
+
+        return response()->json([
+            'success' => true,
+            'estate' => [
+                'id' => $estate->id,
+                'title' => $estate->title,
+                'size' => $estate->size,
+                'town_or_city' => $estate->town_or_city,
+                'state' => $estate->state,
+            ],
+            'plots' => $plots
+        ]);
+    }
+
 }

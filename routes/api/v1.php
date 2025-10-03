@@ -30,6 +30,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/estates/search', [EstateController::class, 'filterSearch']);
         Route::get('/detail/{estateId}', [EstateController::class, 'EstateDetails']);
         Route::post('/{estateId}/generate-plots', [PlotController::class, 'generatePlots']);
+        Route::get('/{estateId}/plots', [PlotController::class, 'getPlotsByEstate']);
         
     });
 
