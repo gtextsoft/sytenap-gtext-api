@@ -303,7 +303,7 @@ class PlotController extends Controller
 
         /**
      * @OA\Post(
-     *     path="/api/v1/estate/plots/finalize-purchase",
+     *     path="/api/v1/estate/plots/purchase",
      *     tags={"Estate Plots"},
      *     summary="Finalize and purchase estate plots",
      *     description="Confirms customer selection of plots, calculates pricing, generates a payment schedule, initializes a Paystack transaction, reserves the plots (mark as sold), and returns the payment link + reference.",
