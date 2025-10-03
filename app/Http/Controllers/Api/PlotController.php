@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Estate;
 use App\Models\Plot;
+use Illuminate\Support\Facades\Validator;
+use Carbon\Carbon;
 
 class PlotController extends Controller
 {
@@ -191,6 +193,106 @@ class PlotController extends Controller
                 'state' => $estate->state,
             ],
             'plots' => $plots
+        ]);
+    }
+
+
+    /**
+     * @OA\Post(
+     *     path="/api/v1/estate/plots/preview-purchase",
+     *     tags={"Plot Purchase"},
+     *     summary="Preview purchase of selected plots",
+     *     description="Generate a preview of the pricing and details for selected plots in an estate before buying",
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"estate_id", "plots", "installment_months"},
+     *             @OA\Property(property="estate_id", type="integer", example=1),
+     *             @OA\Property(
+     *                 property="plots",
+     *                 type="array",
+     *                 @OA\Items(type="integer", example=1),
+     *                 description="Array of plot IDs the customer wants to buy"
+     *             ),
+     *             @OA\Property(property="installment_months", type="integer", minimum=1, maximum=12, example=6)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Purchase preview generated successfully"
+     *     )
+     * )
+     */
+    public function previewPurchase(Request $request)
+    {
+        $validator = \Validator::make($request->all(), [
+            'estate_id' => 'required|integer|exists:estates,id',
+            'plots' => 'required|array|min:1',
+            'plots.*' => 'integer|exists:plots,id',
+            'installment_months' => 'required|integer|min:1|max:12'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $estate = Estate::with('plotDetail')->find($request->estate_id);
+        $plots = Plot::whereIn('id', $request->plots)
+                    ->where('estate_id', $estate->id)
+                    ->where('status', 'available')
+                    ->get();
+
+        if ($plots->count() !== count($request->plots)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Some selected plots are not available'
+            ], 400);
+        }
+
+        // Effective pricing
+        $effectivePrice = $estate->plotDetail->promotion_price ?? $estate->plotDetail->price_per_plot;
+
+        $plotsCount = $plots->count();
+        $totalPrice = $effectivePrice * $plotsCount;
+        $installmentMonths = $request->installment_months;
+        $monthlyPayment = round($totalPrice / $installmentMonths, 2);
+
+        // Generate payment schedule
+        $paymentSchedule = [];
+        $startDate = Carbon::now();
+
+        for ($i = 1; $i <= $installmentMonths; $i++) {
+            $paymentSchedule[] = [
+                'month' => $i,
+                'due_date' => $startDate->copy()->addMonths($i - 1)->format('Y-m-d'),
+                'amount' => $monthlyPayment
+            ];
+        }
+
+        return response()->json([
+            'success' => true,
+            'estate' => [
+                'id' => $estate->id,
+                'title' => $estate->title,
+                'town_or_city' => $estate->town_or_city,
+                'state' => $estate->state,
+                'size' => $estate->size,
+            ],
+            'plots' => $plots,
+            'pricing' => [
+                'price_per_plot' => $estate->plotDetail->price_per_plot,
+                'promotion_price' => $estate->plotDetail->promotion_price,
+                'effective_price' => $effectivePrice,
+                'plots_selected' => $plotsCount,
+                'total_price' => $totalPrice,
+                'installment_months' => $installmentMonths,
+                'monthly_payment' => $monthlyPayment,
+                'payment_schedule' => $paymentSchedule
+            ]
         ]);
     }
 
