@@ -1554,7 +1554,7 @@ class EstateController extends Controller
 
     /**
      * @OA\Get(
-     *     path="/api/v1/estate/estates/{id}",
+     *     path="/api/v1/estate/detail/{id}",
      *     tags={"Estate Management"},
      *     summary="Get full details of a specific estate",
      *     description="Retrieve complete details of an estate by its ID, including associated media and plot details",

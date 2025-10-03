@@ -3,6 +3,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\EstateController;
+use App\Http\Controllers\Api\PlotController;
 
 
 Route::prefix('v1')->group(function () {
@@ -28,7 +29,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/estates/nearby', [EstateController::class, 'getNearbyEstates']);
         Route::post('/estates/search', [EstateController::class, 'filterSearch']);
         Route::get('/detail/{estateId}', [EstateController::class, 'EstateDetails']);
-        
+        Route::post('/{estateId}/generate-plots', [PlotController::class, 'generatePlots']);
         
     });
 
