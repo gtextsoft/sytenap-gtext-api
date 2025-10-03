@@ -31,6 +31,9 @@ Route::prefix('v1')->group(function () {
         Route::get('/detail/{estateId}', [EstateController::class, 'EstateDetails']);
         Route::post('/{estateId}/generate-plots', [PlotController::class, 'generatePlots']);
         Route::get('/{estateId}/plots', [PlotController::class, 'getPlotsByEstate']);
+
+        // Preview purchase of plots
+        Route::post('/plots/preview-purchase', [PlotController::class, 'previewPurchase']);
         
     });
 
