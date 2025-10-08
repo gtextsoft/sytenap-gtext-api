@@ -2,35 +2,36 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class PlotPurchase extends Model
+class CustomerProperty extends Model
 {
-    use HasFactory;
+    //
 
     protected $fillable = [
-        'estate_id',
         'user_id',
+        'estate_id',
         'plots',
         'total_price',
         'installment_months',
-        'monthly_payment',
-        'payment_schedule',
-        'payment_reference',
-        'payment_link',
         'payment_status',
         'acquisition_status',
-
+        'payment_verified_at',
     ];
 
     protected $casts = [
         'plots' => 'array',
-        'payment_schedule' => 'array',
+        'payment_verified_at' => 'datetime',
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 
     public function estate()
     {
         return $this->belongsTo(Estate::class);
     }
+
 }

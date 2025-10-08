@@ -36,6 +36,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/plots/preview-purchase', [PlotController::class, 'previewPurchase']);
         // Purchase plots
         Route::post('/plots/purchase', [PlotController::class, 'finalizePurchase'])->middleware('auth:sanctum');
+      
         
     });
 
@@ -46,5 +47,8 @@ Route::prefix('v1')->group(function () {
         Route::put('/{id}', [EstateController::class, 'update']);
         Route::delete('/{id}', [EstateController::class, 'destroy']);
     });
+
+    Route::get('/payments/callback', [PlotController::class, 'handlePaystackCallback']);
+
 
 });
