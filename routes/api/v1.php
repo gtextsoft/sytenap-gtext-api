@@ -50,6 +50,7 @@ Route::prefix('v1')->group(function () {
 
     Route::prefix('myproperties')->group(function () {
           Route::get('/customer-metrics', [PlotController::class, 'getCustomerMetrics'])->middleware('auth:sanctum');
+          Route::get('/customer-properties', [PlotController::class, 'getCustomerProperties'])->middleware('auth:sanctum');
     });
 
     Route::get('/payments/callback', [PlotController::class, 'handlePaystackCallback']);
