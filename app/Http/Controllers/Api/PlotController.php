@@ -829,6 +829,78 @@ class PlotController extends Controller
         }
     }
 
+    /**
+     * @OA\Get(
+     *     path="/api/v1/myproperties/customer-metrics",
+     *     tags={"Estate Plots"},
+     *     summary="Get customer property purchase metrics",
+     *     description="Returns summary metrics for the authenticated customer, including the number of purchased properties, held (active installment) properties, and total outstanding payment amount.",
+     *     security={{"bearerAuth":{}}},
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Customer property metrics retrieved successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Metrics fetched successfully."),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(property="purchased_properties", type="integer", example=5, description="Number of fully paid and owned properties."),
+     *                 @OA\Property(property="held_properties", type="integer", example=2, description="Number of properties currently on installment or reserved but not fully paid."),
+     *                 @OA\Property(property="total_outstanding_payment", type="number", example=3500000, description="Total remaining balance across installment purchases.")
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=401,
+     *         description="Authentication required"
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Failed to retrieve customer metrics"
+     *     )
+     * )
+     */
+   public function getCustomerMetrics(Request $request)
+    {
+        $user = $request->user();
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Authentication required',
+            ], 401);
+        }
 
+        // Fully paid purchases
+        $purchased = PlotPurchase::where('user_id', $user->id)
+            ->where('payment_status', 'paid')
+            ->count();
+
+        // Active (on installment or pending)
+        $heldPurchases = PlotPurchase::where('user_id', $user->id)
+            ->whereIn('payment_status', ['pending', 'outstanding'])
+            ->get();
+
+        // Count of held properties
+        $held = $heldPurchases->count();
+
+        // Dynamically calculate outstanding payment
+        $outstanding = $heldPurchases->sum(function ($purchase) {
+            $amountPaid = $purchase->amount_paid ?? 0;
+            return max(0, $purchase->total_price - $amountPaid);
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Metrics fetched successfully.',
+            'data' => [
+                'purchased_properties' => $purchased,
+                'held_properties' => $held,
+                'total_outstanding_payment' => $outstanding,
+            ],
+        ]);
+    }
 
 }
