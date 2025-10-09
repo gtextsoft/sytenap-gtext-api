@@ -27,10 +27,19 @@ class PlotPurchase extends Model
     protected $casts = [
         'plots' => 'array',
         'payment_schedule' => 'array',
+        'payment_verified_at' => 'datetime',
     ];
 
     public function estate()
     {
         return $this->belongsTo(Estate::class);
     }
+
+    public function plot()
+    {
+        return $this->belongsTo(Plot::class);
+    }
+
+   
+
 }
