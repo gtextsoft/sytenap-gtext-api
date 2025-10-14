@@ -482,4 +482,21 @@ class AuthController extends Controller
         }
     }
 
+
+    /**
+     * Get all users.
+     */
+    public function index()
+    {
+        $users = User::select('id', 'first_name', 'last_name', 'email', 'account_type', 'state', 'country', 'created_at')
+                     ->orderBy('created_at', 'desc')
+                     ->get();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Users fetched successfully',
+            'data' => $users,
+        ]);
+    }
+
 }
