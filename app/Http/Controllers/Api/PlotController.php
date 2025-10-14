@@ -725,7 +725,7 @@ class PlotController extends Controller
             ]);
 
             foreach ($plots as $plot) {
-                $plot->update(['status' => 'sold']);
+                $plot->update(['status' => 'available']);
             }
         });
 
@@ -798,8 +798,16 @@ class PlotController extends Controller
                 'payment_verified_at' => now(),
             ]);
 
-            // If payment succeeded, assign property
+            // If payment succeeded, assign property and mark plots as sold
             if ($status === 'paid') {
+                // Mark plots as sold
+                $plotIds = is_array($purchase->plots) ? $purchase->plots : json_decode($purchase->plots, true);
+
+                if (!empty($plotIds)) {
+                    Plot::whereIn('id', $plotIds)->update(['status' => 'sold']);
+                }
+
+                // Assign property to customer
                 CustomerProperty::create([
                     'user_id' => $purchase->user_id,
                     'estate_id' => $purchase->estate_id,
