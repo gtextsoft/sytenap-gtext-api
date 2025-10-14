@@ -1381,6 +1381,8 @@ class PlotController extends Controller
             // Generate allocation reference
             $allocationReference = 'ADMIN-ALLOC-' . Str::upper(Str::random(10));
 
+            
+
             // Create PlotPurchase record using ONLY existing fields
             $purchase = PlotPurchase::create([
                 'estate_id' => $estate->id,
@@ -1400,7 +1402,6 @@ class PlotController extends Controller
             foreach ($plots as $plot) {
                 $plot->update(['status' => 'sold']);
             }
-
             // Create CustomerProperty record
             $customerProperty = CustomerProperty::create([
                 'user_id' => $customer->id,
