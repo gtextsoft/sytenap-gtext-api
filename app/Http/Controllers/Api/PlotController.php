@@ -1393,7 +1393,7 @@ class PlotController extends Controller
                 'payment_reference' => $allocationReference,
                 'payment_link' => null, // No payment link for admin allocation
                 'payment_status' => $request->payment_status,
-                'acquisition_status' => $request->acquisition_status ?? 'held',
+                //'acquisition_status' => $request->acquisition_status ?? 'held',
             ]);
 
             // Mark plots as sold
