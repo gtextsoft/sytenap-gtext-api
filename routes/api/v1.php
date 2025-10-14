@@ -53,6 +53,16 @@ Route::prefix('v1')->group(function () {
           Route::get('/customer-properties', [PlotController::class, 'getCustomerProperties'])->middleware('auth:sanctum');
     });
 
+
+    Route::prefix('user')->group(function () {
+        Route::get('/account', [AuthController::class, 'index']);
+    });
+
+    // Admin routes
+    Route::prefix('admin')->group(function () {
+        Route::post('/allocate-property', [PlotController::class, 'allocateProperty'])->middleware('auth:sanctum');
+    });
+
     Route::get('/payments/callback', [PlotController::class, 'handlePaystackCallback']);
 
 
