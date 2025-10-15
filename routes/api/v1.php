@@ -37,6 +37,8 @@ Route::prefix('v1')->group(function () {
         // Purchase plots
         Route::post('/plots/purchase', [PlotController::class, 'finalizePurchase'])->middleware('auth:sanctum');
       
+        // Get all estates
+         Route::get('/estates/all', [EstateController::class, 'getAllEstates']);
         
     });
 
