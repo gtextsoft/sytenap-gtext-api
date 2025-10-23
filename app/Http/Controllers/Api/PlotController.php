@@ -819,15 +819,19 @@ class PlotController extends Controller
                     ]);
                 }
 
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Payment processed successfully',
-                    'data' => [
-                        'reference' => $reference,
-                        'status' => $status,
-                        'gateway_response' => $data,
-                    ],
-                ]);
+                // Redirect to client portal (include reference and status)
+                $redirectUrl = 'https://portal.gtextland.com/client/properties?reference=' . urlencode($reference) . '&status=' . urlencode($status);
+                return redirect()->away($redirectUrl);
+
+                // return response()->json([
+                //     'success' => true,
+                //     'message' => 'Payment processed successfully',
+                //     'data' => [
+                //         'reference' => $reference,
+                //         'status' => $status,
+                //         'gateway_response' => $data,
+                //     ],
+                // ]);
             } catch (\Exception $e) {
                 return response()->json([
                     'success' => false,
