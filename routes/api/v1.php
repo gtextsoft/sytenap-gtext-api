@@ -1,4 +1,5 @@
 <?php
+use App\Http\Controllers\Api\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
@@ -36,8 +37,8 @@ Route::prefix('v1')->group(function () {
         Route::post('/plots/preview-purchase', [PlotController::class, 'previewPurchase']);
         // Purchase plots
         Route::post('/plots/purchase', [PlotController::class, 'finalizePurchase'])->middleware('auth:sanctum');
-      
-        
+
+
     });
 
     Route::prefix('estate-plot-details')->group(function () {
@@ -56,6 +57,8 @@ Route::prefix('v1')->group(function () {
 
     Route::prefix('user')->group(function () {
         Route::get('/account', [AuthController::class, 'index']);
+        Route::post('/email/request-change', [UserController::class, 'requestEmailChange']);
+        Route::post('/email/verify-change', [UserController::class, 'verifyEmailChange']);
     });
 
     // Admin routes
