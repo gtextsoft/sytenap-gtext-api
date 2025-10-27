@@ -91,6 +91,47 @@ class UserController extends Controller {
         ] );
     }
 
+    /**
+    * Resend OTP for email change
+    */
+
+    public function resendEmailChangeOtp( Request $request ): JsonResponse {
+        try {
+            $user = $request->user();
+
+            if ( !$user->pending_email ) {
+                return response()->json( [
+                    'message' => 'No pending email change request found'
+                ], 400 );
+            }
+
+            // Generate and send new OTP to the pending email
+            $otpService = new OtpService();
+            $otpResult = $otpService->generateAndSendOtp(
+                $user->pending_email,
+                'email_change'
+            );
+
+            if ( !$otpResult[ 'success' ] ) {
+                return response()->json( [
+                    'message' => 'Failed to send OTP',
+                    'error' => $otpResult[ 'message' ]
+                ], 500 );
+            }
+
+            return response()->json( [
+                'message' => 'OTP resent successfully',
+                'otp_expires_in_minutes' => $otpResult[ 'expires_in_minutes' ]
+            ], 200 );
+
+        } catch ( \Exception $e ) {
+            return response()->json( [
+                'message' => 'Failed to resend OTP',
+                'error' => $e->getMessage()
+            ], 500 );
+        }
+    }
+
     public function updatePersonalInfo( Request $request ): JsonResponse {
         $user = $request->user();
 

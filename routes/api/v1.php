@@ -57,8 +57,8 @@ Route::prefix('v1')->group(function () {
 
     Route::prefix('user')->group(function () {
         Route::get('/account', [AuthController::class, 'index']);
-        Route::post('/email/request-change', [UserController::class, 'requestEmailChange']);
-        Route::post('/email/verify-change', [UserController::class, 'verifyEmailChange']);
+        Route::post('/email/request-change', [UserController::class, 'requestEmailChange'])->middleware('auth:sanctum');
+        Route::post('/email/verify-change', [UserController::class, 'verifyEmailChange'])->middleware('auth:sanctum');
     });
 
     // Admin routes
