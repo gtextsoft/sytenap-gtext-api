@@ -97,7 +97,15 @@ class PlotController extends Controller
         [$baseLat, $baseLng] = array_map('floatval', explode(',', $estate->cordinates));
 
         $plotsPerRow = ceil(sqrt($availablePlots)); // make grid square-ish
-        $prefix = strtoupper(substr(str_replace(' ', '', $estate->title), 0, 5)); // e.g. BERYL
+        // Build prefix from estate title, town_or_city and state (concatenate, sanitize, uppercase, limited length)
+        $parts = [
+            $estate->title ?? '',
+            $estate->town_or_city ?? '',
+            $estate->state ?? ''
+        ];
+        $prefixRaw = implode('', array_map('trim', $parts));
+        $prefixSanitized = preg_replace('/[^A-Za-z0-9]/', '', $prefixRaw);
+        $prefix = strtoupper(substr($prefixSanitized, 0, 12)); // limit to 12 chars for readability
 
         $createdPlots = [];
 
