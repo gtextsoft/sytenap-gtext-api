@@ -11,7 +11,9 @@ Route::prefix('v1')->group(function () {
     Route::get('test', function () {
         return response()->json(['status' => true, 'message' => "API v1 is up and running"], 200);
     });
-
+    Route::prefix('agent')->group(function () {
+        Route::post('/login', [AuthController::class, 'agent_login']);
+    });
 
     Route::prefix('auth')->group(function () {
         Route::post('register', [AuthController::class, 'register']);
