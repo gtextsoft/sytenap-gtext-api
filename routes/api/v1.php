@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\EstateController;
 use App\Http\Controllers\Api\PlotController;
-
+use App\Http\Controllers\Api\FaqController;
 
 Route::prefix('v1')->group(function () {
 
@@ -65,5 +65,7 @@ Route::prefix('v1')->group(function () {
 
     Route::get('/payments/callback', [PlotController::class, 'handlePaystackCallback']);
 
+    // FAQ routes
+    Route::apiResource('faqs', FaqController::class);
 
 });
