@@ -13,6 +13,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Http;
+
 
 class AuthController extends Controller
 {
@@ -499,4 +501,51 @@ class AuthController extends Controller
         ]);
     }
 
+     public function agent_login(Request $request)
+    {
+      //  return "Agent login endpoint";
+        
+        
+        // Validate request input
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required'
+        ]);
+
+        // Send POST request to your PHP API
+        try {
+            // Send POST request with JSON payload
+            $response = Http::post('http://localhost/GandA/login.php', [
+                'email' => $request->email,
+                'password' => $request->password,
+            ]);
+
+            // Decode JSON response
+            $data = $response->json();
+
+            // Check response and return accordingly
+            if ($response->successful() && isset($data['status']) && $data['status'] === 'success') {
+                return response()->json([
+                    'status' => 'success',
+                    'message' => $data['message'],
+                    'user' => $data['data']
+                ], 200);
+            } else {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => $data['message'] ?? 'Authentication failed'
+                ], 401);
+            }
+
+        } catch (\Exception $e) {
+            // Handle network or server errors
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Unable to connect to authentication server',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }
+
+
