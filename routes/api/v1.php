@@ -37,8 +37,10 @@ Route::prefix('v1')->group(function () {
         Route::post('/plots/preview-purchase', [PlotController::class, 'previewPurchase']);
         // Purchase plots
         Route::post('/plots/purchase', [PlotController::class, 'finalizePurchase'])->middleware('auth:sanctum');
-
-
+      
+        // Get all estates
+         Route::get('/estates/all', [EstateController::class, 'getAllEstates']);
+        
     });
 
     Route::prefix('estate-plot-details')->group(function () {

@@ -1377,6 +1377,7 @@ class EstateController extends Controller
 
         return $earthRadius * $c; // Distance in kilometers
     }
+
     /**
      * @OA\Post(
      *     path="/api/v1/estate/estates/search",
@@ -1727,6 +1728,150 @@ class EstateController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to retrieve estate details',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+
+    /**
+     * @OA\Get(
+     *     path="/api/v1/estate/estates/all",
+     *     tags={"Estate Management"},
+     *     summary="Get all estates",
+     *     description="Retrieve all estates with media and plot details",
+     *     @OA\Response(
+     *         response=200,
+     *         description="All estates retrieved successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="All estates retrieved successfully"),
+     *             @OA\Property(property="total_count", type="integer", example=10),
+     *             @OA\Property(property="data", type="array",
+     *                 @OA\Items(
+     *                     @OA\Property(property="id", type="integer", example=1),
+     *                     @OA\Property(property="title", type="string", example="Luxury Estate Gardens"),
+     *                     @OA\Property(property="town_or_city", type="string", example="Lekki"),
+     *                     @OA\Property(property="state", type="string", example="Lagos"),
+     *                     @OA\Property(property="rating", type="integer", example=5),
+     *                     @OA\Property(property="status", type="string", example="publish"),
+     *                     @OA\Property(property="description", type="string"),
+     *                     @OA\Property(property="amenities", type="array", @OA\Items(type="string")),
+     *                     @OA\Property(property="media", type="object",
+     *                         @OA\Property(property="id", type="integer"),
+     *                         @OA\Property(property="photos", type="array", @OA\Items(type="string")),
+     *                         @OA\Property(property="third_dimension_model_images", type="array", @OA\Items(type="string")),
+     *                         @OA\Property(property="virtual_tour_video_url", type="string")
+     *                     ),
+     *                     @OA\Property(property="plot_detail", type="object",
+     *                         @OA\Property(property="id", type="integer"),
+     *                         @OA\Property(property="available_plot", type="integer", example=25),
+     *                         @OA\Property(property="available_acre", type="number", format="float", example=12.5),
+     *                         @OA\Property(property="price_per_plot", type="number", format="float", example=150000.00),
+     *                         @OA\Property(property="promotion_price", type="number", format="float", example=135000.00),
+     *                         @OA\Property(property="effective_price", type="number", format="float", example=135000.00),
+     *                         @OA\Property(property="has_promotion", type="boolean", example=true),
+     *                         @OA\Property(property="total_plot_value", type="number", format="float", example=3375000.00),
+     *                         @OA\Property(property="installment_plan", type="array", @OA\Items(type="string"))
+     *                     )
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=500, description="Server error")
+     * )
+     */
+    public function getAllEstates()
+    {
+        try {
+            // Get top 10 estates with highest ratings, including their media and plot details
+            $topRatedEstates = Estate::with(['media', 'plotDetail'])
+                ->whereNotNull('rating')
+                ->where('rating', '>', 0)
+                ->where('status', 'publish') // Only show published estates
+                ->orderBy('rating', 'desc')
+                ->orderBy('created_at', 'desc') // Secondary sort for estates with same rating
+                ->get();
+
+            // Check if we got any results
+            if ($topRatedEstates->isEmpty()) {
+                return response()->json([
+                    'message' => 'No rated estates found',
+                    'data' => [],
+                    'total_count' => 0
+                ], 200);
+            }
+
+            // Transform the data to include media and plot detail information
+            $formattedEstates = $topRatedEstates->map(function ($estate) {
+                // Safely access media relationship
+                $media = null;
+                if ($estate->relationLoaded('media') && $estate->media) {
+                    $media = [
+                        'id' => $estate->media->id,
+                        'photos' => $estate->media->photos,
+                        'third_dimension_model_images' => $estate->media->third_dimension_model_images,
+                        'third_dimension_model_video' => $estate->media->third_dimension_model_video,
+                        'virtual_tour_video_url' => $estate->media->virtual_tour_video_url,
+                        'status' => $estate->media->status,
+                        'created_at' => $estate->media->created_at,
+                        'updated_at' => $estate->media->updated_at,
+                    ];
+                }
+
+                // Safely access plot detail relationship
+                $plotDetail = null;
+                if ($estate->relationLoaded('plotDetail') && $estate->plotDetail) {
+                    $plotDetail = [
+                        'id' => $estate->plotDetail->id,
+                        'available_plot' => $estate->plotDetail->available_plot,
+                        'available_acre' => $estate->plotDetail->available_acre,
+                        'price_per_plot' => $estate->plotDetail->price_per_plot,
+                        'percentage_increase' => $estate->plotDetail->percentage_increase,
+                        'installment_plan' => $estate->plotDetail->installment_plan,
+                        'promotion_price' => $estate->plotDetail->promotion_price,
+                        'effective_price' => $estate->plotDetail->effective_price,
+                        'has_promotion' => $estate->plotDetail->has_promotion,
+                        'savings_amount' => $estate->plotDetail->savings_amount,
+                        'total_plot_value' => $estate->plotDetail->total_plot_value,
+                        'formatted_price' => $estate->plotDetail->formatted_price,
+                        'formatted_promotion_price' => $estate->plotDetail->formatted_promotion_price,
+                        'created_at' => $estate->plotDetail->created_at,
+                        'updated_at' => $estate->plotDetail->updated_at,
+                    ];
+                }
+
+                return [
+                    'id' => $estate->id,
+                    'title' => $estate->title,
+                    'town_or_city' => $estate->town_or_city,
+                    'state' => $estate->state,
+                    'coordinates' => $estate->cordinates,
+                    'zoning' => $estate->zoning,
+                    'size' => $estate->size,
+                    'direction' => $estate->direction,
+                    'description' => $estate->description,
+                    'rating' => $estate->rating,
+                    'status' => $estate->status,
+                    'has_certificate_of_occupancy' => $estate->has_cerificate_of_occupancy,
+                    'amenities' => $estate->amenities,
+                    'map_background_image' => $estate->map_background_image,
+                    'preview_display_image' => $estate->preview_display_image,
+                    'created_at' => $estate->created_at,
+                    'updated_at' => $estate->updated_at,
+                    'media' => $media,
+                    'plot_detail' => $plotDetail
+                ];
+            });
+
+            return response()->json([
+                'message' => 'Top rated estates retrieved successfully',
+                'data' => $formattedEstates,
+                'total_count' => $formattedEstates->count()
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Error retrieving top rated estates',
                 'error' => $e->getMessage()
             ], 500);
         }
