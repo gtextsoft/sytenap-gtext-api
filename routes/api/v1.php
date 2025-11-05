@@ -5,8 +5,8 @@ use App\Http\Controllers\Api\FaqController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\PlotController;
 use App\Http\Controllers\Api\UserController;
-use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\Api\EstateController;
+use App\Http\Controllers\Api\DocumentController;
 
 Route::prefix('v1')->group(function () {
 

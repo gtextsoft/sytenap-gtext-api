@@ -1,9 +1,10 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Api;
 
 use App\Models\Document;
 use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
 use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 
 class DocumentController extends Controller {
