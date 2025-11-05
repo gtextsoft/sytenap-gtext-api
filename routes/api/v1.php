@@ -6,12 +6,14 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\EstateController;
 use App\Http\Controllers\Api\PlotController;
 use App\Http\Controllers\Api\FaqController;
+use App\Http\Controllers\Api\DocumentController;  
 
 Route::prefix('v1')->group(function () {
 
     Route::get('test', function () {
         return response()->json(['status' => true, 'message' => "API v1 is up and running"], 200);
     });
+
     Route::prefix('agent')->group(function () {
         Route::post('/login', [AuthController::class, 'agent_login']);
     });
@@ -41,8 +43,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/plots/purchase', [PlotController::class, 'finalizePurchase'])->middleware('auth:sanctum');
       
         // Get all estates
-         Route::get('/estates/all', [EstateController::class, 'getAllEstates']);
-        
+        Route::get('/estates/all', [EstateController::class, 'getAllEstates']);
     });
 
     Route::prefix('estate-plot-details')->group(function () {
@@ -54,10 +55,9 @@ Route::prefix('v1')->group(function () {
     });
 
     Route::prefix('myproperties')->group(function () {
-          Route::get('/customer-metrics', [PlotController::class, 'getCustomerMetrics'])->middleware('auth:sanctum');
-          Route::get('/customer-properties', [PlotController::class, 'getCustomerProperties'])->middleware('auth:sanctum');
+        Route::get('/customer-metrics', [PlotController::class, 'getCustomerMetrics'])->middleware('auth:sanctum');
+        Route::get('/customer-properties', [PlotController::class, 'getCustomerProperties'])->middleware('auth:sanctum');
     });
-
 
     Route::prefix('user')->group(function () {
         Route::get('/account', [AuthController::class, 'index']);
@@ -74,5 +74,10 @@ Route::prefix('v1')->group(function () {
 
     // FAQ routes
     Route::apiResource('faqs', FaqController::class);
+
+    // 👇 Document routes go here
+    Route::prefix('documents')->middleware('auth:sanctum')->group(function () {
+        Route::get('/', [DocumentController::class, 'index']);
+    });
 
 });
