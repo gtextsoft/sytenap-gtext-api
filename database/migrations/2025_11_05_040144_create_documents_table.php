@@ -13,8 +13,12 @@ return new class extends Migration
     {
         Schema::create('documents', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('client_id')->constrained()->onDelete('cascade');
+            $table->foreignId('uploaded_by')->constrained('users')->onDelete('cascade'); // admin who uploaded
+            $table->foreignId('user_id')->constrained('users')->onDelete('cascade'); // client
+            $table->foreignId('plot_id')->nullable()->constrained('plots')->onDelete('set null');
+            $table->foreignId('estate_id')->nullable()->constrained('estates')->onDelete('set null');
             $table->string('title');
+            $table->string('document_type')->nullable();
             $table->string('file_url');
             $table->timestamps();
         });
