@@ -12,6 +12,8 @@ use App\Services\OtpService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use App\Models\Referral;
+use Illuminate\Support\Str;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Http;
 
@@ -432,6 +434,16 @@ class AuthController extends Controller
 
             // Generate API token (using Laravel Sanctum)
             $token = $user->createToken('api-token')->plainTextToken;
+            //Generate referral code if not existing
+            $referral = Referral::where('user_id', $user->id)->first();
+
+            if (!$referral) {
+            Referral::create([
+        'user_id' => $user->id,
+        'referral_code' => 'REF-' . strtoupper(Str::random(8)),
+    ]);
+}
+
 
             // Update last login timestamp
             //$user->update(['last_login_at' => now()]);
@@ -502,50 +514,60 @@ class AuthController extends Controller
     }
 
      public function agent_login(Request $request)
-    {
-      //  return "Agent login endpoint";
-        
-        
-        // Validate request input
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required'
+{
+    // Validate input
+    $request->validate([
+        'email' => 'required|email',
+        'password' => 'required'
+    ]);
+
+    try {
+        // Send POST request to external authentication API
+        $response = Http::post('http://localhost/GandA/login.php', [
+            'email' => $request->email,
+            'password' => $request->password,
         ]);
 
-        // Send POST request to your PHP API
-        try {
-            // Send POST request with JSON payload
-            $response = Http::post('http://localhost/GandA/login.php', [
-                'email' => $request->email,
-                'password' => $request->password,
-            ]);
+        $data = $response->json();
 
-            // Decode JSON response
-            $data = $response->json();
+        if ($response->successful() && isset($data['status']) && $data['status'] === 'success') {
 
-            // Check response and return accordingly
-            if ($response->successful() && isset($data['status']) && $data['status'] === 'success') {
-                return response()->json([
-                    'status' => 'success',
-                    'message' => $data['message'],
-                    'user' => $data['data']
-                ], 200);
-            } else {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => $data['message'] ?? 'Authentication failed'
-                ], 401);
+            //  Get the agent's data (assuming it includes an 'id')
+            $agentId = $data['data']['id'] ?? null;
+
+            if ($agentId) {
+                // Check if referral record exists
+                $existingReferral = Referral::where('user_id', $agentId)->first();
+
+                if (!$existingReferral) {
+                    Referral::create([
+                        'user_id' => $agentId,
+                        'referral_code' => 'REF-' . strtoupper(Str::random(8)),
+                    ]);
+                }
             }
 
-        } catch (\Exception $e) {
-            // Handle network or server errors
+            return response()->json([
+                'status' => 'success',
+                'message' => $data['message'] ?? 'Login successful',
+                'user' => $data['data']
+            ], 200);
+        } else {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Unable to connect to authentication server',
-                'error' => $e->getMessage()
-            ], 500);
+                'message' => $data['message'] ?? 'Authentication failed'
+            ], 401);
         }
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Unable to connect to authentication server',
+            'error' => $e->getMessage()
+        ], 500);
     }
+}
+
 }
 
 

@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\EstateController;
 use App\Http\Controllers\Api\PlotController;
+use App\Http\Controllers\Api\DocumentController;
 use App\Http\Controllers\Api\FaqController;
 
 Route::prefix('v1')->group(function () {
@@ -72,7 +73,21 @@ Route::prefix('v1')->group(function () {
 
     Route::get('/payments/callback', [PlotController::class, 'handlePaystackCallback']);
 
+
+// Document Routes
+Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
+    Route::post('/documents/upload', [DocumentController::class, 'upload']);
+    Route::put('/documents/{id}/publish', [DocumentController::class, 'publish']);
+    Route::put('/documents/{id}/unpublish', [DocumentController::class, 'unpublish']);
+    Route::delete('/documents/{id}', [DocumentController::class, 'destroy']);
+});
+
+// Public routes
+Route::get('/documents', [DocumentController::class, 'index']);
+Route::get('/documents/{id}/download', [DocumentController::class, 'download']);
+
+
     // FAQ routes
-    Route::apiResource('faqs', FaqController::class);
+   // Route::apiResource('faqs', FaqController::class);
 
 });
