@@ -57,7 +57,6 @@ class AdminClientController extends Controller {
                         ->subject('Your New Password from Support Team');
             });
         } catch (\Exception $e) {
-              // Log the failure for debugging or audit purposes
             \Log::error('Failed to send password reset email', [
                 'client_email' => $client->email,
                 'error_message' => $e->getMessage(),
