@@ -508,21 +508,21 @@ class AuthController extends Controller
         ]);
     }
 
-     public function agent_login(Request $request)
+    public function agent_login(Request $request)
     {
-      //  return "Agent login endpoint";
-        
-        
-        // Validate request input
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required'
+        $validator = Validator::make($request->all(), [
+               'email' => 'required|email',
+                'password' => 'required',
         ]);
+        
+        if ($validator->fails()) {
+                return response()->json(['errors' => $validator->errors()], 422);
+        }
 
         // Send POST request to your PHP API
         try {
             // Send POST request with JSON payload
-            $response = Http::post('http://localhost/GandA/login.php', [
+            $response = Http::post(env('GANDAWEBSITE_URL') . '/sytemap/login.php', [
                 'email' => $request->email,
                 'password' => $request->password,
             ]);

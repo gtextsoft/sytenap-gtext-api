@@ -1,17 +1,21 @@
 <?php
-use App\Http\Controllers\Api\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\EstateController;
 use App\Http\Controllers\Api\PlotController;
 use App\Http\Controllers\Api\FaqController;
+use App\Http\Controllers\Api\DocumentController;  
+use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\EstateController;
+use App\Http\Controllers\Api\AdminClientController;
+
 
 Route::prefix('v1')->group(function () {
 
     Route::get('test', function () {
         return response()->json(['status' => true, 'message' => "API v1 is up and running"], 200);
     });
+
     Route::prefix('agent')->group(function () {
         Route::post('/login', [AuthController::class, 'agent_login']);
     });
@@ -39,10 +43,11 @@ Route::prefix('v1')->group(function () {
         Route::post('/plots/preview-purchase', [PlotController::class, 'previewPurchase']);
         // Purchase plots
         Route::post('/plots/purchase', [PlotController::class, 'finalizePurchase'])->middleware('auth:sanctum');
-      
+
         // Get all estates
+        Route::get('/estates/all', [EstateController::class, 'getAllEstates']);
          Route::get('/estates/all', [EstateController::class, 'getAllEstates']);
-        
+
     });
 
     Route::prefix('estate-plot-details')->group(function () {
@@ -54,10 +59,9 @@ Route::prefix('v1')->group(function () {
     });
 
     Route::prefix('myproperties')->group(function () {
-          Route::get('/customer-metrics', [PlotController::class, 'getCustomerMetrics'])->middleware('auth:sanctum');
-          Route::get('/customer-properties', [PlotController::class, 'getCustomerProperties'])->middleware('auth:sanctum');
+        Route::get('/customer-metrics', [PlotController::class, 'getCustomerMetrics'])->middleware('auth:sanctum');
+        Route::get('/customer-properties', [PlotController::class, 'getCustomerProperties'])->middleware('auth:sanctum');
     });
-
 
     Route::prefix('user')->group(function () {
         Route::get('/account', [AuthController::class, 'index']);
@@ -65,12 +69,20 @@ Route::prefix('v1')->group(function () {
         Route::post('/email/verify-change', [UserController::class, 'verifyEmailChange'])->middleware('auth:sanctum');
     });
 
+    Route::prefix('document')->group(function () {
+        Route::get('/my-document', [DocumentController::class, 'getUserDocument'])>middleware('auth:sanctum');
+    });
+
     // Admin routes
     Route::prefix('admin')->group(function () {
         Route::post('/allocate-property', [PlotController::class, 'allocateProperty'])->middleware('auth:sanctum');
+        Route::post('/upload', [DocumentController::class, 'store'])->middleware('auth:sanctum');
+        Route::post('/reset-client-password', [AdminClientController::class, 'resetClientPassword'])->middleware('auth:sanctum');
     });
 
     Route::get('/payments/callback', [PlotController::class, 'handlePaystackCallback']);
+
+    Route::apiResource('faqs', FaqController::class);
 
 
 });
