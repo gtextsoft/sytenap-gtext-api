@@ -14,8 +14,12 @@ return new class extends Migration
     {
         Schema::create('documents', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('uploaded_by')->constrained('users')->onDelete('cascade'); // admin who uploaded
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade'); // client
+           $table->unsignedBigInteger('uploaded_by');
+            $table->foreign('uploaded_by')->references('id')->on('users')->onDelete('cascade');
+
+            $table->unsignedBigInteger('user_id');
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+
             $table->foreignId('plot_id')->nullable()->constrained('plots')->onDelete('set null');
             $table->foreignId('estate_id')->nullable()->constrained('estates')->onDelete('set null');
             $table->string('title');
