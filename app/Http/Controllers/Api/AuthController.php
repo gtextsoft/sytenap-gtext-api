@@ -405,6 +405,13 @@ class AuthController extends Controller
 
             // Check if email is verified
             if (!$user->email_verified_at) {
+
+                 // Generate and send new OTP
+                $otpResult = $this->otpService->generateAndSendOtp(
+                    $request->email,
+                    'email_verification'
+                );
+                
                 return response()->json([
                     'success' => false,
                     'message' => 'Email not verified. Please verify your email before logging in.',
