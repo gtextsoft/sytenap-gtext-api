@@ -1,11 +1,12 @@
 <?php
-use App\Http\Controllers\Api\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\EstateController;
-use App\Http\Controllers\Api\PlotController;
 use App\Http\Controllers\Api\FaqController;
+use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\PlotController;
+use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\EstateController;
+use App\Http\Controllers\Api\DocumentController;
 
 Route::prefix('v1')->group(function () {
 
@@ -39,10 +40,10 @@ Route::prefix('v1')->group(function () {
         Route::post('/plots/preview-purchase', [PlotController::class, 'previewPurchase']);
         // Purchase plots
         Route::post('/plots/purchase', [PlotController::class, 'finalizePurchase'])->middleware('auth:sanctum');
-      
+
         // Get all estates
          Route::get('/estates/all', [EstateController::class, 'getAllEstates']);
-        
+
     });
 
     Route::prefix('estate-plot-details')->group(function () {
@@ -68,6 +69,7 @@ Route::prefix('v1')->group(function () {
     // Admin routes
     Route::prefix('admin')->group(function () {
         Route::post('/allocate-property', [PlotController::class, 'allocateProperty'])->middleware('auth:sanctum');
+        Route::post('/upload', [DocumentController::class, 'store'])->middleware('auth:sanctum');
     });
 
     Route::get('/payments/callback', [PlotController::class, 'handlePaystackCallback']);
