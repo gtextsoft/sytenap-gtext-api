@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('password_reset_logs', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('client_id')->constrained('users')->onDelete('cascade'); // client whose password was reset
+            $table->foreignId('user_id')->constrained('users')->onDelete('cascade'); // client whose password was reset
             $table->foreignId('admin_id')->constrained('users')->onDelete('cascade'); // admin who performed the reset
             $table->timestamp('reset_at')->useCurrent();
             $table->timestamps();
