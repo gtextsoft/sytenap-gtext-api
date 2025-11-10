@@ -70,7 +70,7 @@ Route::prefix('v1')->group(function () {
     });
 
     Route::prefix('document')->group(function () {
-        Route::get('/my-document', [DocumentController::class, 'getUserDocument'])>middleware('auth:sanctum');
+        Route::get('/my-document', [DocumentController::class, 'getUserDocument'])->middleware('auth:sanctum');
     });
 
     // Admin routes
