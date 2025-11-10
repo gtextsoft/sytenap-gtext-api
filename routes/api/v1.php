@@ -1,11 +1,12 @@
 <?php
-use App\Http\Controllers\Api\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\EstateController;
-use App\Http\Controllers\Api\PlotController;
 use App\Http\Controllers\Api\FaqController;
+use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\PlotController;
+use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\EstateController;
+use App\Http\Controllers\Api\DocumentController;
 
 Route::prefix('v1')->group(function () {
 
@@ -68,7 +69,7 @@ Route::prefix('v1')->group(function () {
     // Admin routes
     Route::prefix('admin')->group(function () {
         Route::post('/allocate-property', [PlotController::class, 'allocateProperty'])->middleware('auth:sanctum');
-        Route::post('/reset-client-password', [App\Http\Controllers\Api\AdminClientController::class, 'resetClientPassword'])->middleware('auth:sanctum');
+        Route::post('/upload', [DocumentController::class, 'store'])->middleware('auth:sanctum');
     });
 
     Route::get('/payments/callback', [PlotController::class, 'handlePaystackCallback']);
