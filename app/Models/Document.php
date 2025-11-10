@@ -2,6 +2,11 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class Document extends Model
+{
 use App\Models\Plot;
 use App\Models\User;
 use App\Models\Estate;
@@ -21,6 +26,25 @@ class Document extends Model {
         'file_url',
     ];
 
+    // Relationships
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function uploader()
+    {
+        return $this->belongsTo(User::class, 'uploaded_by');
+    }
+
+    public function plot()
+    {
+        return $this->belongsTo(Plot::class);
+    }
+
+    public function estate()
+    {
+        return $this->belongsTo(Estate::class);
     public function uploader() {
         return $this->belongsTo( User::class, 'uploaded_by' );
     }
