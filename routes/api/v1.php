@@ -1,14 +1,14 @@
 <?php
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\FaqController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\PlotController;
 use App\Http\Controllers\Api\FaqController;
 use App\Http\Controllers\Api\DocumentController;  
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\EstateController;
-use App\Http\Controllers\Api\DocumentController;
+use App\Http\Controllers\Api\AdminClientController;
+
 
 Route::prefix('v1')->group(function () {
 
@@ -69,20 +69,20 @@ Route::prefix('v1')->group(function () {
         Route::post('/email/verify-change', [UserController::class, 'verifyEmailChange'])->middleware('auth:sanctum');
     });
 
+    Route::prefix('document')->group(function () {
+        Route::get('/my-document', [DocumentController::class, 'getUserDocument'])>middleware('auth:sanctum');
+    });
+
     // Admin routes
     Route::prefix('admin')->group(function () {
         Route::post('/allocate-property', [PlotController::class, 'allocateProperty'])->middleware('auth:sanctum');
         Route::post('/upload', [DocumentController::class, 'store'])->middleware('auth:sanctum');
+        Route::post('/reset-client-password', [AdminClientController::class, 'resetClientPassword'])->middleware('auth:sanctum');
     });
 
     Route::get('/payments/callback', [PlotController::class, 'handlePaystackCallback']);
 
-    // FAQ routes
     Route::apiResource('faqs', FaqController::class);
 
-    // 👇 Document routes go here
-    Route::prefix('documents')->middleware('auth:sanctum')->group(function () {
-        Route::get('/', [DocumentController::class, 'index']);
-    });
 
 });
