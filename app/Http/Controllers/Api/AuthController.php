@@ -407,6 +407,13 @@ class AuthController extends Controller
 
             // Check if email is verified
             if (!$user->email_verified_at) {
+
+                 // Generate and send new OTP
+                $otpResult = $this->otpService->generateAndSendOtp(
+                    $request->email,
+                    'email_verification'
+                );
+                
                 return response()->json([
                     'success' => false,
                     'message' => 'Email not verified. Please verify your email before logging in.',
@@ -568,9 +575,25 @@ class AuthController extends Controller
         $response = Http::post('http://localhost/GandA/login.php', [
             'email' => $request->email,
             'password' => $request->password,
+    public function agent_login(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+               'email' => 'required|email',
+                'password' => 'required',
         ]);
+        
+        if ($validator->fails()) {
+                return response()->json(['errors' => $validator->errors()], 422);
+        }
 
         $data = $response->json();
+        // Send POST request to your PHP API
+        try {
+            // Send POST request with JSON payload
+            $response = Http::post(env('GANDAWEBSITE_URL') . '/sytemap/login.php', [
+                'email' => $request->email,
+                'password' => $request->password,
+            ]);
 
         if ($response->successful() && isset($data['status']) && $data['status'] === 'success') {
 
