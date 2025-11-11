@@ -12,6 +12,8 @@ use App\Services\OtpService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use App\Models\Referral;
+use Illuminate\Support\Str;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Http;
 
@@ -439,6 +441,16 @@ class AuthController extends Controller
 
             // Generate API token (using Laravel Sanctum)
             $token = $user->createToken('api-token')->plainTextToken;
+            //Generate referral code if not existing
+            $referral = Referral::where('user_id', $user->id)->first();
+
+            if (!$referral) {
+            Referral::create([
+        'user_id' => $user->id,
+        'referral_code' => 'REF-' . strtoupper(Str::random(8)),
+    ]);
+}
+
 
             // Update last login timestamp
             //$user->update(['last_login_at' => now()]);
@@ -508,6 +520,61 @@ class AuthController extends Controller
         ]);
     }
 
+
+   /**
+ * @OA\Post(
+ *     path="/api/v1/agent/login",
+ *     summary="Agent Login",
+ *     description="Login as an agent and return referral code if successful.",
+ *     tags={"Agent"},
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\JsonContent(
+ *             required={"email","password"},
+ *             @OA\Property(property="email", type="string", format="email", example="agent@example.com"),
+ *             @OA\Property(property="password", type="string", example="password123")
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=200,
+ *         description="Login success, referral code returned",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="success", type="boolean", example=true),
+ *             @OA\Property(property="message", type="string", example="Login successful"),
+ *             @OA\Property(
+ *                 property="data",
+ *                 type="object",
+ *                 @OA\Property(property="user_id", type="integer", example=3),
+ *                 @OA\Property(property="referral_code", type="string", example="REF-A1B2C3D4")
+ *             )
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=401,
+ *         description="Invalid credentials",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="success", type="boolean", example=false),
+ *             @OA\Property(property="message", type="string", example="Invalid email or password")
+ *         )
+ *     )
+ * )
+ */
+
+
+
+     public function agent_login(Request $request)
+{
+    // Validate input
+    $request->validate([
+        'email' => 'required|email',
+        'password' => 'required'
+    ]);
+
+    try {
+        // Send POST request to external authentication API
+        $response = Http::post('http://localhost/GandA/login.php', [
+            'email' => $request->email,
+            'password' => $request->password,
     public function agent_login(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -519,6 +586,7 @@ class AuthController extends Controller
                 return response()->json(['errors' => $validator->errors()], 422);
         }
 
+        $data = $response->json();
         // Send POST request to your PHP API
         try {
             // Send POST request with JSON payload
@@ -527,32 +595,44 @@ class AuthController extends Controller
                 'password' => $request->password,
             ]);
 
-            // Decode JSON response
-            $data = $response->json();
+        if ($response->successful() && isset($data['status']) && $data['status'] === 'success') {
 
-            // Check response and return accordingly
-            if ($response->successful() && isset($data['status']) && $data['status'] === 'success') {
-                return response()->json([
-                    'status' => 'success',
-                    'message' => $data['message'],
-                    'user' => $data['data']
-                ], 200);
-            } else {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => $data['message'] ?? 'Authentication failed'
-                ], 401);
+            //  Get the agent's data (assuming it includes an 'id')
+            $agentId = $data['data']['id'] ?? null;
+
+            if ($agentId) {
+                // Check if referral record exists
+                $existingReferral = Referral::where('user_id', $agentId)->first();
+
+                if (!$existingReferral) {
+                    Referral::create([
+                        'user_id' => $agentId,
+                        'referral_code' => 'REF-' . strtoupper(Str::random(8)),
+                    ]);
+                }
             }
 
-        } catch (\Exception $e) {
-            // Handle network or server errors
+            return response()->json([
+                'status' => 'success',
+                'message' => $data['message'] ?? 'Login successful',
+                'user' => $data['data']
+            ], 200);
+        } else {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Unable to connect to authentication server',
-                'error' => $e->getMessage()
-            ], 500);
+                'message' => $data['message'] ?? 'Authentication failed'
+            ], 401);
         }
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Unable to connect to authentication server',
+            'error' => $e->getMessage()
+        ], 500);
     }
+}
+
 }
 
 
