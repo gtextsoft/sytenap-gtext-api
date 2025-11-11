@@ -525,6 +525,96 @@
                 }
             }
         },
+        "/api/v1/agent/login": {
+            "post": {
+                "tags": [
+                    "Agent"
+                ],
+                "summary": "Agent Login",
+                "description": "Login as an agent and return referral code if successful.",
+                "operationId": "6f6eb50887d90472ddc00c11483b7b7f",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "agent@example.com"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "example": "password123"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Login success, referral code returned",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Login successful"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "user_id": {
+                                                    "type": "integer",
+                                                    "example": 3
+                                                },
+                                                "referral_code": {
+                                                    "type": "string",
+                                                    "example": "REF-A1B2C3D4"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Invalid email or password"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/estate/new": {
             "post": {
                 "tags": [
@@ -1558,6 +1648,2080 @@
                     }
                 }
             }
+        },
+        "/api/v1/estate/estates/nearby": {
+            "post": {
+                "tags": [
+                    "Estate Management"
+                ],
+                "summary": "Get nearby estates based on user coordinates",
+                "description": "Retrieve a list of estates within a specified radius of the user's latitude and longitude",
+                "operationId": "678277fe3839055b6b3de8efb1ca81c9",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "user_id",
+                                    "latitude",
+                                    "longitude"
+                                ],
+                                "properties": {
+                                    "user_id": {
+                                        "description": "ID of the user",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "latitude": {
+                                        "description": "User's latitude",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 6.4281
+                                    },
+                                    "longitude": {
+                                        "description": "User's longitude",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 3.4219
+                                    },
+                                    "radius": {
+                                        "description": "Search radius in kilometers",
+                                        "type": "number",
+                                        "format": "float",
+                                        "maximum": 100,
+                                        "minimum": 1,
+                                        "example": 10
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Nearby estates retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Nearby estates retrieved successfully"
+                                        },
+                                        "total_count": {
+                                            "type": "integer",
+                                            "example": 5
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "title": {
+                                                        "type": "string",
+                                                        "example": "Luxury Estate Gardens"
+                                                    },
+                                                    "town_or_city": {
+                                                        "type": "string",
+                                                        "example": "Lekki"
+                                                    },
+                                                    "state": {
+                                                        "type": "string",
+                                                        "example": "Lagos"
+                                                    },
+                                                    "coordinates": {
+                                                        "type": "string",
+                                                        "example": "6.4281,3.4219"
+                                                    },
+                                                    "distance_km": {
+                                                        "description": "Distance from user location in kilometers",
+                                                        "type": "number",
+                                                        "format": "float",
+                                                        "example": 2.5
+                                                    },
+                                                    "rating": {
+                                                        "type": "integer",
+                                                        "example": 5
+                                                    },
+                                                    "status": {
+                                                        "type": "string",
+                                                        "example": "publish"
+                                                    },
+                                                    "description": {
+                                                        "type": "string",
+                                                        "example": "Beautiful estate with modern amenities"
+                                                    },
+                                                    "amenities": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "string"
+                                                        },
+                                                        "example": [
+                                                            "Swimming Pool",
+                                                            "Gym"
+                                                        ]
+                                                    },
+                                                    "map_background_image": {
+                                                        "type": "string",
+                                                        "format": "uri",
+                                                        "example": "https://res.cloudinary.com/estates/map.jpg"
+                                                    },
+                                                    "preview_display_image": {
+                                                        "type": "string",
+                                                        "format": "uri",
+                                                        "example": "https://res.cloudinary.com/estates/preview.jpg"
+                                                    },
+                                                    "media": {
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "photos": {
+                                                                "type": "array",
+                                                                "items": {
+                                                                    "type": "string",
+                                                                    "format": "uri"
+                                                                }
+                                                            },
+                                                            "third_dimension_model_images": {
+                                                                "type": "array",
+                                                                "items": {
+                                                                    "type": "string",
+                                                                    "format": "uri"
+                                                                }
+                                                            },
+                                                            "third_dimension_model_video": {
+                                                                "type": "string",
+                                                                "format": "uri",
+                                                                "nullable": true
+                                                            },
+                                                            "virtual_tour_video_url": {
+                                                                "type": "string",
+                                                                "format": "uri",
+                                                                "nullable": true
+                                                            },
+                                                            "status": {
+                                                                "type": "string",
+                                                                "example": "publish"
+                                                            },
+                                                            "created_at": {
+                                                                "type": "string",
+                                                                "format": "date-time"
+                                                            },
+                                                            "updated_at": {
+                                                                "type": "string",
+                                                                "format": "date-time"
+                                                            }
+                                                        },
+                                                        "type": "object",
+                                                        "nullable": true
+                                                    },
+                                                    "plot_detail": {
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "available_plot": {
+                                                                "type": "integer",
+                                                                "example": 25
+                                                            },
+                                                            "available_acre": {
+                                                                "type": "number",
+                                                                "format": "float",
+                                                                "example": 12.5
+                                                            },
+                                                            "price_per_plot": {
+                                                                "type": "number",
+                                                                "format": "float",
+                                                                "example": 150000
+                                                            },
+                                                            "percentage_increase": {
+                                                                "type": "number",
+                                                                "format": "float",
+                                                                "example": 5
+                                                            },
+                                                            "installment_plan": {
+                                                                "type": "array",
+                                                                "items": {
+                                                                    "type": "string"
+                                                                },
+                                                                "example": [
+                                                                    "12 months",
+                                                                    "6 months"
+                                                                ]
+                                                            },
+                                                            "promotion_price": {
+                                                                "type": "number",
+                                                                "format": "float",
+                                                                "example": 135000,
+                                                                "nullable": true
+                                                            },
+                                                            "effective_price": {
+                                                                "type": "number",
+                                                                "format": "float",
+                                                                "example": 135000
+                                                            },
+                                                            "has_promotion": {
+                                                                "type": "boolean",
+                                                                "example": true
+                                                            },
+                                                            "savings_amount": {
+                                                                "type": "number",
+                                                                "format": "float",
+                                                                "example": 15000
+                                                            },
+                                                            "total_plot_value": {
+                                                                "type": "number",
+                                                                "format": "float",
+                                                                "example": 3375000
+                                                            },
+                                                            "created_at": {
+                                                                "type": "string",
+                                                                "format": "date-time"
+                                                            },
+                                                            "updated_at": {
+                                                                "type": "string",
+                                                                "format": "date-time"
+                                                            }
+                                                        },
+                                                        "type": "object",
+                                                        "nullable": true
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    },
+                    "500": {
+                        "description": "Server error"
+                    }
+                }
+            }
+        },
+        "/api/v1/estate/estates/search": {
+            "post": {
+                "tags": [
+                    "Estate Management"
+                ],
+                "summary": "Search and filter estates based on specified criteria",
+                "description": "Retrieve a paginated list of estates filtered by minimum price, maximum price, state, town or city, and amenities",
+                "operationId": "6b7f175b1882e77f32292b94059c280e",
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "min_price": {
+                                        "description": "Minimum price per plot",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 100000,
+                                        "nullable": true
+                                    },
+                                    "max_price": {
+                                        "description": "Maximum price per plot",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 500000,
+                                        "nullable": true
+                                    },
+                                    "state": {
+                                        "description": "State where the estate is located",
+                                        "type": "string",
+                                        "example": "Lagos",
+                                        "nullable": true
+                                    },
+                                    "town_or_city": {
+                                        "description": "Town or city where the estate is located",
+                                        "type": "string",
+                                        "example": "Lekki",
+                                        "nullable": true
+                                    },
+                                    "amenities": {
+                                        "description": "Comma-separated list of amenities",
+                                        "type": "string",
+                                        "example": "Swimming Pool,Gym",
+                                        "nullable": true
+                                    },
+                                    "per_page": {
+                                        "description": "Number of results per page",
+                                        "type": "integer",
+                                        "minimum": 1,
+                                        "example": 15,
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Estates filtered successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Estates filtered successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "current_page": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "data": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "title": {
+                                                                "type": "string",
+                                                                "example": "Luxury Estate Gardens"
+                                                            },
+                                                            "town_or_city": {
+                                                                "type": "string",
+                                                                "example": "Lekki"
+                                                            },
+                                                            "state": {
+                                                                "type": "string",
+                                                                "example": "Lagos"
+                                                            },
+                                                            "coordinates": {
+                                                                "type": "string",
+                                                                "example": "6.4281,3.4219"
+                                                            },
+                                                            "rating": {
+                                                                "type": "integer",
+                                                                "example": 5
+                                                            },
+                                                            "status": {
+                                                                "type": "string",
+                                                                "example": "publish"
+                                                            },
+                                                            "description": {
+                                                                "type": "string",
+                                                                "example": "Beautiful estate with modern amenities"
+                                                            },
+                                                            "amenities": {
+                                                                "type": "array",
+                                                                "items": {
+                                                                    "type": "string"
+                                                                },
+                                                                "example": [
+                                                                    "Swimming Pool",
+                                                                    "Gym"
+                                                                ]
+                                                            },
+                                                            "map_background_image": {
+                                                                "type": "string",
+                                                                "format": "uri",
+                                                                "example": "https://res.cloudinary.com/estates/map.jpg"
+                                                            },
+                                                            "preview_display_image": {
+                                                                "type": "string",
+                                                                "format": "uri",
+                                                                "example": "https://res.cloudinary.com/estates/preview.jpg"
+                                                            },
+                                                            "media": {
+                                                                "properties": {
+                                                                    "id": {
+                                                                        "type": "integer",
+                                                                        "example": 1
+                                                                    },
+                                                                    "photos": {
+                                                                        "type": "array",
+                                                                        "items": {
+                                                                            "type": "string",
+                                                                            "format": "uri"
+                                                                        }
+                                                                    },
+                                                                    "third_dimension_model_images": {
+                                                                        "type": "array",
+                                                                        "items": {
+                                                                            "type": "string",
+                                                                            "format": "uri"
+                                                                        }
+                                                                    },
+                                                                    "third_dimension_model_video": {
+                                                                        "type": "string",
+                                                                        "format": "uri",
+                                                                        "nullable": true
+                                                                    },
+                                                                    "virtual_tour_video_url": {
+                                                                        "type": "string",
+                                                                        "format": "uri",
+                                                                        "nullable": true
+                                                                    },
+                                                                    "status": {
+                                                                        "type": "string",
+                                                                        "example": "publish"
+                                                                    }
+                                                                },
+                                                                "type": "object",
+                                                                "nullable": true
+                                                            },
+                                                            "plot_detail": {
+                                                                "properties": {
+                                                                    "id": {
+                                                                        "type": "integer",
+                                                                        "example": 1
+                                                                    },
+                                                                    "available_plot": {
+                                                                        "type": "integer",
+                                                                        "example": 25
+                                                                    },
+                                                                    "available_acre": {
+                                                                        "type": "number",
+                                                                        "format": "float",
+                                                                        "example": 12.5
+                                                                    },
+                                                                    "price_per_plot": {
+                                                                        "type": "number",
+                                                                        "format": "float",
+                                                                        "example": 150000
+                                                                    },
+                                                                    "percentage_increase": {
+                                                                        "type": "number",
+                                                                        "format": "float",
+                                                                        "example": 5
+                                                                    },
+                                                                    "installment_plan": {
+                                                                        "type": "array",
+                                                                        "items": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "example": [
+                                                                            "12 months",
+                                                                            "6 months"
+                                                                        ]
+                                                                    },
+                                                                    "promotion_price": {
+                                                                        "type": "number",
+                                                                        "format": "float",
+                                                                        "example": 135000,
+                                                                        "nullable": true
+                                                                    },
+                                                                    "effective_price": {
+                                                                        "type": "number",
+                                                                        "format": "float",
+                                                                        "example": 135000
+                                                                    },
+                                                                    "has_promotion": {
+                                                                        "type": "boolean",
+                                                                        "example": true
+                                                                    },
+                                                                    "savings_amount": {
+                                                                        "type": "number",
+                                                                        "format": "float",
+                                                                        "example": 15000
+                                                                    },
+                                                                    "total_plot_value": {
+                                                                        "type": "number",
+                                                                        "format": "float",
+                                                                        "example": 3375000
+                                                                    },
+                                                                    "created_at": {
+                                                                        "type": "string",
+                                                                        "format": "date-time"
+                                                                    },
+                                                                    "updated_at": {
+                                                                        "type": "string",
+                                                                        "format": "date-time"
+                                                                    }
+                                                                },
+                                                                "type": "object",
+                                                                "nullable": true
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "first_page_url": {
+                                                    "type": "string",
+                                                    "example": "https://api.stephenakintayotv.com/api/v1/estate/estates/search?page=1"
+                                                },
+                                                "from": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "last_page": {
+                                                    "type": "integer",
+                                                    "example": 5
+                                                },
+                                                "last_page_url": {
+                                                    "type": "string",
+                                                    "example": "https://api.stephenakintayotv.com/api/v1/estate/estates/search?page=5"
+                                                },
+                                                "links": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "next_page_url": {
+                                                    "type": "string",
+                                                    "example": "https://api.stephenakintayotv.com/api/v1/estate/estates/search?page=2",
+                                                    "nullable": true
+                                                },
+                                                "path": {
+                                                    "type": "string",
+                                                    "example": "https://api.stephenakintayotv.com/api/v1/estate/estates/search"
+                                                },
+                                                "per_page": {
+                                                    "type": "integer",
+                                                    "example": 15
+                                                },
+                                                "prev_page_url": {
+                                                    "type": "string",
+                                                    "example": null,
+                                                    "nullable": true
+                                                },
+                                                "to": {
+                                                    "type": "integer",
+                                                    "example": 15
+                                                },
+                                                "total": {
+                                                    "type": "integer",
+                                                    "example": 75
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Failed to filter and search estates"
+                                        },
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Internal server error"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/estate/detail/{id}": {
+            "get": {
+                "tags": [
+                    "Estate Management"
+                ],
+                "summary": "Get full details of a specific estate",
+                "description": "Retrieve complete details of an estate by its ID, including associated media and plot details",
+                "operationId": "39ed48b7cac1d624bb0cb44305b06b80",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of the estate to retrieve",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Estate details retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Estate details retrieved successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "title": {
+                                                    "type": "string",
+                                                    "example": "Luxury Estate Gardens"
+                                                },
+                                                "town_or_city": {
+                                                    "type": "string",
+                                                    "example": "Lekki"
+                                                },
+                                                "state": {
+                                                    "type": "string",
+                                                    "example": "Lagos"
+                                                },
+                                                "cordinates": {
+                                                    "type": "string",
+                                                    "example": "6.4281,3.4219"
+                                                },
+                                                "zoning": {
+                                                    "type": "string",
+                                                    "example": "Residential",
+                                                    "nullable": true
+                                                },
+                                                "size": {
+                                                    "type": "string",
+                                                    "example": "500 sqm",
+                                                    "nullable": true
+                                                },
+                                                "direction": {
+                                                    "type": "string",
+                                                    "example": "North-facing",
+                                                    "nullable": true
+                                                },
+                                                "description": {
+                                                    "type": "string",
+                                                    "example": "Beautiful estate with modern amenities",
+                                                    "nullable": true
+                                                },
+                                                "rating": {
+                                                    "type": "integer",
+                                                    "example": 5,
+                                                    "nullable": true
+                                                },
+                                                "status": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "draft",
+                                                        "publish",
+                                                        "unpublish"
+                                                    ],
+                                                    "example": "publish"
+                                                },
+                                                "has_cerificate_of_occupancy": {
+                                                    "type": "boolean",
+                                                    "example": true
+                                                },
+                                                "amenities": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    },
+                                                    "example": [
+                                                        "Swimming Pool",
+                                                        "Gym"
+                                                    ]
+                                                },
+                                                "map_background_image": {
+                                                    "type": "string",
+                                                    "format": "uri",
+                                                    "example": "https://res.cloudinary.com/estates/map.jpg",
+                                                    "nullable": true
+                                                },
+                                                "preview_display_image": {
+                                                    "type": "string",
+                                                    "format": "uri",
+                                                    "example": "https://res.cloudinary.com/estates/preview.jpg",
+                                                    "nullable": true
+                                                },
+                                                "created_at": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "example": "2025-09-16T10:52:00Z"
+                                                },
+                                                "updated_at": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "example": "2025-09-16T10:52:00Z"
+                                                },
+                                                "media": {
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "integer",
+                                                            "example": 1
+                                                        },
+                                                        "photos": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "type": "string",
+                                                                "format": "uri"
+                                                            },
+                                                            "example": [
+                                                                "https://res.cloudinary.com/estates/photo1.jpg"
+                                                            ]
+                                                        },
+                                                        "third_dimension_model_images": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "type": "string",
+                                                                "format": "uri"
+                                                            },
+                                                            "example": [
+                                                                "https://res.cloudinary.com/estates/model1.jpg"
+                                                            ]
+                                                        },
+                                                        "third_dimension_model_video": {
+                                                            "type": "string",
+                                                            "format": "uri",
+                                                            "example": "https://res.cloudinary.com/estates/model_video.mp4",
+                                                            "nullable": true
+                                                        },
+                                                        "virtual_tour_video_url": {
+                                                            "type": "string",
+                                                            "format": "uri",
+                                                            "example": "https://youtube.com/watch?v=xyz",
+                                                            "nullable": true
+                                                        },
+                                                        "status": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "draft",
+                                                                "publish",
+                                                                "unpublish"
+                                                            ],
+                                                            "example": "publish"
+                                                        },
+                                                        "created_at": {
+                                                            "type": "string",
+                                                            "format": "date-time",
+                                                            "example": "2025-09-16T10:52:00Z"
+                                                        },
+                                                        "updated_at": {
+                                                            "type": "string",
+                                                            "format": "date-time",
+                                                            "example": "2025-09-16T10:52:00Z"
+                                                        }
+                                                    },
+                                                    "type": "object",
+                                                    "nullable": true
+                                                },
+                                                "plot_detail": {
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "integer",
+                                                            "example": 1
+                                                        },
+                                                        "estate_id": {
+                                                            "type": "integer",
+                                                            "example": 1
+                                                        },
+                                                        "available_plot": {
+                                                            "type": "integer",
+                                                            "example": 25
+                                                        },
+                                                        "available_acre": {
+                                                            "type": "number",
+                                                            "format": "float",
+                                                            "example": 12.5
+                                                        },
+                                                        "price_per_plot": {
+                                                            "type": "number",
+                                                            "format": "float",
+                                                            "example": 150000
+                                                        },
+                                                        "percentage_increase": {
+                                                            "type": "number",
+                                                            "format": "float",
+                                                            "example": 5
+                                                        },
+                                                        "installment_plan": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "type": "string"
+                                                            },
+                                                            "example": [
+                                                                "12 months",
+                                                                "6 months"
+                                                            ]
+                                                        },
+                                                        "promotion_price": {
+                                                            "type": "number",
+                                                            "format": "float",
+                                                            "example": 135000,
+                                                            "nullable": true
+                                                        },
+                                                        "effective_price": {
+                                                            "type": "number",
+                                                            "format": "float",
+                                                            "example": 135000
+                                                        },
+                                                        "has_promotion": {
+                                                            "type": "boolean",
+                                                            "example": true
+                                                        },
+                                                        "savings_amount": {
+                                                            "type": "number",
+                                                            "format": "float",
+                                                            "example": 15000
+                                                        },
+                                                        "total_plot_value": {
+                                                            "type": "number",
+                                                            "format": "float",
+                                                            "example": 3375000
+                                                        },
+                                                        "formatted_price": {
+                                                            "type": "string",
+                                                            "example": "150000.00"
+                                                        },
+                                                        "formatted_promotion_price": {
+                                                            "type": "string",
+                                                            "example": "135000.00",
+                                                            "nullable": true
+                                                        },
+                                                        "created_at": {
+                                                            "type": "string",
+                                                            "format": "date-time",
+                                                            "example": "2025-09-16T10:52:00Z"
+                                                        },
+                                                        "updated_at": {
+                                                            "type": "string",
+                                                            "format": "date-time",
+                                                            "example": "2025-09-16T10:52:00Z"
+                                                        }
+                                                    },
+                                                    "type": "object",
+                                                    "nullable": true
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Estate not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Estate not found"
+                                        },
+                                        "error": {
+                                            "type": "string",
+                                            "example": "No estate found with the provided ID"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Failed to retrieve estate details"
+                                        },
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Internal server error"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/estate/estates/all": {
+            "get": {
+                "tags": [
+                    "Estate Management"
+                ],
+                "summary": "Get all estates",
+                "description": "Retrieve all estates with media and plot details",
+                "operationId": "dad4cc461f3b65d8f3de0b0d71f7c148",
+                "responses": {
+                    "200": {
+                        "description": "All estates retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "All estates retrieved successfully"
+                                        },
+                                        "total_count": {
+                                            "type": "integer",
+                                            "example": 10
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "title": {
+                                                        "type": "string",
+                                                        "example": "Luxury Estate Gardens"
+                                                    },
+                                                    "town_or_city": {
+                                                        "type": "string",
+                                                        "example": "Lekki"
+                                                    },
+                                                    "state": {
+                                                        "type": "string",
+                                                        "example": "Lagos"
+                                                    },
+                                                    "rating": {
+                                                        "type": "integer",
+                                                        "example": 5
+                                                    },
+                                                    "status": {
+                                                        "type": "string",
+                                                        "example": "publish"
+                                                    },
+                                                    "description": {
+                                                        "type": "string"
+                                                    },
+                                                    "amenities": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "string"
+                                                        }
+                                                    },
+                                                    "media": {
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer"
+                                                            },
+                                                            "photos": {
+                                                                "type": "array",
+                                                                "items": {
+                                                                    "type": "string"
+                                                                }
+                                                            },
+                                                            "third_dimension_model_images": {
+                                                                "type": "array",
+                                                                "items": {
+                                                                    "type": "string"
+                                                                }
+                                                            },
+                                                            "virtual_tour_video_url": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    },
+                                                    "plot_detail": {
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer"
+                                                            },
+                                                            "available_plot": {
+                                                                "type": "integer",
+                                                                "example": 25
+                                                            },
+                                                            "available_acre": {
+                                                                "type": "number",
+                                                                "format": "float",
+                                                                "example": 12.5
+                                                            },
+                                                            "price_per_plot": {
+                                                                "type": "number",
+                                                                "format": "float",
+                                                                "example": 150000
+                                                            },
+                                                            "promotion_price": {
+                                                                "type": "number",
+                                                                "format": "float",
+                                                                "example": 135000
+                                                            },
+                                                            "effective_price": {
+                                                                "type": "number",
+                                                                "format": "float",
+                                                                "example": 135000
+                                                            },
+                                                            "has_promotion": {
+                                                                "type": "boolean",
+                                                                "example": true
+                                                            },
+                                                            "total_plot_value": {
+                                                                "type": "number",
+                                                                "format": "float",
+                                                                "example": 3375000
+                                                            },
+                                                            "installment_plan": {
+                                                                "type": "array",
+                                                                "items": {
+                                                                    "type": "string"
+                                                                }
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error"
+                    }
+                }
+            }
+        },
+        "/api/v1/estate/{estateId}/generate-plots": {
+            "post": {
+                "tags": [
+                    "Plot Management"
+                ],
+                "summary": "Generate plots for an estate",
+                "description": "Generate plots for a given estate based on its available plots. \n     *                  Each plot will be assigned a unique plot_id, coordinates, and availability status.",
+                "operationId": "d743b8d3fb2f7cd7679a723a4982c04a",
+                "parameters": [
+                    {
+                        "name": "estateId",
+                        "in": "path",
+                        "description": "The ID of the estate to generate plots for",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Plots generated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Generated 50 plots for estate: Beryl Estate Lagos"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "estate_id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "plot_id": {
+                                                        "type": "string",
+                                                        "example": "BERYL-001"
+                                                    },
+                                                    "coordinate": {
+                                                        "type": "string",
+                                                        "example": "6.5119104, 3.6348072"
+                                                    },
+                                                    "status": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "available",
+                                                            "sold",
+                                                            "reserved"
+                                                        ],
+                                                        "example": "available"
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                        "example": "2025-10-03T10:25:36.000000Z"
+                                                    },
+                                                    "updated_at": {
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                        "example": "2025-10-03T10:25:36.000000Z"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "No available plots to generate",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "No available plots to generate."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Estate not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "No query results for model [Estate] 99"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/estate/{estateId}/plots": {
+            "get": {
+                "tags": [
+                    "Plot Management"
+                ],
+                "summary": "Get all plots for an estate",
+                "description": "Retrieve all plots belonging to a specific estate by estate ID",
+                "operationId": "ee481bfd9ebacedb22db0dbd20ea5538",
+                "parameters": [
+                    {
+                        "name": "estateId",
+                        "in": "path",
+                        "description": "The ID of the estate",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of plots retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "estate": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "title": {
+                                                    "type": "string",
+                                                    "example": "Beryl Estate Lagos"
+                                                },
+                                                "size": {
+                                                    "type": "string",
+                                                    "example": "500sqm"
+                                                },
+                                                "town_or_city": {
+                                                    "type": "string",
+                                                    "example": "Ibeju-Lekki"
+                                                },
+                                                "state": {
+                                                    "type": "string",
+                                                    "example": "Lagos"
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "plots": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "plot_id": {
+                                                        "type": "string",
+                                                        "example": "BERYL-001"
+                                                    },
+                                                    "coordinate": {
+                                                        "type": "string",
+                                                        "example": "6.5119104, 3.6348072"
+                                                    },
+                                                    "status": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "available",
+                                                            "sold",
+                                                            "reserved"
+                                                        ],
+                                                        "example": "available"
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                        "example": "2025-10-03T10:25:36.000000Z"
+                                                    },
+                                                    "updated_at": {
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                        "example": "2025-10-03T10:25:36.000000Z"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Estate not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Estate not found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/estate/plots/preview-purchase": {
+            "post": {
+                "tags": [
+                    "Plot Purchase"
+                ],
+                "summary": "Preview purchase of selected plots",
+                "description": "Generate a preview of the pricing and details for selected plots in an estate before buying",
+                "operationId": "717a4d9e40a9202ecc07a7a4791a1320",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "estate_id",
+                                    "plots",
+                                    "installment_months"
+                                ],
+                                "properties": {
+                                    "estate_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "plots": {
+                                        "description": "Array of plot IDs the customer wants to buy",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "example": 1
+                                        }
+                                    },
+                                    "installment_months": {
+                                        "type": "integer",
+                                        "maximum": 12,
+                                        "minimum": 1,
+                                        "example": 6
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Purchase preview generated successfully"
+                    }
+                }
+            }
+        },
+        "/api/v1/estate/plots/purchase": {
+            "post": {
+                "tags": [
+                    "Estate Plots"
+                ],
+                "summary": "Finalize and purchase estate plots",
+                "description": "Confirms customer selection of plots, calculates pricing, determines payment type (installment or full), generates a payment schedule (if installment), initializes a Paystack transaction, reserves plots (mark as sold), and returns payment details including link and reference.",
+                "operationId": "204fdcf53ce2f4eb8a1f1e20211c03d5",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "estate_id",
+                                    "plots",
+                                    "payment_type"
+                                ],
+                                "properties": {
+                                    "estate_id": {
+                                        "description": "The ID of the estate.",
+                                        "type": "integer",
+                                        "example": 12
+                                    },
+                                    "plots": {
+                                        "description": "Array of plot IDs to purchase",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "example": 45
+                                        }
+                                    },
+                                    "payment_type": {
+                                        "description": "Type of payment selected by the buyer. If 'installment', 'installment_months' is required.",
+                                        "type": "string",
+                                        "enum": [
+                                            "installment",
+                                            "full"
+                                        ],
+                                        "example": "installment"
+                                    },
+                                    "installment_months": {
+                                        "description": "Number of months for installment payments (1–12). Required only if payment_type is 'installment'.",
+                                        "type": "integer",
+                                        "maximum": 12,
+                                        "minimum": 1,
+                                        "example": 6
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Purchase confirmed and Paystack payment link generated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Purchase initialized successfully. Proceed to payment."
+                                        },
+                                        "estate": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 12
+                                                },
+                                                "title": {
+                                                    "type": "string",
+                                                    "example": "Palm Gardens Estate"
+                                                },
+                                                "town_or_city": {
+                                                    "type": "string",
+                                                    "example": "Lekki"
+                                                },
+                                                "state": {
+                                                    "type": "string",
+                                                    "example": "Lagos"
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "plots": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "example": {
+                                                    "id": 45,
+                                                    "plot_number": "PG-45",
+                                                    "status": "sold"
+                                                }
+                                            }
+                                        },
+                                        "pricing": {
+                                            "properties": {
+                                                "total_price": {
+                                                    "type": "number",
+                                                    "example": 12000000
+                                                },
+                                                "installment_months": {
+                                                    "type": "integer",
+                                                    "example": 6
+                                                },
+                                                "monthly_payment": {
+                                                    "type": "number",
+                                                    "example": 2000000
+                                                },
+                                                "payment_schedule": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "example": {
+                                                            "month": 1,
+                                                            "due_date": "2025-10-03",
+                                                            "amount": 2000000
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "payment": {
+                                            "properties": {
+                                                "reference": {
+                                                    "type": "string",
+                                                    "example": "PLOT-AB12CD34EF"
+                                                },
+                                                "link": {
+                                                    "type": "string",
+                                                    "example": "https://checkout.paystack.com/abcd1234"
+                                                },
+                                                "status": {
+                                                    "type": "string",
+                                                    "example": "pending"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Some selected plots are unavailable or payment initialization failed"
+                    },
+                    "401": {
+                        "description": "Authentication required"
+                    },
+                    "422": {
+                        "description": "Validation error in request payload"
+                    },
+                    "500": {
+                        "description": "Failed to initialize Paystack payment"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/myproperties/customer-metrics": {
+            "get": {
+                "tags": [
+                    "Estate Plots"
+                ],
+                "summary": "Get customer property purchase metrics",
+                "description": "Returns summary metrics for the authenticated customer, including the number of purchased properties, held (active installment) properties, and total outstanding payment amount.",
+                "operationId": "fee68fbe8339969d83414a525b770398",
+                "responses": {
+                    "200": {
+                        "description": "Customer property metrics retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Metrics fetched successfully."
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "purchased_properties": {
+                                                    "description": "Number of fully paid and owned properties.",
+                                                    "type": "integer",
+                                                    "example": 5
+                                                },
+                                                "held_properties": {
+                                                    "description": "Number of properties currently on installment or reserved but not fully paid.",
+                                                    "type": "integer",
+                                                    "example": 2
+                                                },
+                                                "total_outstanding_payment": {
+                                                    "description": "Total remaining balance across installment purchases.",
+                                                    "type": "number",
+                                                    "example": 3500000
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Authentication required"
+                    },
+                    "500": {
+                        "description": "Failed to retrieve customer metrics"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/myproperties/customer-properties": {
+            "get": {
+                "tags": [
+                    "Customer Properties"
+                ],
+                "summary": "Get Customer Purchased Properties",
+                "description": "Returns a list of all properties purchased by the authenticated customer, grouped by payment status (full paid, outstanding, held). Each property includes related estate, plot, and media details.",
+                "operationId": "getCustomerProperties",
+                "responses": {
+                    "200": {
+                        "description": "Successful response with properties grouped by status",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "summary": {
+                                            "properties": {
+                                                "total_purchased": {
+                                                    "description": "Total number of fully paid properties",
+                                                    "type": "integer",
+                                                    "example": 3
+                                                },
+                                                "held_properties": {
+                                                    "description": "Number of held (reserved) properties",
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "total_outstanding_amount": {
+                                                    "description": "Sum of all outstanding balances",
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 1500000
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "properties": {
+                                            "properties": {
+                                                "full_paid": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "purchase_id": {
+                                                                "type": "integer",
+                                                                "example": 5
+                                                            },
+                                                            "payment_status": {
+                                                                "type": "string",
+                                                                "example": "paid"
+                                                            },
+                                                            "total_price": {
+                                                                "type": "number",
+                                                                "format": "float",
+                                                                "example": 2500000
+                                                            },
+                                                            "outstanding_balance": {
+                                                                "type": "number",
+                                                                "format": "float",
+                                                                "example": 0
+                                                            },
+                                                            "installment_months": {
+                                                                "type": "integer",
+                                                                "example": null
+                                                            },
+                                                            "payment_schedule": {
+                                                                "type": "object",
+                                                                "nullable": true
+                                                            },
+                                                            "purchase_date": {
+                                                                "type": "string",
+                                                                "format": "date-time",
+                                                                "example": "2025-10-08T13:45:16.000000Z"
+                                                            },
+                                                            "plots": {
+                                                                "type": "array",
+                                                                "items": {
+                                                                    "properties": {
+                                                                        "id": {
+                                                                            "type": "integer",
+                                                                            "example": 12
+                                                                        },
+                                                                        "plot_number": {
+                                                                            "type": "string",
+                                                                            "example": "A12"
+                                                                        },
+                                                                        "coordinate": {
+                                                                            "type": "string",
+                                                                            "example": "6.4567,3.6789"
+                                                                        },
+                                                                        "status": {
+                                                                            "type": "string",
+                                                                            "example": "sold"
+                                                                        }
+                                                                    },
+                                                                    "type": "object"
+                                                                }
+                                                            },
+                                                            "estate": {
+                                                                "properties": {
+                                                                    "id": {
+                                                                        "type": "integer",
+                                                                        "example": 4
+                                                                    },
+                                                                    "title": {
+                                                                        "type": "string",
+                                                                        "example": "Lekki Royal Estate"
+                                                                    },
+                                                                    "town_or_city": {
+                                                                        "type": "string",
+                                                                        "example": "Lekki"
+                                                                    },
+                                                                    "state": {
+                                                                        "type": "string",
+                                                                        "example": "Lagos"
+                                                                    },
+                                                                    "plot_detail": {
+                                                                        "properties": {
+                                                                            "price_per_plot": {
+                                                                                "type": "number",
+                                                                                "format": "float",
+                                                                                "example": 2500000
+                                                                            },
+                                                                            "promotion_price": {
+                                                                                "type": "number",
+                                                                                "format": "float",
+                                                                                "example": 2200000
+                                                                            },
+                                                                            "available_plot": {
+                                                                                "type": "integer",
+                                                                                "example": 15
+                                                                            }
+                                                                        },
+                                                                        "type": "object"
+                                                                    },
+                                                                    "media": {
+                                                                        "properties": {
+                                                                            "photos": {
+                                                                                "type": "array",
+                                                                                "items": {
+                                                                                    "type": "string",
+                                                                                    "example": "https://example.com/media/photo1.jpg"
+                                                                                }
+                                                                            },
+                                                                            "third_dimension_model_images": {
+                                                                                "type": "array",
+                                                                                "items": {
+                                                                                    "type": "string",
+                                                                                    "example": "https://example.com/media/3d1.jpg"
+                                                                                }
+                                                                            },
+                                                                            "virtual_tour_video_url": {
+                                                                                "type": "string",
+                                                                                "example": "https://example.com/virtual-tour.mp4"
+                                                                            }
+                                                                        },
+                                                                        "type": "object"
+                                                                    }
+                                                                },
+                                                                "type": "object"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "outstanding": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "purchase_id": {
+                                                                "type": "integer",
+                                                                "example": 2
+                                                            },
+                                                            "payment_status": {
+                                                                "type": "string",
+                                                                "example": "pending"
+                                                            },
+                                                            "total_price": {
+                                                                "type": "number",
+                                                                "example": 3000000
+                                                            },
+                                                            "outstanding_balance": {
+                                                                "type": "number",
+                                                                "example": 1500000
+                                                            },
+                                                            "installment_months": {
+                                                                "type": "integer",
+                                                                "example": 6
+                                                            },
+                                                            "payment_schedule": {
+                                                                "type": "object",
+                                                                "nullable": true
+                                                            },
+                                                            "purchase_date": {
+                                                                "type": "string",
+                                                                "format": "date-time",
+                                                                "example": "2025-10-05T15:35:12.000000Z"
+                                                            },
+                                                            "plots": {
+                                                                "type": "array",
+                                                                "items": {
+                                                                    "properties": {
+                                                                        "id": {
+                                                                            "type": "integer",
+                                                                            "example": 7
+                                                                        },
+                                                                        "plot_number": {
+                                                                            "type": "string",
+                                                                            "example": "B5"
+                                                                        },
+                                                                        "coordinate": {
+                                                                            "type": "string",
+                                                                            "example": "6.487,3.608"
+                                                                        },
+                                                                        "status": {
+                                                                            "type": "string",
+                                                                            "example": "allocated"
+                                                                        }
+                                                                    },
+                                                                    "type": "object"
+                                                                }
+                                                            },
+                                                            "estate": {
+                                                                "properties": {
+                                                                    "id": {
+                                                                        "type": "integer",
+                                                                        "example": 9
+                                                                    },
+                                                                    "title": {
+                                                                        "type": "string",
+                                                                        "example": "Emerald Garden Estate"
+                                                                    },
+                                                                    "town_or_city": {
+                                                                        "type": "string",
+                                                                        "example": "Ibeju-Lekki"
+                                                                    },
+                                                                    "state": {
+                                                                        "type": "string",
+                                                                        "example": "Lagos"
+                                                                    },
+                                                                    "media": {
+                                                                        "properties": {
+                                                                            "photos": {
+                                                                                "type": "array",
+                                                                                "items": {
+                                                                                    "type": "string",
+                                                                                    "example": "https://example.com/img1.jpg"
+                                                                                }
+                                                                            },
+                                                                            "third_dimension_model_images": {
+                                                                                "type": "array",
+                                                                                "items": {
+                                                                                    "type": "string",
+                                                                                    "example": "https://example.com/3d1.jpg"
+                                                                                }
+                                                                            },
+                                                                            "virtual_tour_video_url": {
+                                                                                "type": "string",
+                                                                                "example": "https://example.com/tour.mp4"
+                                                                            }
+                                                                        },
+                                                                        "type": "object"
+                                                                    }
+                                                                },
+                                                                "type": "object"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "held": {
+                                                    "description": "List of held or reserved properties",
+                                                    "type": "array",
+                                                    "items": {
+                                                        "$ref": "#/components/schemas/PropertyItem"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized — when no valid authentication token is provided",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Authentication required"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/admin/allocate-property": {
+            "post": {
+                "tags": [
+                    "Admin - Property Management"
+                ],
+                "summary": "Allocate property to a customer (Admin Only)",
+                "description": "Allows admin to manually allocate plots to a customer. This can be used for special allocations, \n     *                  gifts, promotional offers, or administrative corrections. The plots will be marked as sold \n     *                  and a CustomerProperty record will be created.",
+                "operationId": "985c4f2e3de491691b3c4367342a7828",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "user_id",
+                                    "estate_id",
+                                    "plots"
+                                ],
+                                "properties": {
+                                    "user_id": {
+                                        "description": "The ID of the customer to allocate property to",
+                                        "type": "integer",
+                                        "example": 25
+                                    },
+                                    "estate_id": {
+                                        "description": "The ID of the estate",
+                                        "type": "integer",
+                                        "example": 12
+                                    },
+                                    "plots": {
+                                        "description": "Array of plot IDs to allocate",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "example": 45
+                                        }
+                                    },
+                                    "total_price": {
+                                        "description": "Total price for the allocation (optional, will be calculated if not provided)",
+                                        "type": "number",
+                                        "example": 5000000
+                                    },
+                                    "installment_months": {
+                                        "description": "Number of installment months (0 or null for full payment)",
+                                        "type": "integer",
+                                        "maximum": 12,
+                                        "minimum": 0,
+                                        "example": 6
+                                    },
+                                    "payment_status": {
+                                        "description": "Payment status for this allocation",
+                                        "type": "string",
+                                        "enum": [
+                                            "paid",
+                                            "pending",
+                                            "outstanding"
+                                        ],
+                                        "example": "paid"
+                                    },
+                                    "acquisition_status": {
+                                        "description": "Acquisition status (default: held)",
+                                        "type": "string",
+                                        "enum": [
+                                            "held",
+                                            "transferred"
+                                        ],
+                                        "example": "held"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Property allocated successfully"
+                    },
+                    "400": {
+                        "description": "Validation error or plots unavailable"
+                    },
+                    "401": {
+                        "description": "Unauthorized - Admin access required"
+                    },
+                    "404": {
+                        "description": "User, estate, or plots not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/admin/allocations": {
+            "get": {
+                "tags": [
+                    "Admin - Property Management"
+                ],
+                "summary": "Get all property allocations",
+                "description": "Retrieve a list of all properties with filtering options",
+                "operationId": "3fd2a1e987777236e3dca6c5059c799a",
+                "parameters": [
+                    {
+                        "name": "user_id",
+                        "in": "query",
+                        "description": "Filter by customer user ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "estate_id",
+                        "in": "query",
+                        "description": "Filter by estate ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "payment_status",
+                        "in": "query",
+                        "description": "Filter by payment status",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "paid",
+                                "pending",
+                                "outstanding"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of allocations retrieved successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
         }
     },
     "components": {
@@ -1719,6 +3883,96 @@
                     }
                 },
                 "type": "object"
+            },
+            "PropertyItem": {
+                "properties": {
+                    "purchase_id": {
+                        "type": "integer",
+                        "example": 11
+                    },
+                    "payment_status": {
+                        "type": "string",
+                        "example": "held"
+                    },
+                    "total_price": {
+                        "type": "number",
+                        "example": 2500000
+                    },
+                    "outstanding_balance": {
+                        "type": "number",
+                        "example": null
+                    },
+                    "purchase_date": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2025-10-08T13:45:16Z"
+                    },
+                    "plots": {
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "id": {
+                                    "type": "integer",
+                                    "example": 14
+                                },
+                                "plot_number": {
+                                    "type": "string",
+                                    "example": "A15"
+                                },
+                                "coordinate": {
+                                    "type": "string",
+                                    "example": "6.45,3.67"
+                                },
+                                "status": {
+                                    "type": "string",
+                                    "example": "reserved"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "estate": {
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "example": 3
+                            },
+                            "title": {
+                                "type": "string",
+                                "example": "Cedar Court Estate"
+                            },
+                            "state": {
+                                "type": "string",
+                                "example": "Lagos"
+                            },
+                            "media": {
+                                "properties": {
+                                    "photos": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "example": "https://example.com/pic.jpg"
+                                        }
+                                    },
+                                    "third_dimension_model_images": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "example": "https://example.com/3d.jpg"
+                                        }
+                                    },
+                                    "virtual_tour_video_url": {
+                                        "type": "string",
+                                        "example": "https://example.com/tour.mp4"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        },
+                        "type": "object"
+                    }
+                },
+                "type": "object"
             }
         },
         "securitySchemes": {
@@ -1740,8 +3994,32 @@
             "description": "Authentication"
         },
         {
+            "name": "Agent",
+            "description": "Agent"
+        },
+        {
             "name": "Plot Details",
             "description": "Plot Details"
+        },
+        {
+            "name": "Plot Management",
+            "description": "Plot Management"
+        },
+        {
+            "name": "Plot Purchase",
+            "description": "Plot Purchase"
+        },
+        {
+            "name": "Estate Plots",
+            "description": "Estate Plots"
+        },
+        {
+            "name": "Customer Properties",
+            "description": "Customer Properties"
+        },
+        {
+            "name": "Admin - Property Management",
+            "description": "Admin - Property Management"
         }
     ]
 }

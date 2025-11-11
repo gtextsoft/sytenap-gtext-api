@@ -59,6 +59,29 @@ class DocumentController extends Controller
     }
 
     // Public: view published documents
+
+    /**
+ * @OA\Put(
+ *     path="/api/v1/admin/documents/{id}/publish",
+ *     summary="Publish a document",
+ *     description="Mark a document as published",
+ *     tags={"Documents"},
+ *     security={{"sanctum":{}}},
+ *     @OA\Parameter(
+ *         name="id",
+ *         in="path",
+ *         required=true,
+ *         description="Document ID",
+ *         @OA\Schema(type="integer")
+ *     ),
+ *     @OA\Response(
+ *         response=200,
+ *         description="Document published successfully",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="success", type="boolean", example=true),
+ *             @OA\Property(property
+ * **/
+
     public function index()
     {
         $documents = Document::where('published', true)

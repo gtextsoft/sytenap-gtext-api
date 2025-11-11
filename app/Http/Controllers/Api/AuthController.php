@@ -513,6 +513,48 @@ class AuthController extends Controller
         ]);
     }
 
+
+   /**
+ * @OA\Post(
+ *     path="/api/v1/agent/login",
+ *     summary="Agent Login",
+ *     description="Login as an agent and return referral code if successful.",
+ *     tags={"Agent"},
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\JsonContent(
+ *             required={"email","password"},
+ *             @OA\Property(property="email", type="string", format="email", example="agent@example.com"),
+ *             @OA\Property(property="password", type="string", example="password123")
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=200,
+ *         description="Login success, referral code returned",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="success", type="boolean", example=true),
+ *             @OA\Property(property="message", type="string", example="Login successful"),
+ *             @OA\Property(
+ *                 property="data",
+ *                 type="object",
+ *                 @OA\Property(property="user_id", type="integer", example=3),
+ *                 @OA\Property(property="referral_code", type="string", example="REF-A1B2C3D4")
+ *             )
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=401,
+ *         description="Invalid credentials",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="success", type="boolean", example=false),
+ *             @OA\Property(property="message", type="string", example="Invalid email or password")
+ *         )
+ *     )
+ * )
+ */
+
+
+
      public function agent_login(Request $request)
 {
     // Validate input
