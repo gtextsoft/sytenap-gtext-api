@@ -233,4 +233,21 @@ class DocumentController extends Controller {
                     'data' => $documents
                 ], 200);
     }
+
+
+    public function getAllUserDocument(Request $request)
+    {
+        
+
+        $documents = Document::all()
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+
+
+         return response()->json([
+                    'status' => 'success',
+                    'message' => 'Documents retrieved successfully.',
+                    'data' => $documents
+                ], 200);
+    }
 }
