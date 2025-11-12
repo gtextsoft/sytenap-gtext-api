@@ -239,7 +239,7 @@ class DocumentController extends Controller {
     {
         
 
-        $documents = Document::all()->paginate(10);
+        $documents = Document::all();
 
 
          return response()->json([
