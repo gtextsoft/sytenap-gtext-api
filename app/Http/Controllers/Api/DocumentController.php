@@ -239,9 +239,7 @@ class DocumentController extends Controller {
     {
         
 
-        $documents = Document::all()
-            ->orderBy('created_at', 'desc')
-            ->paginate(10);
+        $documents = Document::all()->paginate(10);
 
 
          return response()->json([
