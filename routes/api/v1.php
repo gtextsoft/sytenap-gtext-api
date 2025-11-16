@@ -8,6 +8,9 @@ use App\Http\Controllers\Api\DocumentController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\EstateController;
 use App\Http\Controllers\Api\AdminClientController;
+use App\Http\Controllers\Api\PropertyController;
+
+
 
 
 Route::prefix('v1')->group(function () {
@@ -83,6 +86,6 @@ Route::prefix('v1')->group(function () {
     Route::get('/payments/callback', [PlotController::class, 'handlePaystackCallback']);
 
     Route::apiResource('faqs', FaqController::class);
-
+    Route::get('/properties', [PropertyController::class, 'index']);
 
 });
