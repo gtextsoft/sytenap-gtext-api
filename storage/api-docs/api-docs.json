@@ -19,6 +19,86 @@
         }
     ],
     "paths": {
+        "/api/v1/admin/referrals": {
+            "get": {
+                "tags": [
+                    "Admin - Referrals"
+                ],
+                "summary": "Get list of all agents and their referrals",
+                "description": "This endpoint returns all agents with their referred users. Only accessible by admin.",
+                "operationId": "4a2ca1962e6f72861575ac3152915c56",
+                "responses": {
+                    "200": {
+                        "description": "List of agents and their referrals",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "agent_id": {
+                                                        "type": "integer",
+                                                        "example": 5
+                                                    },
+                                                    "agent_name": {
+                                                        "type": "string",
+                                                        "example": "John Doe"
+                                                    },
+                                                    "agent_email": {
+                                                        "type": "string",
+                                                        "example": "john@example.com"
+                                                    },
+                                                    "referrals_count": {
+                                                        "type": "integer",
+                                                        "example": 3
+                                                    },
+                                                    "referred_users": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "properties": {
+                                                                "id": {
+                                                                    "type": "integer",
+                                                                    "example": 12
+                                                                },
+                                                                "name": {
+                                                                    "type": "string",
+                                                                    "example": "Mary Smith"
+                                                                },
+                                                                "email": {
+                                                                    "type": "string",
+                                                                    "example": "mary@example.com"
+                                                                }
+                                                            },
+                                                            "type": "object"
+                                                        }
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/api/auth/register": {
             "post": {
                 "tags": [
@@ -613,6 +693,344 @@
                         }
                     }
                 }
+            }
+        },
+        "/api/v1/admin/documents/upload": {
+            "post": {
+                "tags": [
+                    "Documents"
+                ],
+                "summary": "Upload a new document",
+                "description": "Upload a PDF document (admin only)",
+                "operationId": "d8d4179a62c52c448dcc9fd12c894978",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "properties": {
+                                    "title": {
+                                        "type": "string",
+                                        "example": "Sample Document"
+                                    },
+                                    "file": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Document uploaded successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Document uploaded successfully"
+                                        },
+                                        "document": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "title": {
+                                                    "type": "string",
+                                                    "example": "Sample Document"
+                                                },
+                                                "file_path": {
+                                                    "type": "string",
+                                                    "example": "documents/file.pdf"
+                                                },
+                                                "uploaded_by": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "published": {
+                                                    "type": "boolean",
+                                                    "example": false
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation failed"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/admin/documents/{id}/publish": {
+            "put": {
+                "tags": [
+                    "Documents"
+                ],
+                "summary": "Publish a document",
+                "description": "Mark a document as published",
+                "operationId": "8b277421e5a4376f4afbf7ce03541d81",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Document ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Document published successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Document published successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Document not found"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/admin/documents/{id}/unpublish": {
+            "put": {
+                "tags": [
+                    "Documents"
+                ],
+                "summary": "Unpublish a document",
+                "description": "Mark a document as unpublished",
+                "operationId": "3db112154089947373f53bdeeaefcb6d",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Document ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Document unpublished successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Document unpublished successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Document not found"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/documents": {
+            "get": {
+                "tags": [
+                    "Documents"
+                ],
+                "summary": "Get published documents",
+                "description": "List all published documents (public)",
+                "operationId": "07a88109d5967ac490be72ceb7fa973b",
+                "responses": {
+                    "200": {
+                        "description": "List of published documents",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "documents": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "title": {
+                                                        "type": "string",
+                                                        "example": "Sample Document"
+                                                    },
+                                                    "file_path": {
+                                                        "type": "string",
+                                                        "example": "documents/file.pdf"
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "url": {
+                                                        "type": "string",
+                                                        "example": "http://example.com/storage/documents/file.pdf"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/documents/{id}/download": {
+            "get": {
+                "tags": [
+                    "Documents"
+                ],
+                "summary": "Download a document",
+                "description": "Download a published document",
+                "operationId": "1b9861b94be69587f27fa481c27e4acb",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Document ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "File download"
+                    },
+                    "403": {
+                        "description": "Document not available"
+                    },
+                    "404": {
+                        "description": "File not found"
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/documents/{id}": {
+            "delete": {
+                "tags": [
+                    "Documents"
+                ],
+                "summary": "Delete a document",
+                "description": "Delete a document (admin only)",
+                "operationId": "5a3c8c4a7b2f7ceff7d9d1d8b67e7a0e",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Document ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Document deleted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Document deleted successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Document not found"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
             }
         },
         "/api/v1/estate/new": {
@@ -3990,12 +4408,20 @@
             "description": "API Endpoints for managing estates, media, and plot details"
         },
         {
+            "name": "Admin - Referrals",
+            "description": "Admin - Referrals"
+        },
+        {
             "name": "Authentication",
             "description": "Authentication"
         },
         {
             "name": "Agent",
             "description": "Agent"
+        },
+        {
+            "name": "Documents",
+            "description": "Documents"
         },
         {
             "name": "Plot Details",

@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\EstateController;
 use App\Http\Controllers\Api\PlotController;
 use App\Http\Controllers\Api\DocumentController;
 use App\Http\Controllers\Api\FaqController;
+use App\Http\Controllers\Api\AdminReferralController;
 
 Route::prefix('v1')->group(function () {
 
@@ -89,5 +90,7 @@ Route::get('/documents/{id}/download', [DocumentController::class, 'download']);
 
     // FAQ routes
    // Route::apiResource('faqs', FaqController::class);
-
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::get('admin/referrals', [AdminReferralController::class, 'index']);
+});
 });
