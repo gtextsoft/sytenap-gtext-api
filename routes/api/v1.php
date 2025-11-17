@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\AgentController;
 use App\Http\Controllers\Api\EstateController;
 use App\Http\Controllers\Api\DocumentController;
 use App\Http\Controllers\Api\AdminClientController;
+use App\Http\Controllers\Api\CommissionSettingController;
 
 
 Route::prefix('v1')->group(function () {
@@ -81,6 +82,9 @@ Route::prefix('v1')->group(function () {
         Route::post('/allocate-property', [PlotController::class, 'allocateProperty'])->middleware('auth:sanctum');
         Route::post('/upload', [DocumentController::class, 'store'])->middleware('auth:sanctum');
         Route::post('/reset-client-password', [AdminClientController::class, 'resetClientPassword'])->middleware('auth:sanctum');
+        Route::get('/commission-settings', [CommissionSettingController::class, 'index'])->middleware('auth:sanctum');
+        Route::post('/commission-settings', [CommissionSettingController::class, 'store'])->middleware('auth:sanctum');
+        Route::post('/commission-settings/{id}/toggle', [CommissionSettingController::class, 'toggleStatus'])->middleware('auth:sanctum');
     });
 
     Route::get('/payments/callback', [PlotController::class, 'handlePaystackCallback']);
