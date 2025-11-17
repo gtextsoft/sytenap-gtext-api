@@ -1,12 +1,13 @@
 <?php
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\FaqController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\PlotController;
-use App\Http\Controllers\Api\FaqController;
-use App\Http\Controllers\Api\DocumentController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\AgentController;
 use App\Http\Controllers\Api\EstateController;
+use App\Http\Controllers\Api\DocumentController;
 use App\Http\Controllers\Api\AdminClientController;
 
 
@@ -18,6 +19,8 @@ Route::prefix('v1')->group(function () {
 
     Route::prefix('agent')->group(function () {
         Route::post('/login', [AuthController::class, 'agent_login']);
+        Route::post('/balance', [AgentController::class, 'balance']);
+        Route::post('/commission-history', [AgentController::class, 'history']);
     });
 
     Route::prefix('auth')->group(function () {
