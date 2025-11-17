@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\PlotController;
 use App\Http\Controllers\Api\FaqController;
-use App\Http\Controllers\Api\DocumentController;  
+use App\Http\Controllers\Api\DocumentController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\EstateController;
 use App\Http\Controllers\Api\AdminClientController;
@@ -70,7 +70,7 @@ Route::prefix('v1')->group(function () {
     });
 
     Route::prefix('document')->group(function () {
-        Route::get('/my-document', [DocumentController::class, 'getUserDocument'])>middleware('auth:sanctum');
+        Route::get('/my-document', [DocumentController::class, 'getUserDocument'])->middleware('auth:sanctum');
     });
 
     // Admin routes
