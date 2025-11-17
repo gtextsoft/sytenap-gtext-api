@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('agent_commissions', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('agent_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('agent_id');
             $table->decimal('amount', 12, 2);
             $table->timestamps();
         });

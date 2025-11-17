@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('commission_histories', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('agent_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('agent_id');
             $table->foreignId('commission_id')->constrained('agent_commissions')->onDelete('cascade');
             $table->unsignedBigInteger('estate_id')->nullable();
             $table->unsignedBigInteger('plot_id')->nullable();
