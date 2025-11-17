@@ -1,15 +1,17 @@
 name: sytenap-api
 type: laravel
 docroot: public
-php_version: "8.3"
+php_version: "8.4"
 webserver_type: nginx-fpm
 xdebug_enabled: false
 additional_hostnames: []
 additional_fqdns: []
 database:
-    type: mariadb
-    version: "10.11"
+    type: mysql
+    version: "8.0"
+project_tld: test
 use_dns_when_possible: true
+timezone: UTC
 composer_version: "2"
 web_environment: []
 corepack_enable: false

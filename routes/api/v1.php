@@ -1,19 +1,21 @@
 <?php
-use App\Http\Controllers\Api\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\EstateController;
 use App\Http\Controllers\Api\PlotController;
 use App\Http\Controllers\Api\DocumentController;
 use App\Http\Controllers\Api\FaqController;
 use App\Http\Controllers\Api\AdminReferralController;
+use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\EstateController;
+use App\Http\Controllers\Api\AdminClientController;
 
 Route::prefix('v1')->group(function () {
 
     Route::get('test', function () {
         return response()->json(['status' => true, 'message' => "API v1 is up and running"], 200);
     });
+
     Route::prefix('agent')->group(function () {
         Route::post('/login', [AuthController::class, 'agent_login']);
     });
@@ -36,15 +38,9 @@ Route::prefix('v1')->group(function () {
         Route::get('/detail/{estateId}', [EstateController::class, 'EstateDetails']);
         Route::post('/{estateId}/generate-plots', [PlotController::class, 'generatePlots']);
         Route::get('/{estateId}/plots', [PlotController::class, 'getPlotsByEstate']);
-
-        // Preview purchase of plots
         Route::post('/plots/preview-purchase', [PlotController::class, 'previewPurchase']);
-        // Purchase plots
         Route::post('/plots/purchase', [PlotController::class, 'finalizePurchase'])->middleware('auth:sanctum');
-      
-        // Get all estates
-         Route::get('/estates/all', [EstateController::class, 'getAllEstates']);
-        
+        Route::get('/estates/all', [EstateController::class, 'getAllEstates']);
     });
 
     Route::prefix('estate-plot-details')->group(function () {
@@ -56,10 +52,9 @@ Route::prefix('v1')->group(function () {
     });
 
     Route::prefix('myproperties')->group(function () {
-          Route::get('/customer-metrics', [PlotController::class, 'getCustomerMetrics'])->middleware('auth:sanctum');
-          Route::get('/customer-properties', [PlotController::class, 'getCustomerProperties'])->middleware('auth:sanctum');
+        Route::get('/customer-metrics', [PlotController::class, 'getCustomerMetrics'])->middleware('auth:sanctum');
+        Route::get('/customer-properties', [PlotController::class, 'getCustomerProperties'])->middleware('auth:sanctum');
     });
-
 
     Route::prefix('user')->group(function () {
         Route::get('/account', [AuthController::class, 'index']);
@@ -67,30 +62,35 @@ Route::prefix('v1')->group(function () {
         Route::post('/email/verify-change', [UserController::class, 'verifyEmailChange'])->middleware('auth:sanctum');
     });
 
+    Route::prefix('document')->group(function () {
+        Route::get('/my-document', [DocumentController::class, 'getUserDocument'])->middleware('auth:sanctum');
+    });
+
     // Admin routes
     Route::prefix('admin')->group(function () {
         Route::post('/allocate-property', [PlotController::class, 'allocateProperty'])->middleware('auth:sanctum');
+        Route::post('/upload', [DocumentController::class, 'store'])->middleware('auth:sanctum');
+        Route::post('/reset-client-password', [AdminClientController::class, 'resetClientPassword'])->middleware('auth:sanctum');
+
+        // Document management
+        Route::post('/documents/upload', [DocumentController::class, 'upload']);
+        Route::put('/documents/{id}/publish', [DocumentController::class, 'publish']);
+        Route::put('/documents/{id}/unpublish', [DocumentController::class, 'unpublish']);
+        Route::delete('/documents/{id}', [DocumentController::class, 'destroy']);
+
+        // Referrals
+        Route::middleware(['auth:sanctum'])->group(function () {
+            Route::get('/referrals', [AdminReferralController::class, 'index']);
+        });
     });
 
-    Route::get('/payments/callback', [PlotController::class, 'handlePaystackCallback']);
-
-
-// Document Routes
-Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
-    Route::post('/documents/upload', [DocumentController::class, 'upload']);
-    Route::put('/documents/{id}/publish', [DocumentController::class, 'publish']);
-    Route::put('/documents/{id}/unpublish', [DocumentController::class, 'unpublish']);
-    Route::delete('/documents/{id}', [DocumentController::class, 'destroy']);
-});
-
-// Public routes
-Route::get('/documents', [DocumentController::class, 'index']);
-Route::get('/documents/{id}/download', [DocumentController::class, 'download']);
-
+    // Public document routes
+    Route::get('/documents', [DocumentController::class, 'index']);
+    Route::get('/documents/{id}/download', [DocumentController::class, 'download']);
 
     // FAQ routes
-   // Route::apiResource('faqs', FaqController::class);
-Route::middleware(['auth:sanctum'])->group(function () {
-    Route::get('admin/referrals', [AdminReferralController::class, 'index']);
-});
+    Route::apiResource('faqs', FaqController::class);
+
+    // Payment callback
+    Route::get('/payments/callback', [PlotController::class, 'handlePaystackCallback']);
 });
