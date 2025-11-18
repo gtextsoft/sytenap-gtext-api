@@ -1,26 +1,22 @@
 <?php
 
-
 namespace App\Http\Controllers\Api;
 
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\RegisterRequest;
-use App\Http\Requests\VerifyOtpRequest;
 use App\Models\User;
 use App\Services\OtpService;
-use Illuminate\Http\JsonResponse;
+use App\Models\Referral;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
-use App\Models\Referral;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Http;
 
-
 class AuthController extends Controller
 {
-   protected $otpService;
+    protected $otpService;
 
     public function __construct(OtpService $otpService)
     {
@@ -30,60 +26,9 @@ class AuthController extends Controller
     /**
      * Register a new user and send OTP for email verification
      */
-
-    /**
-     * @OA\Post(
-     *      path="/api/auth/register",
-     *      operationId="register",
-     *      tags={"Authentication"},
-     *      summary="Register a new user",
-     *      description="Register a new user and send OTP for email verification",
-     *      @OA\RequestBody(
-     *          required=true,
-     *          @OA\JsonContent(
-     *              required={"first_name","last_name","email","password","password_confirmation","state","country"},
-     *              @OA\Property(property="first_name", type="string", example="John"),
-     *              @OA\Property(property="last_name", type="string", example="Doe"),
-     *              @OA\Property(property="email", type="string", format="email", example="john@example.com"),
-     *              @OA\Property(property="password", type="string", format="password", example="password123"),
-     *              @OA\Property(property="password_confirmation", type="string", format="password", example="password123"),
-     *              @OA\Property(property="state", type="string", example="Lagos"),
-     *              @OA\Property(property="country", type="string", example="Nigeria")
-     *          )
-     *      ),
-     *      @OA\Response(
-     *          response=201,
-     *          description="User registered successfully",
-     *          @OA\JsonContent(
-     *              @OA\Property(property="success", type="boolean", example=true),
-     *              @OA\Property(property="message", type="string", example="User registered successfully. Please check your email for verification code."),
-     *              @OA\Property(property="data", type="object",
-     *                  @OA\Property(property="user", type="object",
-     *                      @OA\Property(property="id", type="integer", example=1),
-     *                      @OA\Property(property="first_name", type="string", example="John"),
-     *                      @OA\Property(property="last_name", type="string", example="Doe"),
-     *                      @OA\Property(property="email", type="string", example="john@example.com"),
-     *                      @OA\Property(property="email_verified", type="boolean", example=false)
-     *                  ),
-     *                  @OA\Property(property="otp_expires_in_minutes", type="integer", example=10)
-     *              )
-     *          )
-     *      ),
-     *      @OA\Response(
-     *          response=422,
-     *          description="Validation error",
-     *          @OA\JsonContent(
-     *              @OA\Property(property="success", type="boolean", example=false),
-     *              @OA\Property(property="message", type="string", example="Validation failed"),
-     *              @OA\Property(property="errors", type="object")
-     *          )
-     *      )
-     * )
-     */
-    public function register(RegisterRequest $request): JsonResponse
+    public function register(RegisterRequest $request)
     {
         try {
-            // Create user with email_verified_at as null
             $user = User::create([
                 'first_name' => $request->first_name,
                 'last_name' => $request->last_name,
@@ -91,14 +36,10 @@ class AuthController extends Controller
                 'password' => Hash::make($request->password),
                 'state' => $request->state,
                 'country' => $request->country,
-                'email_verified_at' => null, // User is not verified yet
+                'email_verified_at' => null,
             ]);
 
-            // Generate and send OTP
-            $otpResult = $this->otpService->generateAndSendOtp(
-                $request->email, 
-                'email_verification'
-            );
+            $otpResult = $this->otpService->generateAndSendOtp($request->email, 'email_verification');
 
             if (!$otpResult['success']) {
                 return response()->json([
@@ -128,86 +69,24 @@ class AuthController extends Controller
     }
 
     /**
-     * @OA\Post(
-     *     path="/api/auth/verify-email",
-     *     summary="Verify user email address via OTP",
-     *     description="Verifies a user's email address using a One-Time Password (OTP) sent to their email. 
-     *     If verification is successful, the user's email_verified_at timestamp is updated.",
-     *     tags={"Authentication"},
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             required={"email", "otp"},
-     *             @OA\Property(property="email", type="string", format="email", example="johndoe@example.com", description="The registered email address of the user."),
-     *             @OA\Property(property="otp", type="string", minLength=6, maxLength=6, example="123456", description="The 6-digit OTP sent to the user's email.")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Email verified successfully",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="Email verified successfully"),
-     *             @OA\Property(
-     *                 property="user",
-     *                 type="object",
-     *                 @OA\Property(property="id", type="integer", example=1),
-     *                 @OA\Property(property="email", type="string", example="johndoe@example.com"),
-     *                 @OA\Property(property="first_name", type="string", example="John"),
-     *                 @OA\Property(property="last_name", type="string", example="Doe"),
-     *                 @OA\Property(property="email_verified", type="boolean", example=true),
-     *                 @OA\Property(property="verified_at", type="string", format="date-time", example="2025-08-15T10:23:45Z")
-     *             )
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=400,
-     *         description="OTP verification failed",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="Invalid OTP")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=422,
-     *         description="Validation failed",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="Validation failed"),
-     *             @OA\Property(property="status", type="integer", example=0),
-     *             @OA\Property(
-     *                 property="errors",
-     *                 type="object",
-     *                 example={"email": {"The email field is required."}, "otp": {"The otp field must be 6 characters."}}
-     *             )
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=500,
-     *         description="Server error",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="Email verification failed"),
-     *             @OA\Property(property="error", type="string", example="Unexpected error occurred")
-     *         )
-     *     )
-     * )
+     * Verify user email using OTP
      */
-      
-    public function verifyEmail(Request $request): JsonResponse
+    public function verifyEmail(Request $request)
     {
-         $validator = \Validator::make($request->all(), [
-            'email' => 'required|string|email|exists:users,email',
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email|exists:users,email',
             'otp' => 'required|string|size:6',
         ]);
 
         if ($validator->fails()) {
-            
             return response()->json([
-                    'message' => 'Validation failed',
-                    'status' => 0,
-                    'errors' => $validator->errors()
-                ], 422);
+                'message' => 'Validation failed',
+                'status' => 0,
+                'errors' => $validator->errors()
+            ], 422);
         }
 
         try {
-            // Verify OTP
             $verificationResult = $this->otpService->verifyOtp(
                 $request->email,
                 $request->otp,
@@ -220,7 +99,6 @@ class AuthController extends Controller
                 ], 400);
             }
 
-            // Update user's email_verified_at timestamp
             $user = User::where('email', $request->email)->first();
             $user->email_verified_at = Carbon::now();
             $user->save();
@@ -246,73 +124,22 @@ class AuthController extends Controller
     }
 
     /**
-     * @OA\Post(
-     *     path="/api/auth/resend-otp",
-     *     summary="Resend email verification OTP",
-     *     description="Resends a One-Time Password (OTP) to the provided email address for email verification. 
-     *     If the email is already verified, the request will fail.",
-     *     tags={"Authentication"},
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             required={"email"},
-     *             @OA\Property(property="email", type="string", format="email", example="johndoe@example.com", description="The registered email address of the user.")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="OTP resent successfully",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="Verification code sent successfully"),
-     *             @OA\Property(property="otp_expires_in_minutes", type="integer", example=5)
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=400,
-     *         description="Email already verified",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="Email is already verified")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=422,
-     *         description="Validation failed",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="The email field is required."),
-     *             @OA\Property(property="errors", type="object", example={"email": {"The selected email is invalid or does not exist."}})
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=500,
-     *         description="Failed to send OTP",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="Failed to send verification email"),
-     *             @OA\Property(property="error", type="string", example="Mail server not responding")
-     *         )
-     *     )
-     * )
-    */
-
-    public function resendOtp(Request $request): JsonResponse
+     * Resend OTP for email verification
+     */
+    public function resendOtp(Request $request)
     {
         $request->validate([
-            'email' => 'required|string|email|exists:users,email'
+            'email' => 'required|email|exists:users,email'
         ]);
 
-        try {
-            // Check if user is already verified
-            $user = User::where('email', $request->email)->first();
-            if ($user->email_verified_at) {
-                return response()->json([
-                    'message' => 'Email is already verified'
-                ], 400);
-            }
+        $user = User::where('email', $request->email)->first();
 
-            // Generate and send new OTP
-            $otpResult = $this->otpService->generateAndSendOtp(
-                $request->email,
-                'email_verification'
-            );
+        if ($user->email_verified_at) {
+            return response()->json(['message' => 'Email is already verified'], 400);
+        }
+
+        try {
+            $otpResult = $this->otpService->generateAndSendOtp($request->email, 'email_verification');
 
             if (!$otpResult['success']) {
                 return response()->json([
@@ -335,125 +162,44 @@ class AuthController extends Controller
     }
 
     /**
-     * @OA\Post(
-     *      path="/api/auth/login",
-     *      operationId="login",
-     *      tags={"Authentication"},
-     *      summary="Login user",
-     *      description="Login user with email and password",
-     *      @OA\RequestBody(
-     *          required=true,
-     *          @OA\JsonContent(
-     *              required={"email","password"},
-     *              @OA\Property(property="email", type="string", format="email", example="john@example.com"),
-     *              @OA\Property(property="password", type="string", format="password", example="password123")
-     *          )
-     *      ),
-     *      @OA\Response(
-     *          response=200,
-     *          description="Login successful",
-     *          @OA\JsonContent(
-     *              @OA\Property(property="success", type="boolean", example=true),
-     *              @OA\Property(property="message", type="string", example="Login successful."),
-     *              @OA\Property(property="data", type="object",
-     *                  @OA\Property(property="user", type="object",
-     *                      @OA\Property(property="id", type="integer", example=1),
-     *                      @OA\Property(property="email", type="string", example="john@example.com"),
-     *                      @OA\Property(property="first_name", type="string", example="John"),
-     *                      @OA\Property(property="last_name", type="string", example="Doe")
-     *                  ),
-     *                  @OA\Property(property="token", type="string", example="1|abc123..."),
-     *                  @OA\Property(property="token_type", type="string", example="Bearer")
-     *              )
-     *          )
-     *      ),
-     *      @OA\Response(
-     *          response=401,
-     *          description="Invalid credentials"
-     *      ),
-     *      @OA\Response(
-     *          response=403,
-     *          description="Email not verified"
-     *      )
-     * )
+     * User login
      */
-    public function login(Request $request): JsonResponse
+    public function login(Request $request)
     {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email|exists:users,email',
+            'password' => 'required|string|min:8',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
         try {
-            
-            $validator = Validator::make($request->all(), [
-                'email' => 'required|email|exists:users,email',
-                'password' => 'required|string|min:8',
-            ]);
-
-            if ($validator->fails()) {
-                return response()->json(['errors' => $validator->errors()], 422);
-            }
-
-            // Find user by email
             $user = User::where('email', $request->email)->first();
 
-            // Check if user exists (this should be handled by validation, but double-check)
-            if (!$user) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Invalid credentials.',
-                    'errors' => [
-                        'email' => ['No account found with this email address.']
-                    ],
-                    'data' => null
-                ], 401);
-            }
-
-            // Check if email is verified
             if (!$user->email_verified_at) {
+                $this->otpService->generateAndSendOtp($request->email, 'email_verification');
 
-                 // Generate and send new OTP
-                $otpResult = $this->otpService->generateAndSendOtp(
-                    $request->email,
-                    'email_verification'
-                );
-                
                 return response()->json([
                     'success' => false,
-                    'message' => 'Email not verified. Please verify your email before logging in.',
-                    'errors' => [
-                        'email' => ['Email address is not verified. Check your inbox for verification code.']
-                    ],
-                    'data' => [
-                        'requires_verification' => true,
-                        'email' => $user->email
-                    ]
+                    'message' => 'Email not verified. Check your inbox.',
+                    'errors' => ['email' => ['Email address is not verified.']],
+                    'data' => ['requires_verification' => true, 'email' => $user->email]
                 ], 403);
             }
 
-            // Verify password
             if (!Hash::check($request->password, $user->password)) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Invalid credentials.',
-                    'errors' => [
-                        'password' => ['The password you entered is incorrect.']
-                    ],
+                    'errors' => ['password' => ['Incorrect password.']],
                     'data' => null
                 ], 401);
             }
 
-            // Generate API token (using Laravel Sanctum)
             $token = $user->createToken('api-token')->plainTextToken;
-            //Generate referral code if not existing
-            $referral = Referral::where('user_id', $user->id)->first();
-
-            if (!$referral) {
-            Referral::create([
-        'user_id' => $user->id,
-        'referral_code' => 'REF-' . strtoupper(Str::random(8)),
-    ]);
-}
-
-
-            // Update last login timestamp
-            //$user->update(['last_login_at' => now()]);
+            $this->createReferralIfNotExists($user->id);
 
             return response()->json([
                 'success' => true,
@@ -468,8 +214,6 @@ class AuthController extends Controller
                         'country' => $user->country,
                         'email_verified' => true,
                         'account_type' => $user->account_type,
-                        'email_verified_at' => $user->email_verified_at,
-                        //'last_login_at' => $user->last_login_at,
                         'created_at' => $user->created_at
                     ],
                     'token' => $token,
@@ -478,34 +222,65 @@ class AuthController extends Controller
                 'errors' => null
             ], 200);
 
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed.',
-                'errors' => $e->errors(),
-                'data' => null
-            ], 422);
-
         } catch (\Exception $e) {
-            \Log::error('User login failed: ' . $e->getMessage(), [
-                'email' => $request->input('email'),
-                'trace' => $e->getTraceAsString()
-            ]);
-
             return response()->json([
                 'success' => false,
-                'message' => 'Login failed due to an unexpected error.',
-                'errors' => [
-                    'server' => ['An unexpected error occurred. Please try again later.']
-                ],
+                'message' => 'Login failed.',
+                'errors' => ['server' => ['Unexpected error occurred.']],
                 'data' => $e->getMessage()
             ], 500);
         }
     }
 
+    /**
+     * Agent login via external API
+     */
+    public function agent_login(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email',
+            'password' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        try {
+            $response = Http::post(env('GANDAWEBSITE_URL') . '/sytemap/login.php', [
+                'email' => $request->email,
+                'password' => $request->password,
+            ]);
+
+            $data = $response->json();
+
+            if ($response->successful() && isset($data['status']) && $data['status'] === 'success') {
+                $agentId = $data['data']['id'] ?? null;
+                if ($agentId) $this->createReferralIfNotExists($agentId);
+
+                return response()->json([
+                    'status' => 'success',
+                    'message' => $data['message'] ?? 'Login successful',
+                    'user' => $data['data']
+                ], 200);
+            }
+
+            return response()->json([
+                'status' => 'error',
+                'message' => $data['message'] ?? 'Authentication failed'
+            ], 401);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Unable to connect to authentication server',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 
     /**
-     * Get all users.
+     * Get all users
      */
     public function index()
     {
@@ -520,119 +295,16 @@ class AuthController extends Controller
         ]);
     }
 
-
-   /**
- * @OA\Post(
- *     path="/api/v1/agent/login",
- *     summary="Agent Login",
- *     description="Login as an agent and return referral code if successful.",
- *     tags={"Agent"},
- *     @OA\RequestBody(
- *         required=true,
- *         @OA\JsonContent(
- *             required={"email","password"},
- *             @OA\Property(property="email", type="string", format="email", example="agent@example.com"),
- *             @OA\Property(property="password", type="string", example="password123")
- *         )
- *     ),
- *     @OA\Response(
- *         response=200,
- *         description="Login success, referral code returned",
- *         @OA\JsonContent(
- *             @OA\Property(property="success", type="boolean", example=true),
- *             @OA\Property(property="message", type="string", example="Login successful"),
- *             @OA\Property(
- *                 property="data",
- *                 type="object",
- *                 @OA\Property(property="user_id", type="integer", example=3),
- *                 @OA\Property(property="referral_code", type="string", example="REF-A1B2C3D4")
- *             )
- *         )
- *     ),
- *     @OA\Response(
- *         response=401,
- *         description="Invalid credentials",
- *         @OA\JsonContent(
- *             @OA\Property(property="success", type="boolean", example=false),
- *             @OA\Property(property="message", type="string", example="Invalid email or password")
- *         )
- *     )
- * )
- */
-
-
-
-     public function agent_login(Request $request)
-{
-    // Validate input
-    $request->validate([
-        'email' => 'required|email',
-        'password' => 'required'
-    ]);
-
-    try {
-        // Send POST request to external authentication API
-        $response = Http::post('http://localhost/GandA/login.php', [
-            'email' => $request->email,
-            'password' => $request->password,
-    public function agent_login(Request $request)
+    /**
+     * Private: Create referral if not exists
+     */
+    private function createReferralIfNotExists($userId)
     {
-        $validator = Validator::make($request->all(), [
-               'email' => 'required|email',
-                'password' => 'required',
-        ]);
-        
-        if ($validator->fails()) {
-                return response()->json(['errors' => $validator->errors()], 422);
-        }
-
-        $data = $response->json();
-        // Send POST request to your PHP API
-        try {
-            // Send POST request with JSON payload
-            $response = Http::post(env('GANDAWEBSITE_URL') . '/sytemap/login.php', [
-                'email' => $request->email,
-                'password' => $request->password,
+        if (!Referral::where('user_id', $userId)->exists()) {
+            Referral::create([
+                'user_id' => $userId,
+                'referral_code' => 'REF-' . strtoupper(Str::random(8)),
             ]);
-
-        if ($response->successful() && isset($data['status']) && $data['status'] === 'success') {
-
-            //  Get the agent's data (assuming it includes an 'id')
-            $agentId = $data['data']['id'] ?? null;
-
-            if ($agentId) {
-                // Check if referral record exists
-                $existingReferral = Referral::where('user_id', $agentId)->first();
-
-                if (!$existingReferral) {
-                    Referral::create([
-                        'user_id' => $agentId,
-                        'referral_code' => 'REF-' . strtoupper(Str::random(8)),
-                    ]);
-                }
-            }
-
-            return response()->json([
-                'status' => 'success',
-                'message' => $data['message'] ?? 'Login successful',
-                'user' => $data['data']
-            ], 200);
-        } else {
-            return response()->json([
-                'status' => 'error',
-                'message' => $data['message'] ?? 'Authentication failed'
-            ], 401);
         }
-
-    } catch (\Exception $e) {
-        return response()->json([
-            'status' => 'error',
-            'message' => 'Unable to connect to authentication server',
-            'error' => $e->getMessage()
-        ], 500);
     }
 }
-
-}
-
-
