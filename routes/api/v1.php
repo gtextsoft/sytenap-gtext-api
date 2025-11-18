@@ -1,96 +1,146 @@
 <?php
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\FaqController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\PlotController;
-use App\Http\Controllers\Api\DocumentController;
-use App\Http\Controllers\Api\FaqController;
+use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\Api\AdminReferralController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\AgentController;
 use App\Http\Controllers\Api\EstateController;
 use App\Http\Controllers\Api\AdminClientController;
+use App\Http\Controllers\Api\CommissionSettingController;
+use App\Http\Controllers\Api\CommissionWithdrawalController; 
 
+
+// API v1 routes
 Route::prefix('v1')->group(function () {
 
-    Route::get('test', function () {
-        return response()->json(['status' => true, 'message' => "API v1 is up and running"], 200);
-    });
+    // -------------------------
+    // Test route
+    // -------------------------
+    Route::get('test', fn() => response()->json([
+        'status' => true,
+        'message' => "API v1 is up and running"
+    ], 200));
 
+    // -------------------------
+    // Agent Routes
+    // -------------------------
     Route::prefix('agent')->group(function () {
         Route::post('/login', [AuthController::class, 'agent_login']);
+        Route::post('/balance', [AgentController::class, 'balance']);
+        Route::post('/commission-history', [AgentController::class, 'history']);
+
+        //  NEW - AGENT WITHDRAWAL ROUTES
+        Route::middleware('auth:sanctum')->group(function () {
+            Route::post('/withdraw', [CommissionWithdrawalController::class, 'requestWithdrawal']);
+            Route::get('/withdrawals', [CommissionWithdrawalController::class, 'agentWithdrawals']);
+        });
     });
 
+    // -------------------------
+    // Auth Routes
+    // -------------------------
     Route::prefix('auth')->group(function () {
         Route::post('register', [AuthController::class, 'register']);
         Route::post('verify-email', [AuthController::class, 'verifyEmail']);
         Route::post('resend-otp', [AuthController::class, 'resendOtp']);
-        Route::post('login',[AuthController::class, 'login']);
+        Route::post('login', [AuthController::class, 'login']);
     });
 
+    // -------------------------
+    // User Routes (protected)
+    // -------------------------
+    Route::prefix('user')->middleware('auth:sanctum')->group(function () {
+        Route::get('/account', [AuthController::class, 'index']);
+        Route::post('/email/request-change', [UserController::class, 'requestEmailChange']);
+        Route::post('/email/verify-change', [UserController::class, 'verifyEmailChange']);
+    });
+
+    // -------------------------
+    // Estate & Plot Routes
+    // -------------------------
     Route::prefix('estate')->group(function () {
         Route::post('media', [EstateController::class, 'media_store']);
         Route::post('new', [EstateController::class, 'store']);
-        Route::get('/estates/top-rated', [EstateController::class, 'getTopRatedEstates']);
-        Route::get('/estates/top-rated-alt', [EstateController::class, 'getTopRatedEstatesAlternative']);
-        Route::get('/estates/detail', [EstateController::class, 'getTopRatedEstatesWithAvailability']);
-        Route::post('/estates/nearby', [EstateController::class, 'getNearbyEstates']);
-        Route::post('/estates/search', [EstateController::class, 'filterSearch']);
-        Route::get('/detail/{estateId}', [EstateController::class, 'EstateDetails']);
-        Route::post('/{estateId}/generate-plots', [PlotController::class, 'generatePlots']);
-        Route::get('/{estateId}/plots', [PlotController::class, 'getPlotsByEstate']);
-        Route::post('/plots/preview-purchase', [PlotController::class, 'previewPurchase']);
-        Route::post('/plots/purchase', [PlotController::class, 'finalizePurchase'])->middleware('auth:sanctum');
-        Route::get('/estates/all', [EstateController::class, 'getAllEstates']);
+        Route::get('top-rated', [EstateController::class, 'getTopRatedEstates']);
+        Route::get('top-rated-alt', [EstateController::class, 'getTopRatedEstatesAlternative']);
+        Route::get('detail', [EstateController::class, 'getTopRatedEstatesWithAvailability']);
+        Route::post('nearby', [EstateController::class, 'getNearbyEstates']);
+        Route::post('search', [EstateController::class, 'filterSearch']);
+        Route::get('{estateId}/detail', [EstateController::class, 'EstateDetails']);
+        Route::post('{estateId}/generate-plots', [PlotController::class, 'generatePlots']);
+        Route::get('{estateId}/plots', [PlotController::class, 'getPlotsByEstate']);
+        Route::post('plots/preview-purchase', [PlotController::class, 'previewPurchase']);
+        Route::post('plots/purchase', [PlotController::class, 'finalizePurchase'])->middleware('auth:sanctum');
+        Route::get('all', [EstateController::class, 'getAllEstates']);
     });
 
-    Route::prefix('estate-plot-details')->group(function () {
+    // -------------------------
+    // Estate-Plot Details (Admin)
+    // -------------------------
+    Route::prefix('estate-plot-details')->middleware('auth:sanctum')->group(function () {
         Route::post('plot-detail', [EstateController::class, 'plot_detail']);
         Route::get('all', [EstateController::class, 'index']);
-        Route::get('/estate/{estateId}', [EstateController::class, 'getByEstate']);
-        Route::put('/{id}', [EstateController::class, 'update']);
-        Route::delete('/{id}', [EstateController::class, 'destroy']);
+        Route::get('estate/{estateId}', [EstateController::class, 'getByEstate']);
+        Route::put('{id}', [EstateController::class, 'update']);
+        Route::delete('{id}', [EstateController::class, 'destroy']);
     });
 
-    Route::prefix('myproperties')->group(function () {
-        Route::get('/customer-metrics', [PlotController::class, 'getCustomerMetrics'])->middleware('auth:sanctum');
-        Route::get('/customer-properties', [PlotController::class, 'getCustomerProperties'])->middleware('auth:sanctum');
+    // -------------------------
+    // My Properties (User)
+    // -------------------------
+    Route::prefix('myproperties')->middleware('auth:sanctum')->group(function () {
+        Route::get('customer-metrics', [PlotController::class, 'getCustomerMetrics']);
+        Route::get('customer-properties', [PlotController::class, 'getCustomerProperties']);
     });
 
-    Route::prefix('user')->group(function () {
-        Route::get('/account', [AuthController::class, 'index']);
-        Route::post('/email/request-change', [UserController::class, 'requestEmailChange'])->middleware('auth:sanctum');
-        Route::post('/email/verify-change', [UserController::class, 'verifyEmailChange'])->middleware('auth:sanctum');
+    // -------------------------
+    // Document Routes
+    // -------------------------
+    // User documents
+    Route::prefix('document')->middleware('auth:sanctum')->group(function () {
+        Route::get('my-document', [DocumentController::class, 'getUserDocument']);
     });
 
-    Route::prefix('document')->group(function () {
-        Route::get('/my-document', [DocumentController::class, 'getUserDocument'])->middleware('auth:sanctum');
+    // Admin documents (protected)
+    Route::prefix('admin/documents')->middleware(['auth:sanctum', 'role:admin'])->group(function () {
+        Route::post('upload', [DocumentController::class, 'store']);
+        Route::put('{id}/publish', [DocumentController::class, 'publish']);
+        Route::put('{id}/unpublish', [DocumentController::class, 'unpublish']);
+        Route::delete('{id}', [DocumentController::class, 'destroy']);
     });
 
-    // Admin routes
-    Route::prefix('admin')->group(function () {
-        Route::post('/allocate-property', [PlotController::class, 'allocateProperty'])->middleware('auth:sanctum');
-        Route::post('/upload', [DocumentController::class, 'store'])->middleware('auth:sanctum');
-        Route::post('/reset-client-password', [AdminClientController::class, 'resetClientPassword'])->middleware('auth:sanctum');
+    // Public documents
+    Route::get('documents', [DocumentController::class, 'index']);
+    Route::get('documents/{id}/download', [DocumentController::class, 'download']);
 
-        // Document management
-        Route::post('/documents/upload', [DocumentController::class, 'upload']);
-        Route::put('/documents/{id}/publish', [DocumentController::class, 'publish']);
-        Route::put('/documents/{id}/unpublish', [DocumentController::class, 'unpublish']);
-        Route::delete('/documents/{id}', [DocumentController::class, 'destroy']);
+    // -------------------------
+    // Admin Routes
+    // -------------------------
+    Route::prefix('admin')->middleware(['auth:sanctum', 'role:admin'])->group(function () {
+        Route::post('allocate-property', [PlotController::class, 'allocateProperty']);
+        Route::post('reset-client-password', [AdminClientController::class, 'resetClientPassword']);
+        Route::get('referrals', [AdminReferralController::class, 'index']);
+        Route::get('commission-settings', [CommissionSettingController::class, 'index']);
+        Route::post('commission-settings', [CommissionSettingController::class, 'store']);
+        Route::post('commission-settings/{id}/toggle', [CommissionSettingController::class, 'toggleStatus']);
 
-        // Referrals
-        Route::middleware(['auth:sanctum'])->group(function () {
-            Route::get('/referrals', [AdminReferralController::class, 'index']);
-        });
+        // 🔥 NEW - ADMIN WITHDRAWAL ROUTES
+        Route::get('/withdrawals', [CommissionWithdrawalController::class, 'allWithdrawals']);
+        Route::post('/withdrawals/{id}/approve', [CommissionWithdrawalController::class, 'approve']);
+        Route::post('/withdrawals/{id}/reject', [CommissionWithdrawalController::class, 'reject']);
     });
 
-    // Public document routes
-    Route::get('/documents', [DocumentController::class, 'index']);
-    Route::get('/documents/{id}/download', [DocumentController::class, 'download']);
-
-    // FAQ routes
+    // -------------------------
+    // FAQ Routes
+    // -------------------------
     Route::apiResource('faqs', FaqController::class);
 
-    // Payment callback
-    Route::get('/payments/callback', [PlotController::class, 'handlePaystackCallback']);
+    // -------------------------
+    // Payment Callback
+    // -------------------------
+    Route::post('payments/callback', [PlotController::class, 'handlePaystackCallback']);
 });
