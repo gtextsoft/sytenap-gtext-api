@@ -4,11 +4,15 @@ namespace App\Http\Controllers\Api;
 
 use App\Models\User;
 use Illuminate\Http\Request;
+use App\Services\MailService;
+use App\Mail\ResetPasswordMail;
 use App\Models\PasswordResetLog;
+use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Validator;
 
 class AdminClientController extends Controller {
 
@@ -21,7 +25,7 @@ class AdminClientController extends Controller {
      *      summary="Reset a client's password using their email address",
      *      description="Allows an admin to reset a client's password by providing the client's registered email and a new password. The new password is updated and sent to the client's email address.",
      *      security={{"sanctum": {}}},
-     * 
+     *
      *      @OA\RequestBody(
      *          required=true,
      *          @OA\JsonContent(
@@ -30,7 +34,7 @@ class AdminClientController extends Controller {
      *              @OA\Property(property="new_password", type="string", format="password", minLength=6, example="newSecurePass123", description="The new password to assign to the client")
      *          )
      *      ),
-     * 
+     *
      *      @OA\Response(
      *          response=200,
      *          description="Password reset successfully and sent to client email.",
@@ -41,7 +45,7 @@ class AdminClientController extends Controller {
      *              @OA\Property(property="reset_by", type="string", example="admin@gofill.com")
      *          )
      *      ),
-     * 
+     *
      *      @OA\Response(
      *          response=403,
      *          description="Access denied. Only admins can reset passwords.",
@@ -50,7 +54,7 @@ class AdminClientController extends Controller {
      *              @OA\Property(property="message", type="string", example="Access denied. Only admins can reset passwords.")
      *          )
      *      ),
-     * 
+     *
      *      @OA\Response(
      *          response=422,
      *          description="Validation error",
@@ -63,7 +67,7 @@ class AdminClientController extends Controller {
      *              )
      *          )
      *      ),
-     * 
+     *
      *      @OA\Response(
      *          response=500,
      *          description="Internal server error",
@@ -81,12 +85,15 @@ class AdminClientController extends Controller {
 
     public function resetClientPassword(Request $request)
     {
-        $request->validate([
-            'client_email' => 'required|email|exists:users,email',
+        $validator = Validator::make($request->all(), [
+            'user_id' => 'required|exists:users,id',
             'new_password' => 'required|string|min:6',
         ]);
 
-        $admin = Auth::user();
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+        $admin = $request->user();
 
         // Confirm admin privilege
         if ($admin->account_type !== 'admin') {
@@ -96,7 +103,16 @@ class AdminClientController extends Controller {
             ], 403);
         }
 
-        $client = User::where('email', $request->client_email)->first();
+        // Get the client user
+        $client = User::find($request->user_id);
+
+        // check user existence
+        if (!$client) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User not found.',
+            ], 404);
+        }
 
         // Update password
         $client->password = Hash::make($request->new_password);
@@ -104,28 +120,20 @@ class AdminClientController extends Controller {
 
         // Log reset action
         PasswordResetLog::create([
-            'client_id' => $client->id,
+            'user_id' => $client->id,
             'admin_id' => $admin->id,
             'reset_at' => now(),
         ]);
 
         // Send new password to client email
         try {
-            $messageBody = "Dear {$client->name},\n\n"
-                . "Your password has been reset by the support team.\n\n"
-                . "New Password: {$request->new_password}\n\n"
-                . "You can now log in using your email and this password.\n\n"
-                . "If you did not request this change, please contact support immediately.\n\n"
-                . "Best Regards,\nSupport Team";
-
-            Mail::raw($messageBody, function ($message) use ($client) {
-                $message->to($client->email)
-                        ->subject('Your New Password from Support Team');
-            });
+              $sent = MailService::send($client->email, new ResetPasswordMail($client, $request->new_password), [
+                     'queue' => false,
+                    ]);
         } catch (\Exception $e) {
-            \Log::error('Failed to send password reset email', [
+            Log::error('Failed to send password reset email', [
                 'client_email' => $client->email,
-                'error_message' => $e->getMessage(),
+                'error' => $e->getMessage(),
                 'time' => now()->toDateTimeString(),
             ]);
         }
@@ -135,6 +143,6 @@ class AdminClientController extends Controller {
             'message' => 'Password reset successfully and sent to client email.',
             'client' => $client->email,
             'reset_by' => $admin->email,
-        ]);
+        ], 200);
     }
 }
