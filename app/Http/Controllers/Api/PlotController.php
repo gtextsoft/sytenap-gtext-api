@@ -1614,7 +1614,151 @@ class PlotController extends Controller
             ],
         ], 200);
     }
-    
 
-    
+    /**
+     * @OA\Post(
+     *     path="/api/v1/property/sync-for-resale",
+     *     tags={"Admin - Property Management"},
+     *     summary="Sync property for resale on external platform",
+     *     description="Sends property details and image to an external resale server.",
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"client_email", "plot_id"},
+     *             @OA\Property(property="client_email", type="string", format="email", example="client@example.com"),
+     *             @OA\Property(property="plot_id", type="integer", example=123)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Property successfully listed on external server"
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Validation error or external server rejection"
+     *     )
+     * )
+     */
+    public function syncForResale(Request $request)
+    {
+        // 0. Check Admin Authorization
+        $user = $request->user();
+        if (!$user || $user->account_type !== 'admin') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized. Only admins can perform this action.'
+            ], 403);
+        }
+
+        // 1. Validation
+        $validator = Validator::make($request->all(), [
+            'client_email' => 'required|email',
+            'plot_id' => 'required|integer|exists:plots,id',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            // 2. Fetch Property Details
+            $plot = Plot::with(['estate.media', 'estate.plotDetail'])->findOrFail($request->plot_id);
+            $estate = $plot->estate;
+
+            // 3. Determine Image URL
+            // Priority: Estate preview image -> First photo in media -> Placeholder/Error
+            $imageUrl = $estate->preview_display_image;
+            
+            if (!$imageUrl && $estate->media && !empty($estate->media->photos)) {
+                $photos = is_array($estate->media->photos) ? $estate->media->photos : json_decode($estate->media->photos, true);
+                $imageUrl = $photos[0] ?? null;
+            }
+
+            if (!$imageUrl) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No image found for this property to sync.'
+                ], 400);
+            }
+
+            // 4. Download Image to Temporary File
+            $tempImageName = 'temp_resale_' . Str::random(10) . '_' . basename($imageUrl);
+            // Handle query parameters in url if any for extension
+            if (strpos($tempImageName, '?') !== false) {
+                $tempImageName = substr($tempImageName, 0, strpos($tempImageName, '?'));
+            }
+            
+            // Ensure extension is present if missing (simple check)
+            if (!pathinfo($tempImageName, PATHINFO_EXTENSION)) {
+                $tempImageName .= '.jpg'; // Default to jpg if unknown
+            }
+
+            $tempPath = storage_path('app/temp/' . $tempImageName);
+            
+            // Ensure temp directory exists
+            if (!file_exists(dirname($tempPath))) {
+                mkdir(dirname($tempPath), 0755, true);
+            }
+
+            // Download content
+            $imageContent = file_get_contents($imageUrl);
+            if ($imageContent === false) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to download property image.'
+                ], 500);
+            }
+            file_put_contents($tempPath, $imageContent);
+
+            // 5. Prepare Payload
+            // Fetch everything available: Merge seller_email with the full plot data (including nested estate, media, etc.)
+            $payload = array_merge(
+                ['seller_email' => $request->client_email],
+                $plot->toArray()
+            );
+
+            // 6. Send to External Server
+            $externalUrl = env('EXTERNAL_RESALE_URL', 'https://external-resale-platform.com/api/v1/receive-listing');
+
+            $response = Http::attach(
+                'image', file_get_contents($tempPath), basename($tempPath)
+            )->post($externalUrl, $payload);
+
+            // 7. Cleanup Temporary File
+            if (file_exists($tempPath)) {
+                unlink($tempPath);
+            }
+
+            // 8. Handle Response
+            if ($response->successful()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Property successfully listed on external server.',
+                    'external_data' => $response->json()
+                ], 200);
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'External server rejected the listing: ' . $response->body(),
+                    'status_code' => $response->status()
+                ], $response->status()); // Pass through the error status
+            }
+
+        } catch (\Exception $e) {
+            // Cleanup on error
+            if (isset($tempPath) && file_exists($tempPath)) {
+                unlink($tempPath);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred during synchronization: ' . $e->getMessage()
+            ], 500);
+        }
+    }    
 }

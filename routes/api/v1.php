@@ -81,6 +81,10 @@ Route::prefix('v1')->group(function () {
         Route::post('/reset-client-password', [AdminClientController::class, 'resetClientPassword'])->middleware('auth:sanctum');
     });
 
+    Route::prefix('property')->group(function () {
+        Route::post('/sync-for-resale', [PlotController::class, 'syncForResale'])->middleware('auth:sanctum');
+    });
+
     Route::get('/payments/callback', [PlotController::class, 'handlePaystackCallback']);
 
     Route::apiResource('faqs', FaqController::class);
