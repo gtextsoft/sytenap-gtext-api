@@ -229,4 +229,19 @@ class DocumentController extends Controller
 
         return response()->json(['status' => true, 'message' => 'Document deleted successfully']);
     }
+
+
+    public function getAllUserDocument(Request $request)
+    {
+        
+
+        $documents = Document::all();
+
+
+         return response()->json([
+                    'status' => 'success',
+                    'message' => 'Documents retrieved successfully.',
+                    'data' => $documents
+                ], 200);
+    }
 }

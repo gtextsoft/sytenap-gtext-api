@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\FaqController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\PlotController;
-use App\Http\Controllers\DocumentController;
+use App\Http\Controllers\Api\DocumentController;
 use App\Http\Controllers\Api\AdminReferralController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\AgentController;
@@ -97,14 +97,12 @@ Route::prefix('v1')->group(function () {
         Route::get('customer-properties', [PlotController::class, 'getCustomerProperties']);
     });
 
-    // -------------------------
-    // Document Routes
-    // -------------------------
-    // User documents
-    Route::prefix('document')->middleware('auth:sanctum')->group(function () {
-        Route::get('my-document', [DocumentController::class, 'getUserDocument']);
+   
+    Route::prefix('document')->group(function () {
+        Route::get('/my-document', [DocumentController::class, 'getUserDocument'])->middleware('auth:sanctum');
+        Route::get('/all-document', [DocumentController::class, 'getAllUserDocument']);
     });
-
+    
     // Admin documents (protected)
     Route::prefix('admin/documents')->middleware(['auth:sanctum', 'role:admin'])->group(function () {
         Route::post('upload', [DocumentController::class, 'store']);
@@ -133,6 +131,12 @@ Route::prefix('v1')->group(function () {
         Route::post('/withdrawals/{id}/approve', [CommissionWithdrawalController::class, 'approve']);
         Route::post('/withdrawals/{id}/reject', [CommissionWithdrawalController::class, 'reject']);
     });
+
+    Route::prefix('property')->group(function () {
+        Route::post('/sync-for-resale', [PlotController::class, 'syncForResale'])->middleware('auth:sanctum');
+    });
+
+    Route::get('/payments/callback', [PlotController::class, 'handlePaystackCallback']);
 
     // -------------------------
     // FAQ Routes
