@@ -63,19 +63,21 @@ Route::prefix('v1')->group(function () {
     // Estate & Plot Routes
     // -------------------------
     Route::prefix('estate')->group(function () {
-        Route::post('media', [EstateController::class, 'media_store']);
-        Route::post('new', [EstateController::class, 'store']);
-        Route::get('top-rated', [EstateController::class, 'getTopRatedEstates']);
-        Route::get('top-rated-alt', [EstateController::class, 'getTopRatedEstatesAlternative']);
-        Route::get('detail', [EstateController::class, 'getTopRatedEstatesWithAvailability']);
-        Route::post('nearby', [EstateController::class, 'getNearbyEstates']);
-        Route::post('search', [EstateController::class, 'filterSearch']);
-        Route::get('{estateId}/detail', [EstateController::class, 'EstateDetails']);
-        Route::post('{estateId}/generate-plots', [PlotController::class, 'generatePlots']);
-        Route::get('{estateId}/plots', [PlotController::class, 'getPlotsByEstate']);
+        Route::prefix('estates')->group(function () {
+                Route::post('media', [EstateController::class, 'media_store']);
+                Route::post('new', [EstateController::class, 'store']);
+                Route::get('top-rated', [EstateController::class, 'getTopRatedEstates']);
+                Route::get('top-rated-alt', [EstateController::class, 'getTopRatedEstatesAlternative']);
+                Route::get('detail', [EstateController::class, 'getTopRatedEstatesWithAvailability']);
+                Route::post('nearby', [EstateController::class, 'getNearbyEstates']);
+                Route::post('search', [EstateController::class, 'filterSearch']);
+                Route::get('all', [EstateController::class, 'getAllEstates']);
+        });
         Route::post('plots/preview-purchase', [PlotController::class, 'previewPurchase']);
         Route::post('plots/purchase', [PlotController::class, 'finalizePurchase'])->middleware('auth:sanctum');
-        Route::get('all', [EstateController::class, 'getAllEstates']);
+        Route::get('detail/{estateId}', [EstateController::class, 'EstateDetails']);
+        Route::post('{estateId}/generate-plots', [PlotController::class, 'generatePlots']);
+        Route::get('{estateId}/plots', [PlotController::class, 'getPlotsByEstate']);    
     });
 
     // -------------------------
