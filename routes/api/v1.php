@@ -76,7 +76,7 @@ Route::prefix('v1')->group(function () {
         
         Route::post('plots/preview-purchase', [PlotController::class, 'previewPurchase']);
         Route::post('plots/purchase', [PlotController::class, 'finalizePurchase'])->middleware('auth:sanctum');
-        Route::get('{estateId}/detail', [EstateController::class, 'EstateDetails']);
+        Route::get('detail/{estateId}', [EstateController::class, 'EstateDetails']);
         Route::post('{estateId}/generate-plots', [PlotController::class, 'generatePlots']);
         Route::get('{estateId}/plots', [PlotController::class, 'getPlotsByEstate']);    
     });
