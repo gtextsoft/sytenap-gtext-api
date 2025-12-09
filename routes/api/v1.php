@@ -73,7 +73,6 @@ Route::prefix('v1')->group(function () {
                 Route::post('search', [EstateController::class, 'filterSearch']);
                 Route::get('all', [EstateController::class, 'getAllEstates']);
         });
-        
         Route::post('plots/preview-purchase', [PlotController::class, 'previewPurchase']);
         Route::post('plots/purchase', [PlotController::class, 'finalizePurchase'])->middleware('auth:sanctum');
         Route::get('detail/{estateId}', [EstateController::class, 'EstateDetails']);
