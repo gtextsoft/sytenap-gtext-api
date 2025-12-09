@@ -9,11 +9,14 @@ return new class extends Migration {
     {
         Schema::create('referrals', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('user_id')->unique(); // One referral per user
-            $table->string('referral_code')->unique(); // Unique referral ID
+            $table->unsignedInteger('user_id')->unique();
+            $table->string('referral_code')->unique();
             $table->timestamps();
 
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('user_id')
+                ->references('id')
+                ->on('users')
+                ->onDelete('cascade');
         });
     }
 
