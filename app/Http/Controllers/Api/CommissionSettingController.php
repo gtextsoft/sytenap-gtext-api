@@ -9,27 +9,34 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
 class CommissionSettingController extends Controller {
-    /**
+
+
+/**
  * @OA\Get(
  *      path="/api/v1/admin/commission-settings",
  *      operationId="getCommissionSettings",
  *      tags={"Admin - Commission Settings"},
  *      summary="List all commission settings",
- *      description="Returns a list of all commission settings available in the system. Only accessible by admin users.",
- *      security={{"sanctum": {}}},
+ *      description="Returns all commission settings in the system. Only accessible by admin users.",
+ *      security={{"sanctum":{}}},
  *
  *      @OA\Response(
  *          response=200,
- *          description="Successful retrieval of commission settings",
+ *          description="Successful retrieval",
  *          @OA\JsonContent(
  *              type="array",
- *              @OA\Items(ref="#/components/schemas/CommissionSetting")
+ *              @OA\Items(
+ *                  @OA\Property(property="id", type="integer", example=1),
+ *                  @OA\Property(property="value", type="number", format="float", example=10),
+ *                  @OA\Property(property="type", type="string", example="percentage"),
+ *                  @OA\Property(property="status", type="boolean", example=true)
+ *              )
  *          )
  *      ),
  *
  *      @OA\Response(
  *          response=403,
- *          description="Access denied. Only admin can view commission settings.",
+ *          description="Access denied",
  *          @OA\JsonContent(
  *              @OA\Property(property="success", type="boolean", example=false),
  *              @OA\Property(property="message", type="string", example="Access denied.")
@@ -37,21 +44,23 @@ class CommissionSettingController extends Controller {
  *      )
  * )
  */
+public function index()
+{
+    $admin = Auth::user();
 
+    if ($admin->account_type !== 'admin') {
+        return response()->json([
+            'success' => false,
+            'message' => 'Access denied.'
+        ], 403);
+    }
 
-                            public function index() {
-                                $admin = Auth::user();
-                                if ( $admin->account_type !== 'admin' ) {
-                                    return response()->json( [
-                                        'success' => false,
-                                        'message' => 'Access denied.'
-                                    ], 403 );
-                                }
-                                $settings = CommissionSetting::orderBy( 'id', 'desc' )->get();
-                                return response()->json( $settings );
-                            }
+    $settings = CommissionSetting::orderBy('id', 'desc')->get();
 
-                           /**
+    return response()->json($settings);
+}
+
+/**
  * @OA\Post(
  *      path="/api/v1/admin/commission-settings",
  *      operationId="createCommissionSetting",
@@ -92,7 +101,14 @@ class CommissionSettingController extends Controller {
  *          @OA\JsonContent(
  *              @OA\Property(property="success", type="boolean", example=true),
  *              @OA\Property(property="message", type="string", example="Commission setting added successfully."),
- *              @OA\Property(property="data", ref="#/components/schemas/CommissionSetting")
+ *              @OA\Property(
+ *                  property="data",
+ *                  type="object",
+ *                  @OA\Property(property="id", type="integer", example=1),
+ *                  @OA\Property(property="value", type="number", format="float", example=10),
+ *                  @OA\Property(property="type", type="string", example="percentage"),
+ *                  @OA\Property(property="status", type="boolean", example=true)
+ *              )
  *          )
  *      ),
  *
@@ -115,40 +131,39 @@ class CommissionSettingController extends Controller {
  * )
  */
 
+public function store(Request $request) {
+    $admin = Auth::user();
+    if ($admin->account_type !== 'admin') {
+        return response()->json([
+            'success' => false,
+            'message' => 'Access denied.'
+        ], 403);
+    }
 
-                                                                            public function store( Request $request ) {
-                                                                                $admin = Auth::user();
-                                                                                if ( $admin->account_type !== 'admin' ) {
-                                                                                    return response()->json( [
-                                                                                        'success' => false,
-                                                                                        'message' => 'Access denied.'
-                                                                                    ], 403 );
-                                                                                }
+    $validator = Validator::make($request->all(), [
+        'value' => 'required|numeric|min:0',
+        'type' => 'required|in:percentage,flat',
+        'status' => 'nullable|boolean'
+    ]);
 
-                                                                                $validator = Validator::make( $request->all(), [
-                                                                                    'value' => 'required|numeric|min:0',
-                                                                                    'type' => 'required|in:percentage,flat',
-                                                                                    'status' => 'nullable|boolean'
-                                                                                ] );
+    if ($validator->fails()) {
+        return response()->json(['errors' => $validator->errors()], 422);
+    }
 
-                                                                                if ( $validator->fails() ) {
-                                                                                    return response()->json( [ 'errors' => $validator->errors() ], 422 );
-                                                                                }
+    $setting = CommissionSetting::create([
+        'value' => $request->value,
+        'type' => $request->type,
+        'status' => $request->status ?? false
+    ]);
 
-                                                                                $setting = CommissionSetting::create( [
-                                                                                    'value' => $request->value,
-                                                                                    'type' => $request->type,
-                                                                                    'status' => $request->status ?? false
-                                                                                ] );
+    return response()->json([
+        'success' => true,
+        'message' => 'Commission setting added successfully.',
+        'data' => $setting
+    ]);
+}
 
-                                                                                return response()->json( [
-                                                                                    'success' => true,
-                                                                                    'message' => 'Commission setting added successfully.',
-                                                                                    'data' => $setting
-                                                                                ] );
-                                                                            }
-
-                                                                          /**
+/**
  * @OA\Patch(
  *      path="/api/v1/admin/commission-settings/{id}/toggle",
  *      operationId="toggleCommissionStatus",
@@ -171,7 +186,14 @@ class CommissionSettingController extends Controller {
  *          @OA\JsonContent(
  *              @OA\Property(property="success", type="boolean", example=true),
  *              @OA\Property(property="message", type="string", example="Commission status updated."),
- *              @OA\Property(property="data", ref="#/components/schemas/CommissionSetting")
+ *              @OA\Property(
+ *                  property="data",
+ *                  type="object",
+ *                  @OA\Property(property="id", type="integer", example=1),
+ *                  @OA\Property(property="value", type="number", format="float", example=10),
+ *                  @OA\Property(property="type", type="string", example="percentage"),
+ *                  @OA\Property(property="status", type="boolean", example=true)
+ *              )
  *          )
  *      ),
  *
@@ -193,27 +215,31 @@ class CommissionSettingController extends Controller {
  *      )
  * )
  */
+public function toggleStatus($id)
+{
+    $admin = Auth::user();
+    if ($admin->account_type !== 'admin') {
+        return response()->json([
+            'success' => false,
+            'message' => 'Access denied.'
+        ], 403);
+    }
 
-                                                                                                                    public function toggleStatus( $id ) {
-                                                                                                                        $admin = Auth::user();
-                                                                                                                        if ( $admin->account_type !== 'admin' ) {
-                                                                                                                            return response()->json( [
-                                                                                                                                'success' => false,
-                                                                                                                                'message' => 'Access denied.'
-                                                                                                                            ], 403 );
-                                                                                                                        }
-                                                                                                                        $setting = CommissionSetting::find( $id );
-                                                                                                                        if ( !$setting ) {
-                                                                                                                            return response()->json( [ 'message' => 'Commission setting not found.' ], 404 );
-                                                                                                                        }
+    $setting = CommissionSetting::find($id);
+    if (!$setting) {
+        return response()->json(['message' => 'Commission setting not found.'], 404);
+    }
 
-                                                                                                                        $setting->status = !$setting->status;
-                                                                                                                        $setting->save();
+    $setting->status = !$setting->status;
+    $setting->save();
 
-                                                                                                                        return response()->json( [
-                                                                                                                            'success' => true,
-                                                                                                                            'message' => 'Commission status updated.',
-                                                                                                                            'data' => $setting
-                                                                                                                        ] );
-                                                                                                                    }
-                                                                                                                }
+    return response()->json([
+        'success' => true,
+        'message' => 'Commission status updated.',
+        'data' => $setting
+    ]);
+}
+
+
+}
+ 
