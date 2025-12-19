@@ -254,7 +254,7 @@ class AuthController extends Controller
 
             $data = $response->json();
 
-            if ($response->successful() && isset($data['status']) && $data['status'] === 'success') {
+            if ($response->successful() && isset($data['success']) && $data['success'] === true) {
                 $agentId = $data['data']['id'] ?? null;
                 if ($agentId) $this->createReferralIfNotExists($agentId);
 
