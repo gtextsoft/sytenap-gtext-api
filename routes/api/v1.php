@@ -120,7 +120,7 @@ Route::prefix('v1')->group(function () {
     // -------------------------
     // Admin Routes
     // -------------------------
-    Route::prefix('admin')->middleware(['auth:sanctum', 'role:admin'])->group(function () {
+    Route::prefix('admin')->middleware(['auth:sanctum'])->group(function () {
         Route::post('allocate-property', [PlotController::class, 'allocateProperty']);
         Route::post('reset-client-password', [AdminClientController::class, 'resetClientPassword']);
         Route::get('referrals', [AdminReferralController::class, 'index']);
