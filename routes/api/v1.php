@@ -64,15 +64,15 @@ Route::prefix('v1')->group(function () {
     // -------------------------
     Route::prefix('estate')->group(function () {
         Route::prefix('estates')->group(function () {
-                Route::post('media', [EstateController::class, 'media_store']);
-                Route::post('new', [EstateController::class, 'store']);
-                Route::get('top-rated', [EstateController::class, 'getTopRatedEstates']);
-                Route::get('top-rated-alt', [EstateController::class, 'getTopRatedEstatesAlternative']);
-                Route::get('detail', [EstateController::class, 'getTopRatedEstatesWithAvailability']);
-                Route::post('nearby', [EstateController::class, 'getNearbyEstates']);
-                Route::post('search', [EstateController::class, 'filterSearch']);
-                Route::get('all', [EstateController::class, 'getAllEstates']);
+            Route::get('top-rated', [EstateController::class, 'getTopRatedEstates']);
+            Route::get('top-rated-alt', [EstateController::class, 'getTopRatedEstatesAlternative']);
+            Route::get('detail', [EstateController::class, 'getTopRatedEstatesWithAvailability']);
+            Route::post('nearby', [EstateController::class, 'getNearbyEstates']);
+            Route::post('search', [EstateController::class, 'filterSearch']);
+            Route::get('all', [EstateController::class, 'getAllEstates']);
         });
+        Route::post('media', [EstateController::class, 'media_store']);
+        Route::post('new', [EstateController::class, 'store']);
         Route::post('plots/preview-purchase', [PlotController::class, 'previewPurchase']);
         Route::post('plots/purchase', [PlotController::class, 'finalizePurchase'])->middleware('auth:sanctum');
         Route::get('detail/{estateId}', [EstateController::class, 'EstateDetails']);
