@@ -630,6 +630,7 @@ class PlotController extends Controller
             'plots' => 'required|array|min:1',
             'plots.*' => 'integer|exists:plots,id',
             'installment_months' => 'required|integer|min:1|max:12',
+            'agent_id' => 'sometimes|integer|min:1'
         ]);
 
         if ($validator->fails()) {
@@ -692,6 +693,18 @@ class PlotController extends Controller
         // Generate Paystack reference
         $paymentReference = 'PLOT-' . Str::upper(Str::random(10));
 
+        // Build metadata
+        $metadata = [
+            'estate_id' => $estate->id,
+            'plots' => $plots->pluck('id')->toArray(),
+            'installments' => $installmentMonths,
+        ];
+
+        // Add agent_id to metadata if provided
+        if ($request->filled('agent_id')) {
+            $metadata['agent_id'] = $request->agent_id;
+        }
+
         // Initialize payment with Paystack (first installment)
         $paystackResponse = Http::withToken(env('PAYSTACK_SECRET_KEY'))
             ->post('https://api.paystack.co/transaction/initialize', [
@@ -699,11 +712,7 @@ class PlotController extends Controller
                 'amount' => $monthlyPayment * 100, // kobo
                 'reference' => $paymentReference,
                 'callback_url' => env('PAYSTACK_CALLBACK_URL', url('/api/v1/payments/callback')),
-                'metadata' => [
-                    'estate_id' => $estate->id,
-                    'plots' => $plots->pluck('id')->toArray(),
-                    'installments' => $installmentMonths,
-                ],
+                'metadata' => $metadata,
             ]);
 
         if (!$paystackResponse->successful() || empty($paystackResponse->json('data.authorization_url'))) {
@@ -825,21 +834,42 @@ class PlotController extends Controller
                         'payment_status' => $purchase->installment_months > 1 ? 'outstanding' : 'fully_paid',
                         'acquisition_status' => 'held',
                     ]);
+
+                    // Check for agent_id in metadata and process commission
+                    $metadata = $data['metadata'] ?? [];
+                    if (!empty($metadata['agent_id'])) {
+                        $agentId = $metadata['agent_id'];
+
+                        // Fetch active commission setting
+                        $commissionSetting = \App\Models\CommissionSetting::where('status', '1')->first();
+
+                        if ($commissionSetting) {
+                            // Calculate commission based on setting type
+                            $commissionAmount = 0;
+                            
+                            if ($commissionSetting->type === 'percentage') {
+                                // value is percentage (e.g., 5 means 5%)
+                                $commissionAmount = ($purchase->total_price * $commissionSetting->value) / 100;
+                            } elseif ($commissionSetting->type === 'fixed') {
+                                // value is a fixed amount
+                                $commissionAmount = $commissionSetting->value;
+                            }
+
+                            // Store commission in AgentCommission table
+                            if ($commissionAmount > 0) {
+                                \App\Models\AgentCommission::create([
+                                    'agent_id' => $agentId,
+                                    'amount' => $commissionAmount,
+                                ]);
+                            }
+                        }
+                    }
                 }
 
                 // Redirect to client portal (include reference and status)
                 $redirectUrl = 'https://portal.gtextland.com/client/properties?reference=' . urlencode($reference) . '&status=' . urlencode($status);
                 return redirect()->away($redirectUrl);
 
-                // return response()->json([
-                //     'success' => true,
-                //     'message' => 'Payment processed successfully',
-                //     'data' => [
-                //         'reference' => $reference,
-                //         'status' => $status,
-                //         'gateway_response' => $data,
-                //     ],
-                // ]);
             } catch (\Exception $e) {
                 return response()->json([
                     'success' => false,
