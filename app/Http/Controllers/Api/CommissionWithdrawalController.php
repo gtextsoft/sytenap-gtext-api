@@ -8,6 +8,93 @@ use App\Models\AgentCommission;
 
 class CommissionWithdrawalController extends Controller
 {
+    /**
+ * @OA\Post(
+ *      path="/api/v1/agent/withdraw",
+ *      operationId="requestCommissionWithdrawal",
+ *      tags={"Agent - Commission"},
+ *      summary="Request commission withdrawal",
+ *      description="Allows an agent to request a withdrawal from their available commission balance. The withdrawal is created with a pending status.",
+ *      security={{"sanctum": {}}},
+ *
+ *      @OA\RequestBody(
+ *          required=true,
+ *          @OA\JsonContent(
+ *              required={"agent_id", "amount"},
+ *              @OA\Property(
+ *                  property="agent_id",
+ *                  type="integer",
+ *                  example=5,
+ *                  description="Unique ID of the agent making the withdrawal request"
+ *              ),
+ *              @OA\Property(
+ *                  property="amount",
+ *                  type="number",
+ *                  format="float",
+ *                  example=15000,
+ *                  description="Amount to withdraw from commission balance"
+ *              ),
+ *              @OA\Property(
+ *                  property="description",
+ *                  type="string",
+ *                  example="Weekly commission withdrawal",
+ *                  description="Optional description for the withdrawal request"
+ *              )
+ *          )
+ *      ),
+ *
+ *      @OA\Response(
+ *          response=201,
+ *          description="Withdrawal request created successfully",
+ *          @OA\JsonContent(
+ *              @OA\Property(property="status", type="boolean", example=true),
+ *              @OA\Property(
+ *                  property="message",
+ *                  type="string",
+ *                  example="Withdrawal request created successfully."
+ *              ),
+ *              @OA\Property(
+ *                  property="data",
+ *                  type="object",
+ *                  @OA\Property(property="id", type="integer", example=12),
+ *                  @OA\Property(property="agent_id", type="integer", example=5),
+ *                  @OA\Property(property="commission_id", type="integer", example=3),
+ *                  @OA\Property(property="amount", type="number", format="float", example=15000),
+ *                  @OA\Property(property="balance_before", type="number", format="float", example=45000),
+ *                  @OA\Property(property="balance_after", type="number", format="float", example=30000),
+ *                  @OA\Property(property="description", type="string", example="Weekly commission withdrawal"),
+ *                  @OA\Property(property="status", type="string", example="pending"),
+ *                  @OA\Property(property="created_at", type="string", format="date-time"),
+ *                  @OA\Property(property="updated_at", type="string", format="date-time")
+ *              )
+ *          )
+ *      ),
+ *
+ *      @OA\Response(
+ *          response=400,
+ *          description="Withdrawal amount exceeds available balance",
+ *          @OA\JsonContent(
+ *              @OA\Property(property="status", type="boolean", example=false),
+ *              @OA\Property(
+ *                  property="message",
+ *                  type="string",
+ *                  example="Withdrawal amount exceeds available balance."
+ *              )
+ *          )
+ *      ),
+ *
+ *      @OA\Response(
+ *          response=422,
+ *          description="Validation error"
+ *      ),
+ *
+ *      @OA\Response(
+ *          response=401,
+ *          description="Unauthenticated"
+ *      )
+ * )
+ */
+
     // Agent requests withdrawal
     public function requestWithdrawal(Request $request)
     {
