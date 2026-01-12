@@ -32,12 +32,8 @@ Route::prefix('v1')->group(function () {
         Route::post('/login', [AuthController::class, 'agent_login']);
         Route::post('/balance', [AgentController::class, 'balance']);
         Route::post('/commission-history', [AgentController::class, 'history']);
-
-        //  NEW - AGENT WITHDRAWAL ROUTES
-        Route::middleware('auth:sanctum')->group(function () {
-            Route::post('/withdraw', [CommissionWithdrawalController::class, 'requestWithdrawal']);
-            Route::get('/withdrawals', [CommissionWithdrawalController::class, 'agentWithdrawals']);
-        });
+        Route::post('/withdraw', [CommissionWithdrawalController::class, 'requestWithdrawal']);
+        Route::get('/withdrawals', [CommissionWithdrawalController::class, 'agentWithdrawals']);
     });
 
     // -------------------------
