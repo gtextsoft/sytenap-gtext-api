@@ -1649,9 +1649,12 @@ class EstateController extends Controller
      *     )
      * )
      */
-    public function EstateDetails($id): JsonResponse
+    public function EstateDetails(Request $request, $id): JsonResponse
     {
         try {
+            if($request->has('agent_id')){
+                $agent_id = $request->agent_id;
+            }
             // Fetch the estate with its media and plot details
             $estate = Estate::with(['media', 'plotDetail'])
                 ->where('status', 'publish')
