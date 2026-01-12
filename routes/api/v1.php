@@ -122,7 +122,7 @@ Route::prefix('v1')->group(function () {
         Route::get('referrals', [AdminReferralController::class, 'index']);
         Route::get('commission-settings', [CommissionSettingController::class, 'index']);
         Route::post('commission-settings', [CommissionSettingController::class, 'store']);
-        Route::post('commission-settings/{id}/toggle', [CommissionSettingController::class, 'toggleStatus']);
+        Route::patch('commission-settings/{id}/toggle', [CommissionSettingController::class, 'toggleStatus']);
 
         // 🔥 NEW - ADMIN WITHDRAWAL ROUTES
         Route::get('/withdrawals', [CommissionWithdrawalController::class, 'allWithdrawals']);
