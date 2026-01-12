@@ -11,13 +11,14 @@ class CommissionWithdrawalController extends Controller
     // Agent requests withdrawal
     public function requestWithdrawal(Request $request)
     {
-        $agent = $request->user();
+        
         $request->validate([
+            'agent_id' => 'required',
             'amount' => 'required|numeric|min:1',
             'description' => 'nullable|string|max:255',
         ]);
 
-        $commission = AgentCommission::where('agent_id', $agent->id)->firstOrFail();
+        $commission = AgentCommission::where('agent_id', $request->agent_id)->firstOrFail();
 
         if ($request->amount > $commission->amount) {
             return response()->json([
