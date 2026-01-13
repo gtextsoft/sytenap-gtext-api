@@ -119,7 +119,7 @@ class CommissionWithdrawalController extends Controller
 
         // Create withdrawal record
         $withdrawal = CommissionWithdrawal::create([
-            'agent_id' => $agent->id,
+            'agent_id' => $request->agent_id,
             'commission_id' => $commission->id,
             'amount' => $request->amount,
             'balance_before' => $balanceBefore,
