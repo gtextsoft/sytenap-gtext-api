@@ -129,6 +129,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/withdrawals', [CommissionWithdrawalController::class, 'allWithdrawals']);
         Route::post('/withdrawals/{id}/approve', [CommissionWithdrawalController::class, 'approve']);
         Route::post('/withdrawals/{id}/reject', [CommissionWithdrawalController::class, 'reject']);
+        Route::put('/plots/{id}/update-plot-id', [PlotController::class, 'updatePlotId']);
     });
 
     Route::prefix('property')->group(function () {

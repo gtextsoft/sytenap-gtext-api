@@ -1791,4 +1791,117 @@ class PlotController extends Controller
             ], 500);
         }
     }    
+
+    /**
+ * @OA\Put(
+ *      path="/api/v1/admin/plots/{id}/update-plot-id",
+ *      operationId="updatePlotId",
+ *      tags={"Admin - Plots"},
+ *      summary="Update plot ID",
+ *      description="Update the plot_id of a plot. Plot ID must be unique across all plots.",
+ *      security={{"sanctum": {}}},
+ *
+ *      @OA\Parameter(
+ *          name="id",
+ *          in="path",
+ *          required=true,
+ *          description="Plot record ID",
+ *          @OA\Schema(type="integer", example=12)
+ *      ),
+ *
+ *      @OA\RequestBody(
+ *          required=true,
+ *          @OA\JsonContent(
+ *              required={"plot_id"},
+ *              @OA\Property(
+ *                  property="plot_id",
+ *                  type="string",
+ *                  example="PLOT-A12"
+ *              )
+ *          )
+ *      ),
+ *
+ *      @OA\Response(
+ *          response=200,
+ *          description="Plot ID updated successfully",
+ *          @OA\JsonContent(
+ *              @OA\Property(property="status", type="boolean", example=true),
+ *              @OA\Property(property="message", type="string", example="Plot ID updated successfully."),
+ *              @OA\Property(
+ *                  property="data",
+ *                  type="object",
+ *                  @OA\Property(property="id", type="integer", example=12),
+ *                  @OA\Property(property="plot_id", type="string", example="PLOT-A12")
+ *              )
+ *          )
+ *      ),
+ *
+ *      @OA\Response(
+ *          response=404,
+ *          description="Plot not found",
+ *          @OA\JsonContent(
+ *              @OA\Property(property="status", type="boolean", example=false),
+ *              @OA\Property(property="message", type="string", example="Plot not found.")
+ *          )
+ *      ),
+ *
+ *      @OA\Response(
+ *          response=422,
+ *          description="Validation error (duplicate or invalid plot_id)",
+ *          @OA\JsonContent(
+ *              @OA\Property(property="status", type="boolean", example=false),
+ *              @OA\Property(
+ *                  property="errors",
+ *                  type="object",
+ *                  example={"plot_id": {"The plot id has already been taken."}}
+ *              )
+ *          )
+ *      ),
+ *
+ *      @OA\Response(
+ *          response=401,
+ *          description="Unauthorized"
+ *      )
+ * )
+ */
+
+    public function updatePlotId(Request $request, $id)
+    {
+        $plot = Plot::find($id);
+
+        if (!$plot) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Plot not found.'
+            ], 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'plot_id' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('plots', 'plot_id')->ignore($plot->id),
+            ],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $plot->plot_id = $request->plot_id;
+        $plot->save();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Plot ID updated successfully.',
+            'data' => [
+                'id' => $plot->id,
+                'plot_id' => $plot->plot_id,
+            ]
+        ], 200);
+    }
 }
