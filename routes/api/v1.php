@@ -33,7 +33,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/balance', [AgentController::class, 'balance']);
         Route::post('/commission-history', [AgentController::class, 'history']);
         Route::post('/withdraw', [CommissionWithdrawalController::class, 'requestWithdrawal']);
-        Route::get('/withdrawals', [CommissionWithdrawalController::class, 'agentWithdrawals']);
+        Route::get('/withdrawals', [CommissionWithdrawalController::class, 'myWithdrawals']);
         Route::post('/dashboard/stats', [AgentController::class, 'dashboardStats']);
     });
 

@@ -244,6 +244,72 @@ class CommissionWithdrawalController extends Controller
         ], 200);
     }
 
+    /**
+ * @OA\Get(
+ *      path="/api/v1/admin/withdrawals",
+ *      operationId="getAllWithdrawals",
+ *      tags={"Admin - Withdrawals"},
+ *      summary="Get all commission withdrawals",
+ *      description="Returns a paginated list of all commission withdrawal requests across all agents, including related agent commission details.",
+ *      security={{"sanctum": {}}},
+ *
+ *      @OA\Response(
+ *          response=200,
+ *          description="All withdrawals retrieved successfully",
+ *          @OA\JsonContent(
+ *              @OA\Property(property="status", type="boolean", example=true),
+ *              @OA\Property(property="message", type="string", example="All withdrawals retrieved successfully."),
+ *              @OA\Property(
+ *                  property="data",
+ *                  type="object",
+ *                  description="Paginated withdrawal records",
+ *                  @OA\Property(property="current_page", type="integer", example=1),
+ *                  @OA\Property(
+ *                      property="data",
+ *                      type="array",
+ *                      @OA\Items(
+ *                          @OA\Property(property="id", type="integer", example=21),
+ *                          @OA\Property(property="agent_id", type="integer", example=5),
+ *                          @OA\Property(property="commission_id", type="integer", example=3),
+ *                          @OA\Property(property="amount", type="number", format="float", example=30000.00),
+ *                          @OA\Property(property="balance_before", type="number", format="float", example=120000.00),
+ *                          @OA\Property(property="balance_after", type="number", format="float", example=90000.00),
+ *                          @OA\Property(property="description", type="string", example="Monthly payout"),
+ *                          @OA\Property(property="status", type="string", example="pending"),
+ *                          @OA\Property(property="created_at", type="string", format="date-time", example="2026-01-12T14:20:00Z"),
+ *                          @OA\Property(property="updated_at", type="string", format="date-time", example="2026-01-12T14:20:00Z"),
+ *
+ *                          @OA\Property(
+ *                              property="agent_commission",
+ *                              type="object",
+ *                              description="Related agent commission information",
+ *                              @OA\Property(property="id", type="integer", example=3),
+ *                              @OA\Property(property="agent_id", type="integer", example=5),
+ *                              @OA\Property(property="amount", type="number", format="float", example=120000.00),
+ *                              @OA\Property(property="created_at", type="string", format="date-time"),
+ *                              @OA\Property(property="updated_at", type="string", format="date-time")
+ *                          )
+ *                      )
+ *                  ),
+ *                  @OA\Property(property="last_page", type="integer", example=4),
+ *                  @OA\Property(property="per_page", type="integer", example=20),
+ *                  @OA\Property(property="total", type="integer", example=78)
+ *              )
+ *          )
+ *      ),
+ *
+ *      @OA\Response(
+ *          response=401,
+ *          description="Unauthenticated"
+ *      ),
+ *
+ *      @OA\Response(
+ *          response=403,
+ *          description="Unauthorized - Admin access required"
+ *      )
+ * )
+ */
+
     // Admin views all withdrawal requests
     public function allWithdrawals()
     {
