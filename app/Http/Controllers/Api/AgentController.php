@@ -226,6 +226,65 @@ class AgentController extends Controller {
 
 
      
+/**
+ * @OA\Get(
+ *      path="/api/v1/agent/referral-info",
+ *      operationId="getReferralInfo",
+ *      tags={"Referral"},
+ *      summary="Get referral information for an agent",
+ *      description="Returns the referral code associated with a given agent ID.",
+ *      security={{"sanctum": {}}},
+ *
+ *      @OA\Parameter(
+ *          name="agent_id",
+ *          in="query",
+ *          description="ID of the agent to fetch referral info for",
+ *          required=true,
+ *          @OA\Schema(
+ *              type="integer",
+ *              example=5
+ *          )
+ *      ),
+ *
+ *      @OA\Response(
+ *          response=200,
+ *          description="Referral info retrieved successfully",
+ *          @OA\JsonContent(
+ *              @OA\Property(property="success", type="boolean", example=true),
+ *              @OA\Property(property="message", type="string", example="Referral info retrieved successfully"),
+ *              @OA\Property(
+ *                  property="data",
+ *                  type="object",
+ *                  @OA\Property(property="agent_id", type="integer", example=5),
+ *                  @OA\Property(property="referral_code", type="string", example="REF12345")
+ *              )
+ *          )
+ *      ),
+ *
+ *      @OA\Response(
+ *          response=404,
+ *          description="Referral info not found",
+ *          @OA\JsonContent(
+ *              @OA\Property(property="success", type="boolean", example=false),
+ *              @OA\Property(property="message", type="string", example="Referral info not found for this agent")
+ *          )
+ *      ),
+ *
+ *      @OA\Response(
+ *          response=422,
+ *          description="Validation error",
+ *          @OA\JsonContent(
+ *              @OA\Property(property="success", type="boolean", example=false),
+ *              @OA\Property(property="message", type="string", example="Validation error"),
+ *              @OA\Property(
+ *                  property="errors",
+ *                  type="object",
+ *                  example={"agent_id": ["The agent id field is required."]}
+ *              )
+ *          )
+ *      )
+ * )
+ */
 
 public function getReferralInfo(Request $request): JsonResponse
 {
