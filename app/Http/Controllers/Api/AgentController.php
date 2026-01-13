@@ -119,20 +119,108 @@ class AgentController extends Controller {
  */
 
 
-                                                                            public function history( Request $request ) {
-                                                                                $validator = Validator::make( $request->all(), [
-                                                                                    'agent_id' => 'required|exists:agent_commissions,agent_id',
-                                                                                ] );
+ public function history( Request $request ) {
+     $validator = Validator::make( $request->all(), [
+                'agent_id' => 'required|exists:agent_commissions,agent_id',
+        ] );
 
-                                                                                if ( $validator->fails() ) {
-                                                                                    return response()->json( [ 'errors' => $validator->errors() ], 422 );
-                                                                                }
+        if ( $validator->fails() ) {
+                    return response()->json( [ 'errors' => $validator->errors() ], 422 );
+        }
 
-                                                                                $history = CommissionHistory::where( 'agent_id', $request->agent_id )
-                                                                                ->with( 'commission' )
-                                                                                ->orderBy( 'id', 'desc' )
-                                                                                ->paginate( 5 );
+        $history = CommissionHistory::where( 'agent_id', $request->agent_id )
+                        ->with( 'commission' )
+                        ->orderBy( 'id', 'desc' )
+                    ->paginate( 5 );
 
-                                                                                return response()->json( $history );
-                                                                            }
-                                                                        }
+                return response()->json( $history );
+    }
+
+        /**
+     * @OA\Post(
+     *      path="/api/v1/agent/dashboard/stats",
+     *      operationId="getAgentDashboardStats",
+     *      tags={"Agent - Dashboard"},
+     *      summary="Get agent dashboard statistics",
+     *      description="Returns dashboard statistics for an agent including total commission earned and number of available properties.",
+     *      security={{"sanctum": {}}},
+     *
+     *      @OA\RequestBody(
+     *          required=true,
+     *          @OA\JsonContent(
+     *              required={"agent_id"},
+     *              @OA\Property(
+     *                  property="agent_id",
+     *                  type="integer",
+     *                  example=5,
+     *                  description="Unique ID of the agent"
+     *              )
+     *          )
+     *      ),
+     *
+     *      @OA\Response(
+     *          response=200,
+     *          description="Dashboard statistics retrieved successfully",
+     *          @OA\JsonContent(
+     *              @OA\Property(property="agent_id", type="integer", example=5),
+     *              @OA\Property(
+     *                  property="total_commission",
+     *                  type="number",
+     *                  format="float",
+     *                  example=125000.50,
+     *                  description="Total commission earned by the agent"
+     *              ),
+     *              @OA\Property(
+     *                  property="available_properties",
+     *                  type="integer",
+     *                  example=42,
+     *                  description="Total number of available (non-draft) properties"
+     *              )
+     *          )
+     *      ),
+     *
+     *      @OA\Response(
+     *          response=422,
+     *          description="Validation error",
+     *          @OA\JsonContent(
+     *              @OA\Property(
+     *                  property="errors",
+     *                  type="object",
+     *                  example={"agent_id": {"The selected agent id is invalid."}}
+     *              )
+     *          )
+     *      ),
+     *
+     *      @OA\Response(
+     *          response=401,
+     *          description="Unauthenticated"
+     *      )
+     * )
+     */
+
+    public function dashboardStats(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'agent_id' => 'required|exists:agent_commissions,agent_id',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $agentId = $request->agent_id;
+
+        $totalCommission = AgentCommission::where('agent_id', $agentId)->sum('amount');
+
+        $availableProperties = Estate::where('status','!=','draft')->count();
+
+        return response()->json([
+            'agent_id' => $agentId,
+            'total_commission' => $totalCommission,
+            'available_properties' => $availableProperties,
+        ]);
+    }
+                                                                               
+}
+
+    
