@@ -130,6 +130,9 @@ Route::prefix('v1')->group(function () {
         Route::post('/withdrawals/{id}/approve', [CommissionWithdrawalController::class, 'approve']);
         Route::post('/withdrawals/{id}/reject', [CommissionWithdrawalController::class, 'reject']);
         Route::put('/plots/{id}/update-plot-id', [PlotController::class, 'updatePlotId']);
+        Route::put('/estate-plot-details/{id}', [EstateController::class, 'update']);
+        Route::delete('/estate-plot-details/{id}', [EstateController::class, 'destroy']);
+        Route::delete('/estate/{id}', [EstateController::class, 'removeEstate']);
     });
 
     Route::prefix('property')->group(function () {
