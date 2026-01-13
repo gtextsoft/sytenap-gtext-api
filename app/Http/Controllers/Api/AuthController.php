@@ -256,7 +256,7 @@ class AuthController extends Controller
 
             if ($response->successful() && isset($data['success']) && $data['success'] === true) {
                 $agentId = $data['data']['id'] ?? null;
-                if ($agentId) $this->createReferralIfNotExists($agentId);
+                $this->createReferralIfNotExists($agentId);
 
                 return response()->json([
                     'status' => 'success',
@@ -298,11 +298,11 @@ class AuthController extends Controller
     /**
      * Private: Create referral if not exists
      */
-    private function createReferralIfNotExists($userId)
+    private function createReferralIfNotExists($agentId)
     {
-        if (!Referral::where('user_id', $userId)->exists()) {
+        if (!Referral::where('user_id', $agentId)->exists()) {
             Referral::create([
-                'user_id' => $userId,
+                'user_id' => $agentId,
                 'referral_code' => 'REF-' . strtoupper(Str::random(8)),
             ]);
         }
