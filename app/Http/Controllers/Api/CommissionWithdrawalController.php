@@ -324,6 +324,59 @@ class CommissionWithdrawalController extends Controller
         ], 200);
     }
 
+    /**
+ * @OA\Post(
+ *      path="/api/v1/admin/withdrawals/{id}/approve",
+ *      operationId="approveWithdrawal",
+ *      tags={"Admin - Withdrawals"},
+ *      summary="Approve a withdrawal request",
+ *      description="Approves a pending withdrawal request and updates the agent's commission balance accordingly.",
+ *      security={{"sanctum": {}}},
+ *
+ *      @OA\Parameter(
+ *          name="id",
+ *          in="path",
+ *          required=true,
+ *          description="ID of the withdrawal request",
+ *          @OA\Schema(type="integer", example=12)
+ *      ),
+ *
+ *      @OA\Response(
+ *          response=200,
+ *          description="Withdrawal approved successfully",
+ *          @OA\JsonContent(
+ *              @OA\Property(property="status", type="boolean", example=true),
+ *              @OA\Property(property="message", type="string", example="Withdrawal approved successfully.")
+ *          )
+ *      ),
+ *
+ *      @OA\Response(
+ *          response=400,
+ *          description="Withdrawal already processed",
+ *          @OA\JsonContent(
+ *              @OA\Property(property="status", type="boolean", example=false),
+ *              @OA\Property(property="message", type="string", example="Withdrawal already processed.")
+ *          )
+ *      ),
+ *
+ *      @OA\Response(
+ *          response=404,
+ *          description="Withdrawal not found"
+ *      ),
+ *
+ *      @OA\Response(
+ *          response=401,
+ *          description="Unauthenticated"
+ *      ),
+ *
+ *      @OA\Response(
+ *          response=403,
+ *          description="Unauthorized - Admin access required"
+ *      )
+ * )
+ */
+
+
     // Admin approves a withdrawal
     public function approve($id)
     {
@@ -346,6 +399,59 @@ class CommissionWithdrawalController extends Controller
             'message' => 'Withdrawal approved successfully.'
         ], 200);
     }
+
+    /**
+ * @OA\Post(
+ *      path="/api/v1/admin/withdrawals/{id}/reject",
+ *      operationId="rejectWithdrawal",
+ *      tags={"Admin - Withdrawals"},
+ *      summary="Reject a withdrawal request",
+ *      description="Rejects a pending withdrawal request. The agent's commission balance remains unchanged.",
+ *      security={{"sanctum": {}}},
+ *
+ *      @OA\Parameter(
+ *          name="id",
+ *          in="path",
+ *          required=true,
+ *          description="ID of the withdrawal request",
+ *          @OA\Schema(type="integer", example=12)
+ *      ),
+ *
+ *      @OA\Response(
+ *          response=200,
+ *          description="Withdrawal rejected successfully",
+ *          @OA\JsonContent(
+ *              @OA\Property(property="status", type="boolean", example=true),
+ *              @OA\Property(property="message", type="string", example="Withdrawal rejected successfully.")
+ *          )
+ *      ),
+ *
+ *      @OA\Response(
+ *          response=400,
+ *          description="Withdrawal already processed",
+ *          @OA\JsonContent(
+ *              @OA\Property(property="status", type="boolean", example=false),
+ *              @OA\Property(property="message", type="string", example="Withdrawal already processed.")
+ *          )
+ *      ),
+ *
+ *      @OA\Response(
+ *          response=404,
+ *          description="Withdrawal not found"
+ *      ),
+ *
+ *      @OA\Response(
+ *          response=401,
+ *          description="Unauthenticated"
+ *      ),
+ *
+ *      @OA\Response(
+ *          response=403,
+ *          description="Unauthorized - Admin access required"
+ *      )
+ * )
+ */
+
 
     // Admin rejects a withdrawal
     public function reject($id)
