@@ -313,7 +313,7 @@ class CommissionWithdrawalController extends Controller
     // Admin views all withdrawal requests
     public function allWithdrawals()
     {
-        $withdrawals = CommissionWithdrawal::with('AgentCommission')
+        $withdrawals = CommissionWithdrawal::with('commission')
             ->orderBy('created_at', 'desc')
             ->paginate(20);
 
