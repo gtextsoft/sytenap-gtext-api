@@ -138,14 +138,22 @@ class CommissionWithdrawalController extends Controller
     // Agent views their withdrawals
     public function myWithdrawals(Request $request)
     {
-        $agent = $request->user();
-        $withdrawals = CommissionWithdrawal::where('agent_id', $agent->id)
+        $agent_id = $request->agent_id;
+        $total_withdrawals = CommissionWithdrawal::where('agent_id', $agent_id)
+            ->where('status', 'approved')
+            ->sum('amount');
+        $pending_withdrawals = CommissionWithdrawal::where('agent_id', $agent_id)
+            ->where('status', 'pending')
+            ->sum('amount');
+        $withdrawals = CommissionWithdrawal::where('agent_id', $agent_id)
             ->orderBy('created_at', 'desc')
             ->paginate(10);
 
         return response()->json([
             'status' => true,
             'message' => 'Withdrawals retrieved successfully.',
+            'total_withdrawals' => $total_withdrawals,
+            'pending_withdrawals' => $pending_withdrawals,
             'data' => $withdrawals
         ], 200);
     }
