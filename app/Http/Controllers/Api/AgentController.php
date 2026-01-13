@@ -130,7 +130,7 @@ class AgentController extends Controller {
         }
 
         $history = CommissionHistory::where( 'agent_id', $request->agent_id )
-                        ->with( 'commission' )
+                        ->with('commission', 'estate', 'plot')
                         ->orderBy( 'id', 'desc' )
                     ->paginate( 5 );
 
