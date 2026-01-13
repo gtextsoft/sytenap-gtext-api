@@ -861,7 +861,84 @@ class EstateController extends Controller
     }
 
      
-   
+   /**
+     * @OA\Put(
+     *     path="/api/v1/admin/estate-plot-details/{id}",
+     *     operationId="updateEstatePlotDetail",
+     *     tags={"Estate Plot Management"},
+     *     summary="Update estate plot detail",
+     *     description="Allows an admin to update plot availability, pricing, promotion, and installment plan for a specific estate plot detail.",
+     *     security={{"sanctum": {}}},
+     *
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="ID of the estate plot detail to update",
+     *         @OA\Schema(type="integer", example=12)
+     *     ),
+     *
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             @OA\Property(property="available_plot", type="integer", example=25),
+     *             @OA\Property(property="available_acre", type="number", format="float", example=2.5),
+     *             @OA\Property(property="price_per_plot", type="number", format="float", example=1500000),
+     *             @OA\Property(property="percentage_increase", type="number", format="float", nullable=true, example=10),
+     *             @OA\Property(
+     *                 property="installment_plan",
+     *                 type="array",
+     *                 nullable=true,
+     *                 @OA\Items(type="string", example="6 Months")
+     *             ),
+     *             @OA\Property(property="promotion_price", type="number", format="float", nullable=true, example=1200000)
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Estate plot detail updated successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Estate plot detail updated successfully"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(property="plot_detail", type="object"),
+     *                 @OA\Property(property="estate_name", type="string", example="Green Acres Estate"),
+     *                 @OA\Property(property="effective_price", type="number", format="float", example=1200000),
+     *                 @OA\Property(property="has_promotion", type="boolean", example=true),
+     *                 @OA\Property(property="total_plot_value", type="number", format="float", example=30000000)
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error or invalid promotion price",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Validation failed"),
+     *             @OA\Property(property="errors", type="object")
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=404,
+     *         description="Estate plot detail not found"
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error while updating plot detail",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Failed to update estate plot detail")
+     *         )
+     *     )
+     * )
+     */
+
     public function update(Request $request, $id): JsonResponse
     {
         try {

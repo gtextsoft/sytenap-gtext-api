@@ -135,7 +135,7 @@ class CommissionWithdrawalController extends Controller
         ], 201);
     }
 /**
- * @OA\Post(
+ * @OA\GET(
  *      path="/api/v1/agent/withdrawals",
  *      operationId="getAgentWithdrawals",
  *      tags={"Agent - Withdrawals"},
