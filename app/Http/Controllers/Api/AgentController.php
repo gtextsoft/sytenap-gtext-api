@@ -226,6 +226,7 @@ class AgentController extends Controller {
 
 
      
+
 /**
  * @OA\Get(
  *      path="/api/v1/agent/referral-info",
@@ -279,7 +280,10 @@ class AgentController extends Controller {
  *              @OA\Property(
  *                  property="errors",
  *                  type="object",
- *                  example={"agent_id": ["The agent id field is required."]}
+ *                  @OA\AdditionalProperties(
+ *                      type="array",
+ *                      @OA\Items(type="string")
+ *                  )
  *              )
  *          )
  *      )
