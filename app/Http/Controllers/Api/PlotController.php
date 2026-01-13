@@ -13,6 +13,8 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\DB;
 use App\Models\CustomerProperty;
+use Illuminate\Validation\Rule;
+
 
 
 class PlotController extends Controller
