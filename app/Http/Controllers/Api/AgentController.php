@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use Illuminate\Http\Request;
 use App\Models\AgentCommission;
 use App\Models\CommissionHistory;
+use App\Models\Estate;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
 
