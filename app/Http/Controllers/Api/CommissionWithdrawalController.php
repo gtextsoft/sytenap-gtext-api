@@ -134,6 +134,92 @@ class CommissionWithdrawalController extends Controller
             'data' => $withdrawal
         ], 201);
     }
+/**
+ * @OA\Post(
+ *      path="/api/v1/agent/withdrawals",
+ *      operationId="getAgentWithdrawals",
+ *      tags={"Agent - Withdrawals"},
+ *      summary="Get agent withdrawal history",
+ *      description="Returns paginated withdrawal history for an agent, including total approved and pending withdrawal amounts.",
+ *      security={{"sanctum": {}}},
+ *
+ *      @OA\RequestBody(
+ *          required=true,
+ *          @OA\JsonContent(
+ *              required={"agent_id"},
+ *              @OA\Property(
+ *                  property="agent_id",
+ *                  type="integer",
+ *                  example=5,
+ *                  description="Unique ID of the agent"
+ *              )
+ *          )
+ *      ),
+ *
+ *      @OA\Response(
+ *          response=200,
+ *          description="Withdrawals retrieved successfully",
+ *          @OA\JsonContent(
+ *              @OA\Property(property="status", type="boolean", example=true),
+ *              @OA\Property(property="message", type="string", example="Withdrawals retrieved successfully."),
+ *              @OA\Property(
+ *                  property="total_withdrawals",
+ *                  type="number",
+ *                  format="float",
+ *                  example=85000.00,
+ *                  description="Total amount of approved withdrawals"
+ *              ),
+ *              @OA\Property(
+ *                  property="pending_withdrawals",
+ *                  type="number",
+ *                  format="float",
+ *                  example=15000.00,
+ *                  description="Total amount of pending withdrawals"
+ *              ),
+ *              @OA\Property(
+ *                  property="data",
+ *                  type="object",
+ *                  description="Paginated withdrawal records",
+ *                  @OA\Property(
+ *                      property="current_page",
+ *                      type="integer",
+ *                      example=1
+ *                  ),
+ *                  @OA\Property(
+ *                      property="data",
+ *                      type="array",
+ *                      @OA\Items(
+ *                          @OA\Property(property="id", type="integer", example=12),
+ *                          @OA\Property(property="agent_id", type="integer", example=5),
+ *                          @OA\Property(property="commission_id", type="integer", example=3),
+ *                          @OA\Property(property="amount", type="number", format="float", example=25000.00),
+ *                          @OA\Property(property="balance_before", type="number", format="float", example=100000.00),
+ *                          @OA\Property(property="balance_after", type="number", format="float", example=75000.00),
+ *                          @OA\Property(property="description", type="string", example="Weekly payout"),
+ *                          @OA\Property(property="status", type="string", example="approved"),
+ *                          @OA\Property(property="created_at", type="string", format="date-time", example="2026-01-10T09:45:00Z"),
+ *                          @OA\Property(property="updated_at", type="string", format="date-time", example="2026-01-10T10:00:00Z")
+ *                      )
+ *                  ),
+ *                  @OA\Property(property="last_page", type="integer", example=3),
+ *                  @OA\Property(property="per_page", type="integer", example=10),
+ *                  @OA\Property(property="total", type="integer", example=25)
+ *              )
+ *          )
+ *      ),
+ *
+ *      @OA\Response(
+ *          response=401,
+ *          description="Unauthenticated"
+ *      ),
+ *
+ *      @OA\Response(
+ *          response=422,
+ *          description="Validation error"
+ *      )
+ * )
+ */
+
 
     // Agent views their withdrawals
     public function myWithdrawals(Request $request)
@@ -161,7 +247,7 @@ class CommissionWithdrawalController extends Controller
     // Admin views all withdrawal requests
     public function allWithdrawals()
     {
-        $withdrawals = CommissionWithdrawal::with('agent')
+        $withdrawals = CommissionWithdrawal::with('AgentCommission')
             ->orderBy('created_at', 'desc')
             ->paginate(20);
 
