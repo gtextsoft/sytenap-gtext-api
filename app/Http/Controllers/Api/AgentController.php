@@ -8,6 +8,8 @@ use App\Models\CommissionHistory;
 use App\Models\Estate;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Http\JsonResponse;
+use App\Models\Referral;
 
 class AgentController extends Controller {
 
@@ -221,7 +223,47 @@ class AgentController extends Controller {
             'available_properties' => $availableProperties,
         ]);
     }
-                                                                               
+
+
+     
+
+public function getReferralInfo(Request $request): JsonResponse
+{
+    // Validate the input
+    $validator = Validator::make($request->all(), [
+        'agent_id' => 'required', 
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Validation error',
+            'errors' => $validator->errors()
+        ], 422);
+    }
+
+    $agentId = $request->agent_id;
+
+    // Get referral info
+    $referral = Referral::where('user_id', $agentId)->first();
+
+    if (!$referral) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Referral info not found for this agent',
+        ], 404);
+    }
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Referral info retrieved successfully',
+        'data' => [
+            'agent_id' => $agentId,
+            'referral_code' => $referral->referral_code,
+        ]
+    ], 200);
+}
+                                                                         
 }
 
     
