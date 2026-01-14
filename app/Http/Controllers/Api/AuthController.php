@@ -279,6 +279,8 @@ class AuthController extends Controller
         }
     }
 
+    
+
     /**
      * Get all users
      */
