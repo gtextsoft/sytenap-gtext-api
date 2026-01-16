@@ -109,8 +109,8 @@ class CommissionWithdrawalController extends Controller
 
         if ($request->amount > $commission->amount) {
             return response()->json([
-                'status' => false,
-                'message' => 'Withdrawal amount exceeds available balance.'
+            'status' => false,
+            'message' => 'Withdrawal amount exceeds available balance.'
             ], 400);
         }
 
@@ -127,6 +127,10 @@ class CommissionWithdrawalController extends Controller
             'description' => $request->description,
             'status' => 'pending',
         ]);
+
+        // Update agent commission balance
+        $commission->amount = $balanceAfter;
+        $commission->save();
 
         return response()->json([
             'status' => true,
