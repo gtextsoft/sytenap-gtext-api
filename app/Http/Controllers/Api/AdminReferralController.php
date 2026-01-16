@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Referral;
 use Illuminate\Http\JsonResponse;
 
 class AdminReferralController extends Controller
@@ -42,25 +43,7 @@ class AdminReferralController extends Controller
      */
     public function index(): JsonResponse
     {
-        $agents = User::with(['referrals.referredUser'])
-            ->whereHas('referrals') // Only users who have referrals
-            ->get()
-            ->map(function ($agent) {
-                return [
-                    'agent_id' => $agent->id,
-                    'agent_name' => $agent->first_name . ' ' . $agent->last_name,
-                    'agent_email' => $agent->email,
-                    'referrals_count' => $agent->referrals->count(),
-                    'referred_users' => $agent->referrals->map(function ($referral) {
-                        return [
-                            'id' => optional($referral->referredUser)->id,
-                            'name' => optional($referral->referredUser)->first_name . ' ' . optional($referral->referredUser)->last_name,
-                            'email' => optional($referral->referredUser)->email,
-                        ];
-                    }),
-                ];
-            });
-
+        $agents = Referral::get();
         return response()->json([
             'success' => true,
             'data' => $agents,
