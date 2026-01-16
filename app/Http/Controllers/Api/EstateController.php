@@ -861,7 +861,84 @@ class EstateController extends Controller
     }
 
      
-   
+   /**
+     * @OA\Put(
+     *     path="/api/v1/admin/estate-plot-details/{id}",
+     *     operationId="updateEstatePlotDetail",
+     *     tags={"Plot Management"},
+     *     summary="Update estate plot detail",
+     *     description="Allows an admin to update plot availability, pricing, promotion, and installment plan for a specific estate plot detail.",
+     *     security={{"sanctum": {}}},
+     *
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="ID of the estate plot detail to update",
+     *         @OA\Schema(type="integer", example=12)
+     *     ),
+     *
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             @OA\Property(property="available_plot", type="integer", example=25),
+     *             @OA\Property(property="available_acre", type="number", format="float", example=2.5),
+     *             @OA\Property(property="price_per_plot", type="number", format="float", example=1500000),
+     *             @OA\Property(property="percentage_increase", type="number", format="float", nullable=true, example=10),
+     *             @OA\Property(
+     *                 property="installment_plan",
+     *                 type="array",
+     *                 nullable=true,
+     *                 @OA\Items(type="string", example="6 Months")
+     *             ),
+     *             @OA\Property(property="promotion_price", type="number", format="float", nullable=true, example=1200000)
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Estate plot detail updated successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Estate plot detail updated successfully"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(property="plot_detail", type="object"),
+     *                 @OA\Property(property="estate_name", type="string", example="Green Acres Estate"),
+     *                 @OA\Property(property="effective_price", type="number", format="float", example=1200000),
+     *                 @OA\Property(property="has_promotion", type="boolean", example=true),
+     *                 @OA\Property(property="total_plot_value", type="number", format="float", example=30000000)
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error or invalid promotion price",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Validation failed"),
+     *             @OA\Property(property="errors", type="object")
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=404,
+     *         description="Estate plot detail not found"
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error while updating plot detail",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Failed to update estate plot detail")
+     *         )
+     *     )
+     * )
+     */
+
     public function update(Request $request, $id): JsonResponse
     {
         try {
@@ -1112,7 +1189,53 @@ class EstateController extends Controller
         }
     }
 
-     
+    /**
+ * @OA\Delete(
+ *      path="/api/v1/admin/estate-plot-details/{id}",
+ *      operationId="deleteEstatePlotDetail",
+ *      tags={"Plot Management"},
+ *      summary="Delete a specific estate plot detail",
+ *      description="Deletes a single estate plot detail by ID.",
+ *      security={{"sanctum": {}}},
+ *
+ *      @OA\Parameter(
+ *          name="id",
+ *          in="path",
+ *          description="ID of the estate plot detail to delete",
+ *          required=true,
+ *          @OA\Schema(type="integer", example=5)
+ *      ),
+ *
+ *      @OA\Response(
+ *          response=200,
+ *          description="Estate plot detail deleted successfully",
+ *          @OA\JsonContent(
+ *              @OA\Property(property="success", type="boolean", example=true),
+ *              @OA\Property(property="message", type="string", example="Estate plot detail deleted successfully")
+ *          )
+ *      ),
+ *
+ *      @OA\Response(
+ *          response=404,
+ *          description="Plot detail not found",
+ *          @OA\JsonContent(
+ *              @OA\Property(property="success", type="boolean", example=false),
+ *              @OA\Property(property="message", type="string", example="No query results for model [App\\Models\\EstatePlotDetail] 5")
+ *          )
+ *      ),
+ *
+ *      @OA\Response(
+ *          response=500,
+ *          description="Failed to delete estate plot detail",
+ *          @OA\JsonContent(
+ *              @OA\Property(property="success", type="boolean", example=false),
+ *              @OA\Property(property="message", type="string", example="Failed to delete estate plot detail"),
+ *              @OA\Property(property="error", type="string", example="SQLSTATE[23000]: Integrity constraint violation...")
+ *          )
+ *      )
+ * )
+ */
+ 
     public function destroy($id): JsonResponse
     {
         try {
@@ -1555,7 +1678,7 @@ class EstateController extends Controller
 
     /**
      * @OA\Get(
-     *     path="/api/v1/estate/detail/{id}",
+     *     path="/api/v1/estate/detail/{id}?agent_id={agent_id}",
      *     tags={"Estate Management"},
      *     summary="Get full details of a specific estate",
      *     description="Retrieve complete details of an estate by its ID, including associated media and plot details",
@@ -1649,9 +1772,12 @@ class EstateController extends Controller
      *     )
      * )
      */
-    public function EstateDetails($id): JsonResponse
+    public function EstateDetails(Request $request, $id): JsonResponse
     {
         try {
+            if($request->has('agent_id')){
+                $agent_id = $request->agent_id;
+            }
             // Fetch the estate with its media and plot details
             $estate = Estate::with(['media', 'plotDetail'])
                 ->where('status', 'publish')
@@ -1877,5 +2003,98 @@ class EstateController extends Controller
         }
     }
 
+
+    /**
+ * @OA\Delete(
+ *      path="/api/v1/admin/estate/{id}",
+ *      operationId="deleteEstate",
+ *      tags={"Estate Management"},
+ *      summary="Delete a specific estate",
+ *      description="Deletes an estate along with its associated media if it exists.",
+ *      security={{"sanctum": {}}},
+ *
+ *      @OA\Parameter(
+ *          name="id",
+ *          in="path",
+ *          description="ID of the estate to delete",
+ *          required=true,
+ *          @OA\Schema(type="integer", example=12)
+ *      ),
+ *
+ *      @OA\Response(
+ *          response=200,
+ *          description="Estate deleted successfully",
+ *          @OA\JsonContent(
+ *              @OA\Property(property="success", type="boolean", example=true),
+ *              @OA\Property(property="message", type="string", example="Estate deleted successfully")
+ *          )
+ *      ),
+ *
+ *      @OA\Response(
+ *          response=404,
+ *          description="Estate not found",
+ *          @OA\JsonContent(
+ *              @OA\Property(property="success", type="boolean", example=false),
+ *              @OA\Property(property="message", type="string", example="No query results for model [App\\Models\\Estate] 12")
+ *          )
+ *      ),
+ *
+ *      @OA\Response(
+ *          response=500,
+ *          description="Failed to delete estate",
+ *          @OA\JsonContent(
+ *              @OA\Property(property="success", type="boolean", example=false),
+ *              @OA\Property(property="message", type="string", example="Failed to delete estate"),
+ *              @OA\Property(property="error", type="string", example="SQLSTATE[23000]: Integrity constraint violation...")
+ *          )
+ *      )
+ * )
+ */
+
+
+    public function removeEstate($id): JsonResponse
+    {
+        DB::beginTransaction();
+
+        try {
+            // Find estate
+            $estate = Estate::findOrFail($id);
+
+            // Delete related media first (if exists)
+            $estateMedia = EstateMedia::where('estate_id', $estate->id)->first();
+
+            if ($estateMedia) {
+                // NOTE:
+                // If you later store Cloudinary public_ids,
+                // this is where you should delete them from Cloudinary
+                $estateMedia->delete();
+            }
+
+            // Delete estate
+            $estate->delete();
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Estate deleted successfully'
+            ], 200);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete estate',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
     
 }
+
+
+
+
+

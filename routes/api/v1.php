@@ -32,12 +32,10 @@ Route::prefix('v1')->group(function () {
         Route::post('/login', [AuthController::class, 'agent_login']);
         Route::post('/balance', [AgentController::class, 'balance']);
         Route::post('/commission-history', [AgentController::class, 'history']);
-
-        //  NEW - AGENT WITHDRAWAL ROUTES
-        Route::middleware('auth:sanctum')->group(function () {
-            Route::post('/withdraw', [CommissionWithdrawalController::class, 'requestWithdrawal']);
-            Route::get('/withdrawals', [CommissionWithdrawalController::class, 'agentWithdrawals']);
-        });
+        Route::post('/withdraw', [CommissionWithdrawalController::class, 'requestWithdrawal']);
+        Route::get('/withdrawals', [CommissionWithdrawalController::class, 'myWithdrawals']);
+        Route::post('/dashboard/stats', [AgentController::class, 'dashboardStats']);
+        Route::get('/referral-info', [AgentController::class, 'getReferralInfo']);
     });
 
     // -------------------------
@@ -64,15 +62,15 @@ Route::prefix('v1')->group(function () {
     // -------------------------
     Route::prefix('estate')->group(function () {
         Route::prefix('estates')->group(function () {
-                Route::post('media', [EstateController::class, 'media_store']);
-                Route::post('new', [EstateController::class, 'store']);
-                Route::get('top-rated', [EstateController::class, 'getTopRatedEstates']);
-                Route::get('top-rated-alt', [EstateController::class, 'getTopRatedEstatesAlternative']);
-                Route::get('detail', [EstateController::class, 'getTopRatedEstatesWithAvailability']);
-                Route::post('nearby', [EstateController::class, 'getNearbyEstates']);
-                Route::post('search', [EstateController::class, 'filterSearch']);
-                Route::get('all', [EstateController::class, 'getAllEstates']);
+            Route::get('top-rated', [EstateController::class, 'getTopRatedEstates']);
+            Route::get('top-rated-alt', [EstateController::class, 'getTopRatedEstatesAlternative']);
+            Route::get('detail', [EstateController::class, 'getTopRatedEstatesWithAvailability']);
+            Route::post('nearby', [EstateController::class, 'getNearbyEstates']);
+            Route::post('search', [EstateController::class, 'filterSearch']);
+            Route::get('all', [EstateController::class, 'getAllEstates']);
         });
+        Route::post('media', [EstateController::class, 'media_store']);
+        Route::post('new', [EstateController::class, 'store']);
         Route::post('plots/preview-purchase', [PlotController::class, 'previewPurchase']);
         Route::post('plots/purchase', [PlotController::class, 'finalizePurchase'])->middleware('auth:sanctum');
         Route::get('detail/{estateId}', [EstateController::class, 'EstateDetails']);
@@ -120,18 +118,22 @@ Route::prefix('v1')->group(function () {
     // -------------------------
     // Admin Routes
     // -------------------------
-    Route::prefix('admin')->middleware(['auth:sanctum', 'role:admin'])->group(function () {
+    Route::prefix('admin')->middleware(['auth:sanctum'])->group(function () {
         Route::post('allocate-property', [PlotController::class, 'allocateProperty']);
         Route::post('reset-client-password', [AdminClientController::class, 'resetClientPassword']);
         Route::get('referrals', [AdminReferralController::class, 'index']);
         Route::get('commission-settings', [CommissionSettingController::class, 'index']);
         Route::post('commission-settings', [CommissionSettingController::class, 'store']);
-        Route::post('commission-settings/{id}/toggle', [CommissionSettingController::class, 'toggleStatus']);
+        Route::patch('commission-settings/{id}/toggle', [CommissionSettingController::class, 'toggleStatus']);
 
         // 🔥 NEW - ADMIN WITHDRAWAL ROUTES
         Route::get('/withdrawals', [CommissionWithdrawalController::class, 'allWithdrawals']);
         Route::post('/withdrawals/{id}/approve', [CommissionWithdrawalController::class, 'approve']);
         Route::post('/withdrawals/{id}/reject', [CommissionWithdrawalController::class, 'reject']);
+        Route::put('/plots/{id}/update-plot-id', [PlotController::class, 'updatePlotId']);
+        Route::put('/estate-plot-details/{id}', [EstateController::class, 'update']);
+        Route::delete('/estate-plot-details/{id}', [EstateController::class, 'destroy']);
+        Route::delete('/estate/{id}', [EstateController::class, 'removeEstate']);
     });
 
     Route::prefix('property')->group(function () {
