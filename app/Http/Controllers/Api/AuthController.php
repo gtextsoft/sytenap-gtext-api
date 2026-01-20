@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Http;
 use App\Models\Estate;
 use App\Notifications\AdminEstateAssignedNotification;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 
 
 class AuthController extends Controller
@@ -452,13 +453,14 @@ class AuthController extends Controller
                 'estate_admin' => $admins,
             ]);
 
-            // 4. Send Notification
-            $admin->notify(
+           Notification::send(
+                $admin,
                 new AdminEstateAssignedNotification(
                     estate: $estate,
                     password: $plainPassword
                 )
             );
+
 
             return response()->json([
                 'message' => 'Admin created and estate assigned successfully',
