@@ -417,6 +417,11 @@ class AuthController extends Controller
             'estate_id'  => 'required|exists:estates,id',
         ]);
 
+        $user = $request->user();
+        if ($user->account_type !== 'admin') {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
         return DB::transaction(function () use ($request) {
 
             // 1. Generate password
@@ -428,6 +433,8 @@ class AuthController extends Controller
                 'last_name'         => $request->last_name,
                 'email'             => $request->email,
                 'account_type'      => 'admin',
+                'state'             => 'Lagos',
+                'country'           => 'Nigeria',
                 'password'          => Hash::make($plainPassword),
                 'email_verified_at' => now(), // ✅ auto-verified
             ]);
