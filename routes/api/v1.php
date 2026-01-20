@@ -144,6 +144,42 @@ Route::prefix('v1')->group(function () {
 
     Route::get('/payments/callback', [PlotController::class, 'handlePaystackCallback']);
 
+
+
+    // -------------------------
+    // GeoJSON (Map Data)
+    // -------------------------
+    Route::get('geojson/{estate}/{name}', function ($estate, $name) {
+
+    // Decode URL encoding: Jasper%20Estate → Jasper Estate
+    $estate = urldecode($estate);
+
+    // Sanitize folder name (security)
+    $estateSafe = preg_replace('/[^A-Za-z0-9 _-]/', '', $estate);
+    $estateSafe = trim($estateSafe);
+
+    if ($estateSafe === '') {
+        return response()->json(['error' => 'Invalid estate name'], 400);
+    }
+
+    $path = "geojson/{$estateSafe}/{$name}.geojson";
+
+    if (!\Illuminate\Support\Facades\Storage::exists($path)) {
+        return response()->json([
+            'error' => 'GeoJSON not found',
+            'checked' => $path
+        ], 404);
+    }
+
+    return response(
+        \Illuminate\Support\Facades\Storage::get($path),
+        200,
+        ['Content-Type' => 'application/json']
+    );
+});
+
+
+
     // -------------------------
     // FAQ Routes
     // -------------------------
