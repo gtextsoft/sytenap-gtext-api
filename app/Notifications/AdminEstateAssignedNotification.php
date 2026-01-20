@@ -13,7 +13,7 @@ class AdminEstateAssignedNotification extends Notification
     use Queueable;
 
     public function __construct(
-        public Estate $estate,
+        public ?Estate $estate,
         public string $password
     ) {}
 
@@ -28,7 +28,12 @@ class AdminEstateAssignedNotification extends Notification
             ->subject('You have been assigned as an Estate Admin')
             ->greeting('Hello ' . $notifiable->first_name . ',')
             ->line('You have been created as an admin on our platform.')
-            ->line('Estate Assigned: **' . $this->estate->title . '**')
+            //->line('Estate Assigned: **' . $this->estate->title . '**')
+            ->line(
+                    $this->estate
+                        ? 'Estate Assigned: ' . $this->estate->title
+                        : 'Role Assigned: Legal Officer'
+                )
             ->line('Login Details:')
             ->line('Email: ' . $notifiable->email)
             ->line('Password: ' . $this->password)
