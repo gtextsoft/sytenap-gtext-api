@@ -68,6 +68,14 @@ class DocumentController extends Controller
             ]
         );
 
+
+        // Access properties like array
+        $publicId = $uploadResult['public_id'];
+        $format   = $uploadResult['format'];
+
+        // Generate download URL
+        $fileUrl = "https://res.cloudinary.com/dhfmwhhbc/raw/upload/fl_attachment/{$publicId}.{$format}";
+
         $document = Document::create([
             'uploaded_by' => $admin->id,
             'user_id' => $validated['user_id'],
@@ -76,7 +84,7 @@ class DocumentController extends Controller
             'title' => $validated['title'],
             'document_type' => $validated['document_type'] ?? 'pdf',
             //'file_url' => //$uploadResult['secure_url'],
-            'file_url' => $this->cloudinaryDownloadUrl($uploadResult),
+            'file_url' => $fileUrl,
         ]);
 
         return response()->json([
@@ -375,7 +383,14 @@ class DocumentController extends Controller
                 'folder' => 'legal_documents',
                 'resource_type' => 'raw',
             ]
-        );
+        );  // Access properties like array
+        $publicId = $uploadResult['public_id'];
+        $format   = $uploadResult['format'];
+
+        // Generate download URL
+        $fileUrl = "https://res.cloudinary.com/dhfmwhhbc/raw/upload/fl_attachment/{$publicId}.{$format}";
+
+
 
         $document = Document::create([
             'uploaded_by'   => $legal->id,
@@ -384,7 +399,7 @@ class DocumentController extends Controller
             'estate_id'     => $validated['estate_id'] ?? null,
             'title'         => $validated['title'],
             'document_type' => $validated['document_type'] ?? 'pdf',
-            'file_url'      => $this->cloudinaryDownloadUrl($uploadResult),
+            'file_url'      => $fileUrl,
             'comment'       => $validated['comment'] ?? null,
         ]);
 
