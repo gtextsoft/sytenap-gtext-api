@@ -6,13 +6,17 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use App\Models\Document;
 
 class LegalDocumentSentNotification extends Notification
 {
     use Queueable;
 
-   
-    public function __construct(public Document $document) {}
+
+
+    public function __construct(public Document $document) {
+         $this->document = $document;
+    }
 
     public function via($notifiable)
     {

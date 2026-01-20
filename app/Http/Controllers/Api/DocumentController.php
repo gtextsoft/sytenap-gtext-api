@@ -193,16 +193,16 @@ class DocumentController extends Controller
      *     @OA\Response(response=404, description="Document not found")
      * )
      */
-    public function download($id)
-    {
-        $document = Document::findOrFail($id);
+    // public function download($id)
+    // {
+    //     $document = Document::findOrFail($id);
 
-        if (!$document->published) {
-            return response()->json(['status' => false, 'message' => 'Document not available'], 403);
-        }
+    //     if (!$document->published) {
+    //         return response()->json(['status' => false, 'message' => 'Document not available'], 403);
+    //     }
 
-        return response()->json(['status' => true, 'url' => $document->file_url]);
-    }
+    //     return response()->json(['status' => true, 'url' => $document->file_url]);
+    // }
 
 
  //  Add the new index() method here
@@ -389,10 +389,7 @@ class DocumentController extends Controller
         $publicId = $uploadResult['public_id'];
         $format   =  $request->file('file')->getClientOriginalExtension();
 
-        // Generate download URL
-        $fileUrl = "https://res.cloudinary.com/dhfmwhhbc/raw/upload/fl_attachment/{$publicId}.{$format}";
-
-
+        
 
         $document = Document::create([
             'uploaded_by'   => $legal->id,
@@ -401,7 +398,9 @@ class DocumentController extends Controller
             'estate_id'     => $validated['estate_id'] ?? null,
             'title'         => $validated['title'],
             'document_type' => $validated['document_type'] ?? 'pdf',
-            'file_url'      => $fileUrl,
+            'public_id' => $uploadResult['public_id'], 
+            'extension'    => $request->file('file')->getClientOriginalExtension(), 
+            'file_url'      => $uploadResult['secure_url'],
             'comment'       => $validated['comment'] ?? null,
         ]);
 
@@ -420,9 +419,22 @@ class DocumentController extends Controller
         ], 201);
     }
 
-  
 
-   
+    public function download(Document $document)
+    {
+        // Generate signed URL for raw file
+        $fileUrl = Cloudinary::downloadApi()->download(
+            $document->public_id,
+            ['resource_type' => 'raw']
+        );
+
+        return response()->streamDownload(function () use ($fileUrl) {
+            echo file_get_contents($fileUrl);
+        }, $document->title . '.' . $document->extension);
+    }
+
+    
+
 
 
 }
