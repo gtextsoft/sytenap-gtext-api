@@ -74,7 +74,8 @@ class DocumentController extends Controller
             'estate_id' => $validated['estate_id'] ?? null,
             'title' => $validated['title'],
             'document_type' => $validated['document_type'] ?? 'pdf',
-            'file_url' => $uploadResult['secure_url'],
+            //'file_url' => //$uploadResult['secure_url'],
+            'file_url' => $this->cloudinaryDownloadUrl($uploadResult),
         ]);
 
         return response()->json([
@@ -382,7 +383,7 @@ class DocumentController extends Controller
             'estate_id'     => $validated['estate_id'] ?? null,
             'title'         => $validated['title'],
             'document_type' => $validated['document_type'] ?? 'pdf',
-            'file_url'      => $uploadResult['secure_url'],
+            'file_url'      => $this->cloudinaryDownloadUrl($uploadResult),
             'comment'       => $validated['comment'] ?? null,
         ]);
 
@@ -400,5 +401,11 @@ class DocumentController extends Controller
             'document' => $document,
         ], 201);
     }
+
+    function cloudinaryDownloadUrl(array $uploadResult): string
+    {
+        return "https://res.cloudinary.com/dhfmwhhbc/raw/upload/fl_attachment/{$uploadResult['public_id']}.{$uploadResult['format']}";
+    }
+
 
 }
