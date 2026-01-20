@@ -422,15 +422,22 @@ class DocumentController extends Controller
 
     public function download(Document $document)
     {
-        // Generate signed URL for raw file
-        $fileUrl = Cloudinary::downloadApi()->download(
-            $document->public_id,
-            ['resource_type' => 'raw']
-        );
+        // // Generate signed URL for raw file
+        // $fileUrl = Cloudinary::downloadApi()->download(
+        //     $document->public_id,
+        //     ['resource_type' => 'raw']
+        // );
+
+        // return response()->streamDownload(function () use ($fileUrl) {
+        //     echo file_get_contents($fileUrl);
+        // }, $document->title . '.' . $document->extension);
+
+         $fileUrl = $document->file_url; // Use the URL saved from Cloudinary
+        $fileName = $document->title . '.' . $document->document_type;
 
         return response()->streamDownload(function () use ($fileUrl) {
             echo file_get_contents($fileUrl);
-        }, $document->title . '.' . $document->extension);
+        }, $fileName);
     }
 
     
