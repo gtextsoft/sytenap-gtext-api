@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Notifications\LegalDocumentSentNotification;
 use Illuminate\Support\Facades\Notification;
 use Cloudinary\Api\ApiResponse;
+use Illuminate\Support\Facades\Log;
 
 class DocumentController extends Controller
 {
@@ -384,8 +385,9 @@ class DocumentController extends Controller
                 'resource_type' => 'raw',
             ]
         );  // Access properties like array
+        Log::error($uploadResult);
         $publicId = $uploadResult['public_id'];
-        $format   = $uploadResult['format'];
+        $format   =  $request->file('file')->getClientOriginalExtension();
 
         // Generate download URL
         $fileUrl = "https://res.cloudinary.com/dhfmwhhbc/raw/upload/fl_attachment/{$publicId}.{$format}";
