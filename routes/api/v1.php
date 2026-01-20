@@ -191,6 +191,6 @@ Route::prefix('v1')->group(function () {
     Route::post('payments/callback', [PlotController::class, 'handlePaystackCallback']);
 
     Route::prefix('legal')->group(function () {
-       Route::post('/send-document', [DocumentController::class, 'sendLegalDocument'])->middleware('auth:sanctum');
+       Route::post('/send-document', [DocumentController::class, 'sendDocumentToClient'])->middleware('auth:sanctum');
     });
 });
