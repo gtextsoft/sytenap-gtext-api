@@ -13,6 +13,10 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Http;
+use App\Models\Estate;
+use App\Notifications\AdminEstateAssignedNotification;
+use Illuminate\Support\Facades\DB;
+
 
 class AuthController extends Controller
 {
@@ -309,4 +313,154 @@ class AuthController extends Controller
             ]);
         }
     }
+
+    /**
+ * @OA\Post(
+ *      path="/api/v1/admin/create-new-admin",
+ *      operationId="createNewAdminAndAssignEstate",
+ *      tags={"Admin - Estate Management"},
+ *      summary="Create a new admin and assign an estate",
+ *      description="Allows an authenticated admin to create another admin, auto-verify their email, assign an estate, and send login credentials via email.",
+ *      security={{"sanctum": {}}},
+ *
+ *      @OA\RequestBody(
+ *          required=true,
+ *          @OA\JsonContent(
+ *              required={"first_name","last_name","email","estate_id"},
+ *
+ *              @OA\Property(
+ *                  property="first_name",
+ *                  type="string",
+ *                  example="John",
+ *                  description="First name of the admin to be created"
+ *              ),
+ *
+ *              @OA\Property(
+ *                  property="last_name",
+ *                  type="string",
+ *                  example="Doe",
+ *                  description="Last name of the admin to be created"
+ *              ),
+ *
+ *              @OA\Property(
+ *                  property="email",
+ *                  type="string",
+ *                  format="email",
+ *                  example="admin@example.com",
+ *                  description="Email address of the new admin (must be unique)"
+ *              ),
+ *
+ *              @OA\Property(
+ *                  property="estate_id",
+ *                  type="integer",
+ *                  example=12,
+ *                  description="ID of the estate to assign to the admin"
+ *              )
+ *          )
+ *      ),
+ *
+ *      @OA\Response(
+ *          response=201,
+ *          description="Admin created and estate assigned successfully",
+ *          @OA\JsonContent(
+ *              @OA\Property(
+ *                  property="message",
+ *                  type="string",
+ *                  example="Admin created and estate assigned successfully"
+ *              ),
+ *              @OA\Property(
+ *                  property="admin",
+ *                  type="object",
+ *                  @OA\Property(property="id", type="integer", example=45),
+ *                  @OA\Property(property="first_name", type="string", example="John"),
+ *                  @OA\Property(property="last_name", type="string", example="Doe"),
+ *                  @OA\Property(property="email", type="string", example="admin@example.com"),
+ *                  @OA\Property(property="account_type", type="string", example="admin"),
+ *                  @OA\Property(property="email_verified_at", type="string", format="date-time", example="2026-01-20T05:45:00Z")
+ *              )
+ *          )
+ *      ),
+ *
+ *      @OA\Response(
+ *          response=422,
+ *          description="Validation error",
+ *          @OA\JsonContent(
+ *              @OA\Property(
+ *                  property="errors",
+ *                  type="object",
+ *                  example={
+ *                      "email": {"The email has already been taken."},
+ *                      "estate_id": {"The selected estate id is invalid."}
+ *                  }
+ *              )
+ *          )
+ *      ),
+ *
+ *      @OA\Response(
+ *          response=401,
+ *          description="Unauthenticated"
+ *      ),
+ *
+ *      @OA\Response(
+ *          response=403,
+ *          description="Unauthorized - user does not have permission to create admins"
+ *      )
+ * )
+ */
+
+     public function createAdminAndAssignEstate(Request $request)
+    {
+        $request->validate([
+            'first_name' => 'required|string',
+            'last_name'  => 'required|string',
+            'email'      => 'required|email|unique:users,email',
+            'estate_id'  => 'required|exists:estates,id',
+        ]);
+
+        return DB::transaction(function () use ($request) {
+
+            // 1. Generate password
+            $plainPassword = Str::random(10);
+
+            // 2. Create Admin User
+            $admin = User::create([
+                'first_name'        => $request->first_name,
+                'last_name'         => $request->last_name,
+                'email'             => $request->email,
+                'account_type'      => 'admin',
+                'password'          => Hash::make($plainPassword),
+                'email_verified_at' => now(), // ✅ auto-verified
+            ]);
+
+            // 3. Assign Estate
+            $estate = Estate::findOrFail($request->estate_id);
+
+            $admins = $estate->estate_admin ?? [];
+
+            if (!in_array($admin->email, $admins)) {
+                $admins[] = $admin->email;
+            }
+
+            $estate->update([
+                'estate_admin' => $admins,
+            ]);
+
+            // 4. Send Notification
+            $admin->notify(
+                new AdminEstateAssignedNotification(
+                    estate: $estate,
+                    password: $plainPassword
+                )
+            );
+
+            return response()->json([
+                'message' => 'Admin created and estate assigned successfully',
+                'admin'   => $admin,
+            ], 201);
+        });
+    }
 }
+
+
+
+

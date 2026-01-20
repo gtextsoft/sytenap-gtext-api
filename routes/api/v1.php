@@ -134,6 +134,8 @@ Route::prefix('v1')->group(function () {
         Route::put('/estate-plot-details/{id}', [EstateController::class, 'update']);
         Route::delete('/estate-plot-details/{id}', [EstateController::class, 'destroy']);
         Route::delete('/estate/{id}', [EstateController::class, 'removeEstate']);
+
+        Route::post('/create-new-admin', [AuthController::class, 'createAdminAndAssignEstate']);
     });
 
     Route::prefix('property')->group(function () {
