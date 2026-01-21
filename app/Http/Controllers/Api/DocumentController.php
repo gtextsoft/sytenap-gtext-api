@@ -75,9 +75,7 @@ class DocumentController extends Controller
         $publicId = $uploadResult['public_id'];
         $format   = $uploadResult['format'];
 
-        // Generate download URL
-        $fileUrl = "https://res.cloudinary.com/dhfmwhhbc/raw/upload/fl_attachment/{$publicId}.{$format}";
-
+    
         $document = Document::create([
             'uploaded_by' => $admin->id,
             'user_id' => $validated['user_id'],
@@ -85,8 +83,9 @@ class DocumentController extends Controller
             'estate_id' => $validated['estate_id'] ?? null,
             'title' => $validated['title'],
             'document_type' => $validated['document_type'] ?? 'pdf',
-            //'file_url' => //$uploadResult['secure_url'],
-            'file_url' => $fileUrl,
+            'public_id' => $uploadResult['public_id'], 
+            'extension'    => $request->file('file')->getClientOriginalExtension(), 
+            'file_url'      => $uploadResult['secure_url'],
         ]);
 
         return response()->json([
@@ -183,29 +182,7 @@ class DocumentController extends Controller
         return response()->json(['status' => true, 'message' => 'Document unpublished successfully']);
     }
 
-    /**
-     * @OA\Get(
-     *     path="/api/v1/documents/{id}/download",
-     *     summary="Download a published document",
-     *     tags={"Documents"},
-     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
-     *     @OA\Response(response=200, description="Download URL returned"),
-     *     @OA\Response(response=403, description="Document not available"),
-     *     @OA\Response(response=404, description="Document not found")
-     * )
-     */
-    // public function download($id)
-    // {
-    //     $document = Document::findOrFail($id);
-
-    //     if (!$document->published) {
-    //         return response()->json(['status' => false, 'message' => 'Document not available'], 403);
-    //     }
-
-    //     return response()->json(['status' => true, 'url' => $document->file_url]);
-    // }
-
-
+    
  //  Add the new index() method here
     public function index(Request $request)
     {
