@@ -487,6 +487,86 @@ class DocumentController extends Controller
         );
     }
 
+    /**
+ * @OA\Post(
+ *     path="/api/v1/document/{document}/signed",
+ *     summary="Send signed copy of a legal document",
+ *     description="Allows a client to upload and send a signed copy of a legal document that was originally sent by the legal/admin team.",
+ *     operationId="sendSignedDocument",
+ *     tags={"Documents"},
+ *     security={{"sanctum": {}}},
+ *
+ *     @OA\Parameter(
+ *         name="document",
+ *         in="path",
+ *         description="ID of the document sent by legal/admin",
+ *         required=true,
+ *         @OA\Schema(type="integer", example=12)
+ *     ),
+ *
+ *     @OA\RequestBody(
+ *         required=true,
+ *         description="Signed document upload",
+ *         @OA\MediaType(
+ *             mediaType="multipart/form-data",
+ *             @OA\Schema(
+ *                 required={"file"},
+ *                 @OA\Property(
+ *                     property="file",
+ *                     type="string",
+ *                     format="binary",
+ *                     description="Signed PDF document (max 5MB)"
+ *                 ),
+ *                 @OA\Property(
+ *                     property="comment",
+ *                     type="string",
+ *                     example="I have signed and reviewed the document."
+ *                 )
+ *             )
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=201,
+ *         description="Signed document sent successfully",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="success", type="boolean", example=true),
+ *             @OA\Property(property="message", type="string", example="Signed document sent successfully."),
+ *             @OA\Property(
+ *                 property="document",
+ *                 type="object",
+ *                 @OA\Property(property="id", type="integer", example=45),
+ *                 @OA\Property(property="title", type="string", example="Contract Agreement (Signed)"),
+ *                 @OA\Property(property="file_url", type="string", example="https://res.cloudinary.com/..."),
+ *                 @OA\Property(property="uploaded_by", type="integer", example=8),
+ *                 @OA\Property(property="user_id", type="integer", example=1),
+ *                 @OA\Property(property="parent_document_id", type="integer", example=12),
+ *                 @OA\Property(property="created_at", type="string", format="date-time")
+ *             )
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=403,
+ *         description="Unauthorized action",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="success", type="boolean", example=false),
+ *             @OA\Property(property="message", type="string", example="Only clients can send signed documents.")
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=404,
+ *         description="Document not found"
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=422,
+ *         description="Validation error"
+ *     )
+ * )
+ */
+
     public function sendSignedDocument(Request $request, Document $document)
     {
         $client = $request->user();
