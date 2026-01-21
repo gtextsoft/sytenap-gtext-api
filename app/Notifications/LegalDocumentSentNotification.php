@@ -34,7 +34,7 @@ class LegalDocumentSentNotification extends Notification
                 $mail->line('Legal Comment:')
                      ->line($this->document->comment);
             })
-            ->action('Download Document', $this->document->file_url)
+            ->action('Download Document', route('documents.download', $this->document->id))
             ->line('You may also log in to your dashboard to access this document.')
             ->salutation('Legal Team');
     }

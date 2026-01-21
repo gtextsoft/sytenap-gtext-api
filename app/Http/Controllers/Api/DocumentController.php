@@ -8,6 +8,7 @@ use App\Models\Document;
 use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 use App\Models\User;
 use App\Notifications\LegalDocumentSentNotification;
+use App\Notifications\ClientSignedDocumentNotification;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Log;
 
@@ -119,7 +120,10 @@ class DocumentController extends Controller
             return response()->json(['errors' => 'Unauthorized'], 401);
         }
 
-        $documents = Document::where('user_id', $user->id)
+     $documents = Document::where(function ($query) use ($user) {
+                $query->where('user_id', $user->id)
+                    ->orWhere('uploaded_by', $user->id);
+            })
             ->orderBy('created_at', 'desc')
             ->paginate(10);
 
@@ -128,58 +132,6 @@ class DocumentController extends Controller
             'message' => 'Documents retrieved successfully.',
             'data' => $documents
         ], 200);
-    }
-
-    /**
-     * @OA\Put(
-     *     path="/api/v1/admin/documents/{id}/publish",
-     *     summary="Publish a document",
-     *     tags={"Admin - Documents"},
-     *     security={{"sanctum":{}}},
-     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
-     *     @OA\Response(response=200, description="Document published successfully"),
-     *     @OA\Response(response=403, description="Access denied"),
-     *     @OA\Response(response=404, description="Document not found")
-     * )
-     */
-    public function publish(Request $request, $id)
-    {
-        $admin = $request->user();
-        if ($admin->account_type !== 'admin') {
-            return response()->json(['status' => false, 'message' => 'Access denied.'], 403);
-        }
-
-        $document = Document::findOrFail($id);
-        $document->published = true;
-        $document->save();
-
-        return response()->json(['status' => true, 'message' => 'Document published successfully']);
-    }
-
-    /**
-     * @OA\Put(
-     *     path="/api/v1/admin/documents/{id}/unpublish",
-     *     summary="Unpublish a document",
-     *     tags={"Admin - Documents"},
-     *     security={{"sanctum":{}}},
-     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
-     *     @OA\Response(response=200, description="Document unpublished successfully"),
-     *     @OA\Response(response=403, description="Access denied"),
-     *     @OA\Response(response=404, description="Document not found")
-     * )
-     */
-    public function unpublish(Request $request, $id)
-    {
-        $admin = $request->user();
-        if ($admin->account_type !== 'admin') {
-            return response()->json(['status' => false, 'message' => 'Access denied.'], 403);
-        }
-
-        $document = Document::findOrFail($id);
-        $document->published = false;
-        $document->save();
-
-        return response()->json(['status' => true, 'message' => 'Document unpublished successfully']);
     }
 
     
@@ -534,6 +486,66 @@ class DocumentController extends Controller
             ]
         );
     }
+
+    public function sendSignedDocument(Request $request, Document $document)
+    {
+        $client = $request->user();
+
+        // Only client can reply
+        if ($client->account_type !== 'client') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only clients can send signed documents.'
+            ], 403);
+        }
+
+        // Ensure document belongs to client
+        if ($document->user_id !== $client->id) {
+            abort(403, 'Unauthorized');
+        }
+
+        $validated = $request->validate([
+            'file'    => 'required|mimes:pdf|max:5120',
+            'comment' => 'nullable|string',
+        ]);
+
+        // Upload signed copy
+        $uploadResult = Cloudinary::uploadApi()->upload(
+            $request->file('file')->getRealPath(),
+            [
+                'folder' => 'signed_documents',
+                'resource_type' => 'raw',
+            ]
+        );
+
+        // Create reply document
+        $signedDocument = Document::create([
+            'uploaded_by'        => $client->id,
+            'user_id'            => $document->uploaded_by, // send back to legal
+            'estate_id'          => $document->estate_id,
+            'plot_id'            => $document->plot_id,
+            'title'              => $document->title . ' (Signed)',
+            'document_type'      => $document->document_type,
+            'public_id'          => $uploadResult['public_id'],
+            'extension'          => $request->file('file')->getClientOriginalExtension(),
+            'file_url'           => $uploadResult['secure_url'],
+            'comment'            => $validated['comment'],
+            'parent_document_id' => $document->id,
+        ]);
+
+        // Notify legal
+        Notification::send(
+            $document->uploader,
+            new ClientSignedDocumentNotification($signedDocument)
+        );
+
+        return response()->json([
+            'success'  => true,
+            'message'  => 'Signed document sent successfully.',
+            'document' => $signedDocument,
+        ], 201);
+    }
+
 
 
 }

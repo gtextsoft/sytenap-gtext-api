@@ -101,6 +101,9 @@ Route::prefix('v1')->group(function () {
     Route::prefix('document')->group(function () {
         Route::get('/my-document', [DocumentController::class, 'getUserDocument'])->middleware('auth:sanctum');
         Route::get('/all-document', [DocumentController::class, 'getAllUserDocument']);
+
+        Route::post('/{document}/send-signed',[DocumentController::class, 'sendSignedDocument'])->middleware('auth:sanctum');
+
     });
     
     // Admin documents (protected)
