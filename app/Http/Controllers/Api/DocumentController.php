@@ -183,11 +183,70 @@ class DocumentController extends Controller
     }
 
     
- //  Add the new index() method here
+    /**
+ * @OA\Get(
+ *     path="/api/v1/documents",
+ *     operationId="getDocumentsList",
+ *     tags={"Admin - Documents"},
+ *     summary="Get list of documents",
+ *     description="Retrieve a paginated list of documents ordered by most recent first for both legal and admin.",
+ *     security={{"sanctum": {}}},
+ *
+ *     @OA\Parameter(
+ *         name="page",
+ *         in="query",
+ *         required=false,
+ *         description="Page number for pagination",
+ *         @OA\Schema(
+ *             type="integer",
+ *             example=1
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=200,
+ *         description="Documents retrieved successfully",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="status", type="string", example="success"),
+ *             @OA\Property(property="message", type="string", example="Documents retrieved successfully."),
+ *             @OA\Property(
+ *                 property="data",
+ *                 type="object",
+ *                 description="Paginated documents response",
+ *                 @OA\Property(property="current_page", type="integer", example=1),
+ *                 @OA\Property(
+ *                     property="data",
+ *                     type="array",
+ *                     @OA\Items(
+ *                         @OA\Property(property="id", type="integer", example=3),
+ *                         @OA\Property(property="title", type="string", example="Deed of Assignment"),
+ *                         @OA\Property(property="document_type", type="string", example="pdf"),
+ *                         @OA\Property(property="file_url", type="string", example="https://res.cloudinary.com/..."),
+ *                         @OA\Property(property="user_id", type="integer", example=12),
+ *                         @OA\Property(property="uploaded_by", type="integer", example=5),
+ *                         @OA\Property(property="plot_id", type="integer", nullable=true, example=8),
+ *                         @OA\Property(property="estate_id", type="integer", nullable=true, example=2),
+ *                         @OA\Property(property="comment", type="string", nullable=true, example="Please review and sign."),
+ *                         @OA\Property(property="created_at", type="string", format="date-time", example="2026-01-20T10:15:30Z")
+ *                     )
+ *                 ),
+ *                 @OA\Property(property="per_page", type="integer", example=10),
+ *                 @OA\Property(property="total", type="integer", example=45),
+ *                 @OA\Property(property="last_page", type="integer", example=5)
+ *             )
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=401,
+ *         description="Unauthenticated"
+ *     )
+ * )
+ */
+
     public function index(Request $request)
     {
-        $documents = Document::where('published', true)
-            ->orderBy('created_at', 'desc')
+        $documents = Document::orderBy('created_at', 'desc')
             ->paginate(10);
 
         return response()->json([
