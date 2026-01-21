@@ -423,15 +423,63 @@ class DocumentController extends Controller
 
     
   
+    /**
+     * @OA\Get(
+     *     path="/api/v1/documents/{document}/download",
+     *     operationId="downloadClientDocument",
+     *     tags={"Documents"},
+     *     summary="Download a client document",
+     *     description="Allows an authorized user (client or uploader or admin) to download a document that was uploaded by admin or legal. The document is streamed and downloaded with the correct filename.",
+     *     security={{"sanctum": {}}},
+     *
+     *     @OA\Parameter(
+     *         name="document",
+     *         in="path",
+     *         required=true,
+     *         description="ID of the document to download",
+     *         @OA\Schema(
+     *             type="integer",
+     *             example=3
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Document downloaded successfully",
+     *         @OA\MediaType(
+     *             mediaType="application/pdf",
+     *             @OA\Schema(
+     *                 type="string",
+     *                 format="binary"
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthenticated"
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=403,
+     *         description="Unauthorized access to document"
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=404,
+     *         description="Document not found or unavailable"
+     *     )
+     * )
+     */
 
     public function download(Document $document)
     {
-        // $user = auth()->user();
+        $user = auth()->user();
 
-        // // Authorization
-        // if ($user->id !== $document->user_id && $user->id !== $document->uploaded_by) {
-        //     abort(403, 'Unauthorized');
-        // }
+        // Authorization
+        if ($user->id !== $document->user_id && $user->id !== $document->uploaded_by || $user->account_type === 'client') {
+            abort(403, 'Unauthorized');
+        }
 
         $response = Http::timeout(60)->get($document->file_url);
 
