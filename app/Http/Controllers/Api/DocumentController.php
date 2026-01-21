@@ -9,8 +9,9 @@ use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 use App\Models\User;
 use App\Notifications\LegalDocumentSentNotification;
 use Illuminate\Support\Facades\Notification;
-
 use Illuminate\Support\Facades\Log;
+
+use Illuminate\Support\Facades\Http;
 
 class DocumentController extends Controller
 {
@@ -420,28 +421,35 @@ class DocumentController extends Controller
     }
 
 
+    
+  
+
     public function download(Document $document)
     {
-        // // Generate signed URL for raw file
-        // $fileUrl = Cloudinary::downloadApi()->download(
-        //     $document->public_id,
-        //     ['resource_type' => 'raw']
-        // );
+        // $user = auth()->user();
 
-        // return response()->streamDownload(function () use ($fileUrl) {
-        //     echo file_get_contents($fileUrl);
-        // }, $document->title . '.' . $document->extension);
+        // // Authorization
+        // if ($user->id !== $document->user_id && $user->id !== $document->uploaded_by) {
+        //     abort(403, 'Unauthorized');
+        // }
 
-         $fileUrl = $document->file_url; // Use the URL saved from Cloudinary
+        $response = Http::timeout(60)->get($document->file_url);
+
+        if (!$response->successful()) {
+            abort(404, 'Document not found');
+        }
+
         $fileName = $document->title . '.' . $document->document_type;
 
-        return response()->streamDownload(function () use ($fileUrl) {
-            echo file_get_contents($fileUrl);
-        }, $fileName);
+        return response()->streamDownload(
+            fn () => print($response->body()),
+            $fileName,
+            [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'attachment; filename="'.$fileName.'"',
+            ]
+        );
     }
-
-    
-
 
 
 }
