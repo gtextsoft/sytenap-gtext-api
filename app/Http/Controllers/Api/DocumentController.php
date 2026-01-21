@@ -489,7 +489,7 @@ class DocumentController extends Controller
 
     /**
      * @OA\Post(
-     *     path="/api/v1/document/{document}/signed",
+     *     path="/api/v1/document/{document}/send-signed",
      *     summary="Send signed copy of a legal document",
      *     description="Allows a client to upload and send a signed copy of a legal document that was originally sent by the legal/admin team.",
      *     operationId="sendSignedDocument",
