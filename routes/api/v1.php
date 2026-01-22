@@ -117,8 +117,11 @@ Route::prefix('v1')->group(function () {
     // Public documents
     Route::get('documents', [DocumentController::class, 'index']);
     //Route::get('documents/{id}/download', [DocumentController::class, 'download']);
-    Route::get('/documents/{document}/download', [DocumentController::class, 'download'])
-        ->name('documents.download');
+   Route::middleware('auth:sanctum')->get('/documents/{document}/download', [DocumentController::class, 'download'])
+    ->name('documents.download');
+
+
+
 
     // -------------------------
     // Admin Routes
