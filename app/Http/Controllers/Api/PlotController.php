@@ -16,11 +16,19 @@ use App\Models\CustomerProperty;
 use Illuminate\Validation\Rule;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use App\Services\OtpService;
 
 
 
 class PlotController extends Controller
 {
+    protected $otpService;
+
+    public function __construct(OtpService $otpService)
+    {
+        $this->otpService = $otpService;
+    }
+
     /**
      * @OA\Post(
      *     path="/api/v1/estate/{estateId}/generate-plots",
