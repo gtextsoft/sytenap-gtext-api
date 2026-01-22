@@ -74,7 +74,7 @@ class DocumentController extends Controller
 
         // Access properties like array
         $publicId = $uploadResult['public_id'];
-        $format   = $uploadResult['format'];
+        //$format   = $uploadResult['format'];
 
     
         $document = Document::create([
