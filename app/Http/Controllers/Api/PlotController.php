@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\DB;
 use App\Models\CustomerProperty;
 use Illuminate\Validation\Rule;
 use App\Models\User;
+use Illuminate\Support\Facades\Hash;
 
 
 
