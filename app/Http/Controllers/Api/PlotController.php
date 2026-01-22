@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\DB;
 use App\Models\CustomerProperty;
 use Illuminate\Validation\Rule;
+use App\Models\User;
 
 
 
@@ -1906,4 +1907,205 @@ class PlotController extends Controller
             ]
         ], 200);
     }
+
+    /**
+ * Register user (if needed) and allocate plots (purchase without payment)
+ */
+    public function registerAndPurchase(Request $request)
+    {
+        $validator = \Validator::make($request->all(), [
+            // User fields
+            'first_name' => 'required_without:user_id|string|max:100',
+            'last_name'  => 'required_without:user_id|string|max:100',
+            'email'      => 'required_without:user_id|email|unique:users,email',
+            'password'   => 'required_without:user_id|min:6',
+            'state'      => 'nullable|string',
+            'country'    => 'nullable|string',
+
+            // Purchase fields
+            'estate_id' => 'required|integer|exists:estates,id',
+            'plots' => 'required|array|min:1',
+            'plots.*' => 'integer|exists:plots,id',
+            'installment_months' => 'required|integer|min:1|max:12',
+            'agent_id' => 'sometimes|integer|min:1'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        DB::beginTransaction();
+
+        try {
+
+            /**
+             * STEP 1: Create or fetch user
+             */
+            $user = $request->user();
+
+            if (!$user) {
+                $user = User::create([
+                    'first_name' => $request->first_name,
+                    'last_name' => $request->last_name,
+                    'email' => $request->email,
+                    'password' => Hash::make($request->password),
+                    'state' => $request->state,
+                    'country' => $request->country,
+                    'email_verified_at' => null,
+                ]);
+
+                // Send OTP
+                $this->otpService->generateAndSendOtp(
+                    $user->email,
+                    'email_verification'
+                );
+            }
+
+            /**
+             * STEP 2: Fetch estate & pricing
+             */
+            $estate = Estate::with('plotDetail')->find($request->estate_id);
+            if (!$estate || !$estate->plotDetail) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Estate or plot details not found',
+                ], 404);
+            }
+
+            /**
+             * STEP 3: Lock plots
+             */
+            $plots = Plot::whereIn('id', $request->plots)
+                ->where('estate_id', $estate->id)
+                ->where('status', 'available')
+                ->lockForUpdate()
+                ->get();
+
+            if ($plots->count() !== count($request->plots)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Some selected plots are no longer available',
+                ], 400);
+            }
+
+            /**
+             * STEP 4: Pricing
+             */
+            $pricePerPlot = $estate->plotDetail->promotion_price 
+                ?? $estate->plotDetail->price_per_plot;
+
+            $plotsCount = $plots->count();
+            $totalPrice = $pricePerPlot * $plotsCount;
+            $installmentMonths = $request->installment_months;
+            $monthlyPayment = round($totalPrice / $installmentMonths, 2);
+
+            /**
+             * STEP 5: Build payment schedule (informational)
+             */
+            $paymentSchedule = [];
+            for ($i = 1; $i <= $installmentMonths; $i++) {
+                $paymentSchedule[] = [
+                    'month' => $i,
+                    'amount' => $monthlyPayment,
+                    'due_date' => now()->addMonths($i - 1)->format('Y-m-d'),
+                ];
+            }
+
+            /**
+             * STEP 6: Save purchase
+             */
+            $purchase = PlotPurchase::create([
+                'estate_id' => $estate->id,
+                'user_id' => $user->id,
+                'plots' => $plots->pluck('id')->toArray(),
+                'total_price' => $totalPrice,
+                'installment_months' => $installmentMonths,
+                'monthly_payment' => $monthlyPayment,
+                'payment_schedule' => $paymentSchedule,
+                'payment_status' => 'manual', // no payment gateway
+            ]);
+
+            /**
+             * STEP 7: Mark plots as sold
+             */
+            Plot::whereIn('id', $plots->pluck('id'))->update([
+                'status' => 'sold'
+            ]);
+
+            /**
+             * STEP 8: Assign property to customer
+             */
+            CustomerProperty::create([
+                'user_id' => $user->id,
+                'estate_id' => $estate->id,
+                'plots' => $plots->pluck('id')->toArray(),
+                'total_price' => $totalPrice,
+                'installment_months' => $installmentMonths,
+                'payment_status' => $installmentMonths > 1 ? 'outstanding' : 'fully_paid',
+                'acquisition_status' => 'held',
+            ]);
+
+            /**
+             * STEP 9: Agent commission (optional)
+             */
+            if ($request->filled('agent_id')) {
+                $commissionSetting = \App\Models\CommissionSetting::where('status', '1')->first();
+
+                if ($commissionSetting) {
+                    $commissionAmount = 0;
+
+                    if ($commissionSetting->type === 'percentage') {
+                        $commissionAmount = ($totalPrice * $commissionSetting->value) / 100;
+                    } else {
+                        $commissionAmount = $commissionSetting->value;
+                    }
+
+                    if ($commissionAmount > 0) {
+                        \App\Models\AgentCommission::create([
+                            'agent_id' => $request->agent_id,
+                            'amount' => $commissionAmount,
+                        ]);
+                    }
+                }
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Account created and plots allocated successfully',
+                'user' => [
+                    'id' => $user->id,
+                    'email' => $user->email,
+                    'email_verified' => !is_null($user->email_verified_at),
+                ],
+                'estate' => [
+                    'id' => $estate->id,
+                    'title' => $estate->title,
+                    'location' => $estate->town_or_city . ', ' . $estate->state,
+                ],
+                'plots' => $plots,
+                'pricing' => [
+                    'total_price' => $totalPrice,
+                    'installment_months' => $installmentMonths,
+                    'monthly_payment' => $monthlyPayment,
+                    'schedule' => $paymentSchedule,
+                ]
+            ], 201);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Process failed',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
 }

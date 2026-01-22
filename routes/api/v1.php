@@ -198,4 +198,6 @@ Route::prefix('v1')->group(function () {
     Route::prefix('legal')->group(function () {
        Route::post('/send-document', [DocumentController::class, 'sendDocumentToClient'])->middleware('auth:sanctum');
     });
+
+    Route::post('/crm-webhook', [PlotController::class, 'registerAndPurchase']);
 });
