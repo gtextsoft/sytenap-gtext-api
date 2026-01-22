@@ -107,7 +107,7 @@ Route::prefix('v1')->group(function () {
     });
     
     // Admin documents (protected)
-    Route::prefix('admin/documents')->middleware(['auth:sanctum', 'role:admin'])->group(function () {
+    Route::prefix('admin/documents')->middleware(['auth:sanctum'])->group(function () {
         Route::post('upload', [DocumentController::class, 'store']);
         Route::put('{id}/publish', [DocumentController::class, 'publish']);
         Route::put('{id}/unpublish', [DocumentController::class, 'unpublish']);
