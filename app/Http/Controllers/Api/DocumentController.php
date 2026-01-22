@@ -94,6 +94,7 @@ class DocumentController extends Controller
             'message' => 'Document uploaded successfully.',
             'document' => $document,
         ], 201);
+        
     }
 
     /**
