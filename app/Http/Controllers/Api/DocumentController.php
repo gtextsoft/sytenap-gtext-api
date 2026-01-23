@@ -66,7 +66,7 @@ class DocumentController extends Controller
         $uploadResult = Cloudinary::uploadApi()->upload(
             $request->file('file')->getRealPath(),
             [
-                'folder' => 'client_documents',
+                'folder' => 'legal_documents',
                 'resource_type' => 'raw',
             ]
         );
@@ -573,7 +573,7 @@ class DocumentController extends Controller
         $client = $request->user();
 
         // Only client can reply
-        if ($client->account_type !== 'client') {
+        if ($client->account_type !== 'client' || $client->account_type !== 'prospect') {
             return response()->json([
                 'success' => false,
                 'message' => 'Only clients can send signed documents.'
