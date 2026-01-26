@@ -424,7 +424,7 @@ class AuthController extends Controller
             'first_name'   => 'required|string',
             'last_name'    => 'required|string',
             'email'        => 'required|email|unique:users,email',
-            'account_type' => 'required|in:admin,legal',
+            'account_type' => 'required|in:admin,legal,accountant',
             'estate_id'    => 'required_if:account_type,admin|exists:estates,id',
         ]);
 

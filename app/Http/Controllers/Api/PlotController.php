@@ -106,7 +106,11 @@ class PlotController extends Controller
         $lngOffset = $plotSideMeters / 111000; // east-west
 
         // base coordinate
-        [$baseLat, $baseLng] = array_map('floatval', explode(',', $estate->cordinates));
+        $coordinates = $estate->cordinates;
+        if (!$coordinates || !preg_match('/^-?\d+\.?\d*\s*,\s*-?\d+\.?\d*$/', $coordinates)) {
+            throw new \Exception("Invalid coordinate format for estate {$estateId}. Expected 'latitude, longitude'.");
+        }
+        [$baseLat, $baseLng] = array_map('floatval', explode(',', $coordinates));
 
         $plotsPerRow = ceil(sqrt($availablePlots)); // make grid square-ish
         // Build prefix from estate title, town_or_city and state (concatenate, sanitize, uppercase, limited length)
@@ -1918,8 +1922,8 @@ class PlotController extends Controller
     }
 
     /**
- * Register user (if needed) and allocate plots (purchase without payment)
- */
+     * Register user (if needed) and allocate plots (purchase without payment)
+     */
     public function registerAndPurchase(Request $request)
     {
         $validator = \Validator::make($request->all(), [
@@ -1968,10 +1972,10 @@ class PlotController extends Controller
                 ]);
 
                 // Send OTP
-                $this->otpService->generateAndSendOtp(
-                    $user->email,
-                    'email_verification'
-                );
+                // $this->otpService->generateAndSendOtp(
+                //     $user->email,
+                //     'email_verification'
+                // );
             }
 
             /**

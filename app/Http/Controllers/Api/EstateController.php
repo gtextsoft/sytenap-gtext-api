@@ -106,6 +106,44 @@ class EstateController extends Controller
 
         $data = $validator->validated();
 
+        // Validate coordinates format if provided
+        if ($request->has('cordinates') && !empty($data['cordinates'])) {
+            $coordinates = $data['cordinates'];
+            
+            // Check if coordinates match the format: number,number
+            if (!preg_match('/^-?\d+(\.\d+)?,-?\d+(\.\d+)?$/', $coordinates)) {
+                return response()->json([
+                    'message' => 'Validation error',
+                    'errors' => [
+                        'cordinates' => ['Coordinates must be in the format: latitude,longitude (e.g., 6.4281,3.4219)']
+                    ],
+                ], 422);
+            }
+            
+            // Additionally validate that coordinates are within valid ranges
+            [$lat, $lng] = explode(',', $coordinates);
+            $lat = (float)$lat;
+            $lng = (float)$lng;
+            
+            if ($lat < -90 || $lat > 90) {
+                return response()->json([
+                    'message' => 'Validation error',
+                    'errors' => [
+                        'cordinates' => ['Latitude must be between -90 and 90']
+                    ],
+                ], 422);
+            }
+            
+            if ($lng < -180 || $lng > 180) {
+                return response()->json([
+                    'message' => 'Validation error',
+                    'errors' => [
+                        'cordinates' => ['Longitude must be between -180 and 180']
+                    ],
+                ], 422);
+            }
+        }
+
         // Upload map background image (corrected method)
         if ($request->hasFile('map_background_image')) {
             $uploadResult = Cloudinary::uploadApi()->upload(
