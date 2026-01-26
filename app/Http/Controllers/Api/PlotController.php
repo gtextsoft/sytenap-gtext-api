@@ -17,7 +17,8 @@ use Illuminate\Validation\Rule;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use App\Services\OtpService;
-
+use Illuminate\Support\Facades\Notification;
+use App\Notifications\SendAccountCredentialsNotification;
 
 
 class PlotController extends Controller
@@ -1961,6 +1962,7 @@ class PlotController extends Controller
             $user = $request->user();
 
             if (!$user) {
+                $plainPassword = $request->password;
                 $user = User::create([
                     'first_name' => $request->first_name,
                     'last_name' => $request->last_name,
@@ -1976,6 +1978,11 @@ class PlotController extends Controller
                 //     $user->email,
                 //     'email_verification'
                 // );
+
+                Notification::send(
+                    $user,
+                    new SendAccountCredentialsNotification($user, $plainPassword)
+                );
             }
 
             /**
