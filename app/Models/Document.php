@@ -16,6 +16,9 @@ class Document extends Model
         'title',
         'document_type',
         'file_url',
+        'comment',
+        'public_id',
+        'extension',
     ];
 
     // Relationships

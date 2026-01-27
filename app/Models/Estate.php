@@ -26,12 +26,14 @@ class Estate extends Model
         'amenities',
         'rating',
         'status',
+        'estate_admin',
     ];
 
     protected $casts = [
         'has_cerificate_of_occupancy' => 'boolean',
         'amenities' => 'array',
         'rating' => 'integer',
+        'estate_admin' => 'array',
     ];
 
     public function media()

@@ -10,7 +10,7 @@ return new class extends Migration
         Schema::create('commission_withdrawals', function (Blueprint $table) {
             $table->id();
             $table->foreignId('agent_id')->constrained('users')->onDelete('cascade');
-            $table->foreignId('commission_id')->constrained('agent_commissions')->onDelete('cascade');
+            $table->unsignedBigInteger('commission_id')->nullable();
             $table->decimal('amount', 12, 2);
             $table->decimal('balance_before', 12, 2);
             $table->decimal('balance_after', 12, 2);
@@ -18,6 +18,8 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->timestamp('withdrawal_date')->useCurrent();
             $table->timestamps();
+            
+            $table->foreign('commission_id')->references('id')->on('agent_commissions')->onDelete('cascade');
         });
     }
 
