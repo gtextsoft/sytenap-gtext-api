@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Hash;
 use App\Services\OtpService;
 use Illuminate\Support\Facades\Notification;
 use App\Notifications\SendAccountCredentialsNotification;
+use App\Notifications\PropertyAllocatedNotification;
 
 
 class PlotController extends Controller
@@ -1349,15 +1350,7 @@ class PlotController extends Controller
      */
     public function allocateProperty(Request $request)
     {
-        // Verify admin authentication (uncomment when ready)
-        // $admin = $request->user();
-        // if (!$admin || !$admin->hasRole('admin')) {
-        //     return response()->json([
-        //         'success' => false,
-        //         'message' => 'Unauthorized. Admin access required.',
-        //     ], 403);
-        // }
-
+       
         // Validation
         $validator = Validator::make($request->all(), [
             'user_id' => 'required|integer|exists:users,id',
@@ -1476,7 +1469,17 @@ class PlotController extends Controller
 
             DB::commit();
 
-            return response()->json([
+
+                // Send notification to customer
+                Notification::send(
+                    $customer,
+                    new PropertyAllocatedNotification(
+                        $estate->title,
+                        $plots->pluck('plot_id')->toArray(),
+                        $allocationReference
+                    )
+                );
+                            return response()->json([
                 'success' => true,
                 'message' => 'Property allocated successfully to customer',
                 'data' => [
