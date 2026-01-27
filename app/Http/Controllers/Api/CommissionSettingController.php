@@ -7,6 +7,7 @@ use App\Models\CommissionSetting;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Log;
 
 class CommissionSettingController extends Controller {
 
@@ -44,9 +45,10 @@ class CommissionSettingController extends Controller {
  *      )
  * )
  */
-public function index()
+public function index(Request $request)
 {
-    $admin = Auth::user();
+    $admin = $request->user();
+    Log::error('Authenticated user: ', ['user' => $admin]);
 
     if ($admin->account_type !== 'admin') {
         return response()->json([
