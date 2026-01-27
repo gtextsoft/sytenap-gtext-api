@@ -26,7 +26,7 @@ class PropertyAllocatedNotification extends Notification
      */
     public function via($notifiable)
     {
-        return ['database', 'mail']; // you can remove mail if not needed
+        return ['mail']; // you can remove mail if not needed
     }
 
     /**
@@ -46,17 +46,15 @@ class PropertyAllocatedNotification extends Notification
     }
 
     /**
-     * Database notification
+     * Get the array representation of the notification.
+     *
+     * @return array<string, mixed>
      */
-    public function toDatabase($notifiable)
+    public function toArray(object $notifiable): array
     {
         return [
-            'title' => 'Property Allocated',
-            'message' => "Your property at {$this->estateName} has been allocated.",
-            'estate' => $this->estateName,
-            'plot_ids' => $this->plotIds,
-            'allocation_reference' => $this->allocationReference,
-            'action_url' => '/dashboard/properties',
+            //
         ];
     }
+
 }
