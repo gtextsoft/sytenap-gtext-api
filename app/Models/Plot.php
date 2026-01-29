@@ -16,6 +16,10 @@ class Plot extends Model
         'status',
     ];
 
+
+    protected $hidden = [
+        'geom', // hide the geometry column
+    ];
     public function estate()
     {
         return $this->belongsTo(Estate::class);

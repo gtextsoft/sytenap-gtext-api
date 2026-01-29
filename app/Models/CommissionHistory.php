@@ -22,4 +22,12 @@ class CommissionHistory extends Model {
     public function agent() {
         return $this->belongsTo( User::class, 'agent_id' );
     }
+
+    public function plot() {
+        return $this->belongsTo( Plot::class, 'plot_id' );
+    }
+
+    public function estate() {
+        return $this->belongsTo( Estate::class, 'estate_id' );
+    }
 }
