@@ -13,7 +13,12 @@ class Plot extends Model
         'estate_id',
         'plot_id',
         'coordinate',
-        'status',
+        'status'
+        'Area',
+        'geom',,
+        'Block',
+        'Plot'
+        'Price'
     ];
 
 

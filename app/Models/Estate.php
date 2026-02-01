@@ -27,6 +27,7 @@ class Estate extends Model
         'rating',
         'status',
         'estate_admin',
+        'geom',
     ];
 
     protected $casts = [
