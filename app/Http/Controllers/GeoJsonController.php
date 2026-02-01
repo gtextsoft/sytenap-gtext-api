@@ -9,32 +9,46 @@ use Illuminate\Support\Facades\DB;
 class GeoJsonController extends Controller
 {
     public function getLayout(int $estateId)
-    {
-        $rows = DB::table('plots')   // <-- change to your real table name
-            ->where('estate_id', $estateId)
-            ->selectRaw("*, ST_AsGeoJSON(geom) AS geom_geojson")
-            ->get();
+        {
+            $rows = DB::table('plots')
+                ->leftJoin('estate_plot_details', 'estate_plot_details.estate_id', '=', 'plots.estate_id')
+                ->leftJoin('plot_purchases', function ($join) {
+                    $join->on('plot_purchases.estate_id', '=', 'plots.estate_id')
+                        ->whereRaw("
+                            CONCAT(',', REPLACE(REPLACE(plot_purchases.plots, '[', ''), ']', ''), ',')
+                            LIKE CONCAT('%,', plots.id, ',%')
+                        ");
+                })
+                ->where('plots.estate_id', $estateId)
+                ->selectRaw("
+                    plots.*,
+                    plot_purchases.user_id AS owner_id,
+                    estate_plot_details.price_per_plot AS price,
+                    ST_AsGeoJSON(plots.geom) AS geom_geojson
+                ")
+                ->get();
 
-        $features = $rows->map(function ($r) {
-            $props = (array) $r;
+            $features = $rows->map(function ($r) {
+                $props = (array) $r;
 
-            // remove geometry fields from properties
-            unset($props['geom']);
-            $geom = json_decode($props['geom_geojson'] ?? 'null', true);
-            unset($props['geom_geojson']);
+                // remove geometry fields from properties
+                unset($props['geom']);
+                $geom = json_decode($props['geom_geojson'] ?? 'null', true);
+                unset($props['geom_geojson']);
 
-            return [
-                "type" => "Feature",
-                "geometry" => $geom,
-                "properties" => $props,
-            ];
-        });
+                return [
+                    "type" => "Feature",
+                    "geometry" => $geom,
+                    "properties" => $props,
+                ];
+            });
 
-        return response()->json([
-            "type" => "FeatureCollection",
-            "name" => "Layout",
-            "features" => $features,
-        ]);
+            return response()->json([
+                "type" => "FeatureCollection",
+                "name" => "Layout",
+                "features" => $features,
+            ]);
+        }
     }
 
 
@@ -100,5 +114,4 @@ class GeoJsonController extends Controller
 
         return response()->json(['message' => 'Updated', 'id' => $plotId]);
     }
-
 }
