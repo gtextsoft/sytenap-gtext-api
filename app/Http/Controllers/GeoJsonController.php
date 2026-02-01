@@ -127,12 +127,12 @@ class GeoJsonController extends Controller
 
 
     public function allBoundary(){
-        $row = DB::table('estates')
-            ->whereNotNull('geom') // only return if geometry exists
-            ->selectRaw('ST_AsGeoJSON(geom) AS geom_geojson')
+        $rows = DB::table('estates')
+            ->whereNotNull('geom')
+            ->selectRaw('id, ST_AsGeoJSON(geom) AS geom_geojson')
             ->get();
 
-        if (!$row) {
+        if ($rows->isEmpty()) {
             return response()->json([
                 "type" => "FeatureCollection",
                 "name" => "Boundary",
@@ -140,16 +140,23 @@ class GeoJsonController extends Controller
             ]);
         }
 
+        $features = $rows->map(function ($r) {
+            return [
+                "type" => "Feature",
+                "geometry" => json_decode($r->geom_geojson ?? 'null', true),
+                "properties" => [
+                    "estate_id" => $r->id,
+                ],
+            ];
+        });
+
         return response()->json([
             "type" => "FeatureCollection",
             "name" => "Boundary",
-            "features" => [[
-                "type" => "Feature",
-                "geometry" => json_decode($row->geom_geojson, true),
-                "properties" => new \stdClass(),
-            ]],
+            "features" => $features,
         ]);
     }
+
 
 
 
