@@ -130,7 +130,6 @@ class GeoJsonController extends Controller
         $row = DB::table('estates')
             ->whereNotNull('geom') // only return if geometry exists
             ->selectRaw('ST_AsGeoJSON(geom) AS geom_geojson')
-            ->first();
 
         if (!$row) {
             return response()->json([
@@ -146,7 +145,7 @@ class GeoJsonController extends Controller
             "features" => [[
                 "type" => "Feature",
                 "geometry" => json_decode($row->geom_geojson, true),
-                "properties" => new \stdClass(), // {}
+                "properties" => new \stdClass(),
             ]],
         ]);
     }
