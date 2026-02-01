@@ -21,8 +21,11 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 use App\Http\Controllers\GeoJsonController;
 
 
-Route::get('/v1/geojson/{estate}/layout', [GeoJsonController::class, 'getLayout']);
-Route::get('/v1/geojson/{estate}/boundary', [GeoJsonController::class, 'getBoundary']);
+Route::get('/v1/geojson/{estate?}/layout', [GeoJsonController::class, 'getLayout']);
+Route::get('/v1/geojson/{estate?}/boundary', [GeoJsonController::class, 'getBoundary']);
+
+Route::get('/v1/geojson/layout', [GeoJsonController::class, 'allLayout']);
+Route::get('/v1/geojson/boundary', [GeoJsonController::class, 'allBoundary']);
 
 Route::patch('/v1/geojson/{estate}/layout/{id}', [GeoJsonController::class, 'updateLayoutFeature']);
 
