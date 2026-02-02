@@ -149,7 +149,7 @@ class GeoJsonController extends Controller
                     "title" => $r->title,
                     "town_or_city" => $r->town_or_city,
                     "state" => $r->state,
-                    "cordinates" => $r->cordinates,
+                    "coordinates" => $r->cordinates,
                 ],
             ];
         });
