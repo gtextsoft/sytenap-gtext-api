@@ -128,9 +128,22 @@ class GeoJsonController extends Controller
 
     public function allBoundary(){
         $rows = DB::table('estates')
-            ->whereNotNull('geom')
-            ->selectRaw('id, title, town_or_city, state, cordinates, ST_AsGeoJSON(geom) AS geom_geojson')
-            ->get();
+            ->whereNotNull('estates.geom')
+        ->leftJoin('estate_plot_details', 'estate_plot_details.estate_id', '=', 'estates.id')
+        ->selectRaw('
+            estates.id,
+            estates.title,
+            estates.town_or_city,
+            estates.state,
+            estates.size,
+            estates.direction,
+            estates.description,
+            estates.cordinates,
+            estate_plot_details.available_plot,
+            estate_plot_details.price_per_plot,
+            ST_AsGeoJSON(estates.geom) AS geom_geojson
+        ')
+        ->get();
 
         if ($rows->isEmpty()) {
             return response()->json([
@@ -145,12 +158,20 @@ class GeoJsonController extends Controller
                 "type" => "Feature",
                 "geometry" => json_decode($r->geom_geojson ?? 'null', true),
                 "properties" => [
-                    "estate_id" => $r->id,
-                    "title" => $r->title,
-                    "town_or_city" => $r->town_or_city,
-                    "state" => $r->state,
-                    "coordinates" => $r->cordinates,
-                ],
+                "estate_id" => $r->id,
+                "title" => $r->title,
+                "town_or_city" => $r->town_or_city,
+                "state" => $r->state,
+
+                "size" => $r->size,
+                "direction" => $r->direction,
+                "description" => $r->description,
+
+                "available_plot" => $r->available_plot,
+                "price_per_plot" => $r->price_per_plot,
+
+                "coordinates" => $r->cordinates,
+            ],
             ];
         });
 
