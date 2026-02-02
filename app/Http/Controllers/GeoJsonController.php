@@ -147,7 +147,7 @@ class GeoJsonController extends Controller
                 "properties" => [
                     "estate_id" => $r->id,
                     "title" => $r->title,
-                    "cordinates" => $r->coordinates,
+                    "coordinates" => $r->cordinates,
                 ],
             ];
         });
