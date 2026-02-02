@@ -129,7 +129,7 @@ class GeoJsonController extends Controller
     public function allBoundary(){
         $rows = DB::table('estates')
             ->whereNotNull('geom')
-            ->selectRaw('id, title, cordinates, ST_AsGeoJSON(geom) AS geom_geojson')
+            ->selectRaw('id, title,town_or_city,state, cordinates, ST_AsGeoJSON(geom) AS geom_geojson')
             ->get();
 
         if ($rows->isEmpty()) {
@@ -147,7 +147,9 @@ class GeoJsonController extends Controller
                 "properties" => [
                     "estate_id" => $r->id,
                     "title" => $r->title,
-                    "coordinates" => $r->cordinates,
+                    "town_or_city" => $r->town_or_city,
+                    "state" => $r->state,
+                    "cordinates" => $r->cordinates,
                 ],
             ];
         });
