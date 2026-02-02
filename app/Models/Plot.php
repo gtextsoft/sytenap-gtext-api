@@ -15,7 +15,7 @@ class Plot extends Model
         'coordinate',
         'status'
         'Area',
-        'geom',,
+        'geom',
         'Block',
         'Plot'
         'Price'
