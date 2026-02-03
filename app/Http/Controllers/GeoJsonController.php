@@ -138,7 +138,7 @@ class GeoJsonController extends Controller
             estates.size,
             estates.direction,
             estates.description,
-            estates.cordinates,
+            estates.cordinates AS coordinates,
             estate_plot_details.available_plot,
             estate_plot_details.price_per_plot,
             ST_AsGeoJSON(estates.geom) AS geom_geojson
@@ -170,7 +170,7 @@ class GeoJsonController extends Controller
                 "available_plot" => $r->available_plot,
                 "price_per_plot" => $r->price_per_plot,
 
-                "coordinates" => $r->cordinates,
+                "coordinates" => $r->coordinates,
             ],
             ];
         });
