@@ -50,12 +50,12 @@ public function index(Request $request)
     $admin = $request->user();
     Log::error('Authenticated user: ', ['user' => $admin]);
 
-    if ($admin->account_type !== 'admin') {
-        return response()->json([
-            'success' => false,
-            'message' => 'Access denied.'
-        ], 403);
-    }
+    // if ($admin->account_type !== 'admin') {
+    //     return response()->json([
+    //         'success' => false,
+    //         'message' => 'Access denied.'
+    //     ], 403);
+    // }
 
     $settings = CommissionSetting::orderBy('id', 'desc')->get();
 
