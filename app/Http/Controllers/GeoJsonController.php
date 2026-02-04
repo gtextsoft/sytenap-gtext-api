@@ -79,7 +79,7 @@ class GeoJsonController extends Controller
         }
 
 
-        $features = $rows->map(function ($r) {
+        $features = $row->map(function ($r) {
             return [
                 "type" => "Feature",
                 "geometry" => json_decode($r->geom_geojson ?? 'null', true),
