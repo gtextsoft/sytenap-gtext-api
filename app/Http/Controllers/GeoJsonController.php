@@ -56,8 +56,8 @@ class GeoJsonController extends Controller
         $estateId = (int) $estateId;
 
         $r = DB::table('estates')
-            ->where('id', $estateId)
-            ->whereNotNull('geom') // only return if geometry exists
+            ->where('estates.id', $estateId)
+            ->whereNotNull('estates.geom') // only return if geometry exists
             ->leftJoin('estate_plot_details', 'estate_plot_details.estate_id', '=', 'estates.id')
             ->selectRaw('
             estates.id,
@@ -79,8 +79,7 @@ class GeoJsonController extends Controller
         }
 
 
-        $features = 
-            return [
+        $features =[
                 "type" => "Feature",
                 "geometry" => json_decode($r->geom_geojson ?? 'null', true),
                 "properties" => [
