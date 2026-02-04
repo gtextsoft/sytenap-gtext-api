@@ -70,7 +70,7 @@ class GeoJsonController extends Controller
         ')
             ->first();
 
-        if (!$row) {
+        if (!$r) {
             return response()->json([
                 "type" => "FeatureCollection",
                 "name" => "Boundary",
@@ -79,7 +79,7 @@ class GeoJsonController extends Controller
         }
 
 
-        $features = $row->map(function ($r) {
+        $features = 
             return [
                 "type" => "Feature",
                 "geometry" => json_decode($r->geom_geojson ?? 'null', true),
@@ -93,7 +93,6 @@ class GeoJsonController extends Controller
                 "coordinates" => $r->coordinates,
             ],
             ];
-        });
 
 
         return response()->json([
