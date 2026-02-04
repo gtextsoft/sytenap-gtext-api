@@ -55,7 +55,7 @@ class GeoJsonController extends Controller
          // normal single-estate boundary
         $estateId = (int) $estateId;
 
-        $row = DB::table('estates')
+        $r = DB::table('estates')
             ->where('id', $estateId)
             ->whereNotNull('geom') // only return if geometry exists
             ->leftJoin('estate_plot_details', 'estate_plot_details.estate_id', '=', 'estates.id')
