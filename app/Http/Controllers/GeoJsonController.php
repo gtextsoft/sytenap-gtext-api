@@ -58,7 +58,16 @@ class GeoJsonController extends Controller
         $row = DB::table('estates')
             ->where('id', $estateId)
             ->whereNotNull('geom') // only return if geometry exists
-            ->selectRaw('ST_AsGeoJSON(geom) AS geom_geojson')
+            ->leftJoin('estate_plot_details', 'estate_plot_details.estate_id', '=', 'estates.id')
+            ->selectRaw('
+            estates.id,
+            estates.title,
+            estates.size,
+            estates.cordinates AS coordinates,
+            estate_plot_details.available_plot,
+            estate_plot_details.price_per_plot,
+            ST_AsGeoJSON(estates.geom) AS geom_geojson
+        ')
             ->first();
 
         if (!$row) {
@@ -69,14 +78,28 @@ class GeoJsonController extends Controller
             ]);
         }
 
+
+        $features = $rows->map(function ($r) {
+            return [
+                "type" => "Feature",
+                "geometry" => json_decode($r->geom_geojson ?? 'null', true),
+                "properties" => [
+                "id" => $r->id,
+                "title" => $r->title,
+                "size" => $r->size,
+                "available_plot" => $r->available_plot,
+                "price_per_plot" => $r->price_per_plot,
+
+                "coordinates" => $r->coordinates,
+            ],
+            ];
+        });
+
+
         return response()->json([
             "type" => "FeatureCollection",
             "name" => "Boundary",
-            "features" => [[
-                "type" => "Feature",
-                "geometry" => json_decode($row->geom_geojson, true),
-                "properties" => new \stdClass(), // {}
-            ]],
+            "features" => $features
         ]);
     }
 
