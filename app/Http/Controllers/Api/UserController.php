@@ -7,9 +7,18 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
+use App\Services\CartService;
+use Illuminate\Support\Str;
+
 
 class UserController extends Controller {
     protected $otpService;
+    protected $cartService;
+
+    public function __construct(CartService $cartService)
+    {
+        $this->cartService = $cartService;
+    }
 
     /**
     * Request email change ( send OTP )
@@ -152,4 +161,109 @@ class UserController extends Controller {
             'data' => $user->only( [ 'first_name', 'last_name', 'state', 'country' ] ),
         ] );
     }
+
+    private function getTempUserId(): string
+    {
+        if (!session()->has('temp_user_id')) {
+            session(['temp_user_id' => (string) Str::uuid()]);
+        }
+
+        return session('temp_user_id');
+    }
+
+    public function addToCart(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'estate_id' => 'required|integer|exists:estates,id',
+            'plot_id'   => 'required|integer|exists:plots,id',
+            'price'     => 'required|numeric|min:0',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors'  => $validator->errors(),
+            ], 422);
+        }
+
+        try {
+
+            $cartItem = $this->cartService->addItem(
+                estateId: $request->estate_id,
+                plotId: $request->plot_id,
+                price: $request->price,
+                userId: $request->user()?->id,
+                tempUserId: $this->getTempUserId()
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Plot added to cart',
+                'data' => $cartItem
+            ]);
+
+        } catch (\Exception $e) {
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 400);
+        }
+    }
+
+    public function getCart(Request $request): JsonResponse
+    {
+        $items = $this->cartService->getCartItems(
+            $request->user()?->id,
+            $this->getTempUserId()
+        );
+
+        return response()->json([
+            'success' => true,
+            'data' => $items
+        ]);
+    }
+
+    public function removeCartItem(int $id): JsonResponse
+    {
+        $this->cartService->removeItem($id);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Item removed from cart'
+        ]);
+    }
+
+    public function cartTotal(Request $request): JsonResponse
+    {
+        $total = $this->cartService->getCartTotal(
+            $request->user()?->id,
+            $this->getTempUserId()
+        );
+
+        return response()->json([
+            'success' => true,
+            'total' => $total
+        ]);
+    }
+
+    public function clearCart(Request $request): JsonResponse
+    {
+        $this->cartService->clearCart(
+            $request->user()?->id,
+            $this->getTempUserId()
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Cart cleared'
+        ]);
+    }
+
+
+
+
+
+
 }
