@@ -159,6 +159,11 @@ Route::prefix('v1')->group(function () {
         Route::get('/cart-total', [UserController::class, 'cartTotal'])->middleware('auth:sanctum');
         Route::delete('/cart-clear', [UserController::class, 'clearCart'])->middleware('auth:sanctum');
         Route::post('/create-invoice', [UserController::class, 'createInvoice'])->middleware('auth:sanctum');
+        Route::middleware('auth:sanctum')->post(
+                '/invoice/{invoice}/confirm-payment',
+                [UserController::class, 'confirmPayment']
+        );
+
 
 
 

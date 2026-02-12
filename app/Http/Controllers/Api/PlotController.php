@@ -20,6 +20,9 @@ use App\Services\OtpService;
 use Illuminate\Support\Facades\Notification;
 use App\Notifications\SendAccountCredentialsNotification;
 use App\Notifications\PropertyAllocatedNotification;
+use Illuminate\Support\Facades\Cache;
+use App\Services\ZohoService;
+use App\Models\ZohoCredential; 
 
 
 class PlotController extends Controller
@@ -2131,9 +2134,68 @@ class PlotController extends Controller
         }
     }
 
-    public function handleZohoCallback(Request $request) { 
-        return response()->json([ 'success' => true, 'message' => 'Zoho callback received', 'data' => $request->all() ], 200);
+   
 
+    public function handleZohoCallback(Request $request)
+    {
+        try {
+
+            if (!$request->has('code')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Authorization code not provided by Zoho'
+                ], 400);
+            }
+
+            $code = $request->code;
+
+            $zohoService = new ZohoService();
+
+            // Exchange code for tokens
+            $tokens = $zohoService->getTokensFromCode($code);
+
+            if (!isset($tokens['refresh_token'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Refresh token not returned by Zoho',
+                    'zoho_response' => $tokens
+                ], 400);
+            }
+
+            // -----------------------------------
+            // STORE TOKENS PERMANENTLY
+            // -----------------------------------
+
+            ZohoCredential::updateOrCreate(
+                ['id' => 1], // single Zoho account
+                [
+                    'refresh_token' => $tokens['refresh_token'],
+                    'access_token'  => $tokens['access_token'],
+                    'expires_in'    => $tokens['expires_in'],
+                ]
+            );
+
+            // cache access token
+            Cache::put(
+                'zoho_access_token',
+                $tokens['access_token'],
+                now()->addSeconds($tokens['expires_in'] - 60)
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Zoho connected successfully. Refresh token stored.'
+            ]);
+
+        } catch (\Exception $e) {
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Zoho connection failed',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
+
 
 }

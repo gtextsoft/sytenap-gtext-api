@@ -11,6 +11,9 @@ use App\Services\CartService;
 use App\Services\InvoiceService;
 use Illuminate\Support\Str;
 use App\Models\Plot;
+use App\Models\Invoice; 
+use App\Services\ZohoService;
+use App\Models\ZohoCredential;
 
 
 
@@ -484,8 +487,72 @@ class UserController extends Controller {
 
 
     /**
-     * Create an invoice for all cart items
+     * @OA\Post(
+     *     path="/api/v1/checkout/invoice",
+     *     tags={"Checkout"},
+     *     summary="Create an invoice for all cart items",
+     *     description="Calculates the total amount of items in the user's cart (or guest cart via temporary_user_id) and generates an invoice. Returns demo bank info for payment.",
+     *
+     *     @OA\Parameter(
+     *         name="X-Temp-User",
+     *         in="header",
+     *         required=false,
+     *         description="Temporary user ID for guests. Include if the user is not logged in.",
+     *         @OA\Schema(type="string", example="f4740c0e-9011-4761-8485-f0c605f3e720")
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Invoice created successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Invoice created successfully"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(
+     *                     property="invoice",
+     *                     type="object",
+     *                     @OA\Property(property="id", type="integer", example=12),
+     *                     @OA\Property(property="user_id", type="integer", nullable=true, example=3),
+     *                     @OA\Property(property="invoice_number", type="string", example="INV-20260212-5F3A2B"),
+     *                     @OA\Property(property="payment_status", type="string", example="pending"),
+     *                     @OA\Property(property="amount", type="number", format="float", example=3500000),
+     *                     @OA\Property(property="created_at", type="string", format="date-time"),
+     *                     @OA\Property(property="updated_at", type="string", format="date-time")
+     *                 ),
+     *                 @OA\Property(
+     *                     property="bank_info",
+     *                     type="object",
+     *                     @OA\Property(property="bank_name", type="string", example="Demo Bank"),
+     *                     @OA\Property(property="account_name", type="string", example="Gtext Land Limited"),
+     *                     @OA\Property(property="account_number", type="string", example="0123456789"),
+     *                     @OA\Property(property="reference", type="string", example="INV-20260212-5F3A2B")
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=400,
+     *         description="No items in cart",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="No items in cart")
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Unauthenticated.")
+     *         )
+     *     )
+     * )
      */
+
     public function createInvoice(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -525,8 +592,75 @@ class UserController extends Controller {
         ]);
     }
 
+    
 
+   
 
+    public function confirmPayment(Request $request, Invoice $invoice)
+    {
+        if ($invoice->payment_status === 'paid') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invoice already marked as paid'
+            ], 400);
+        }
+
+        try {
+
+            // 1️⃣ Mark invoice as paid
+            $invoice->update([
+                'payment_status' => 'paid'
+            ]);
+
+            // 2 Get user (optional if invoice allows null)
+            $user = $invoice->user;
+
+            // 3️⃣ Get Zoho refresh token from DB
+            $zohoCredential = ZohoCredential::first();
+
+            if (!$zohoCredential || !$zohoCredential->refresh_token) {
+                throw new \Exception('Zoho CRM is not connected. Missing refresh token.');
+            }
+
+            $refreshToken = $zohoCredential->refresh_token;
+
+            // 4️ Send to Zoho CRM
+            $zohoService = new ZohoService();
+
+            // create contact
+            $contactId = $zohoService->createContact([
+                'Last_Name'  => $user?->last_name ?? 'Customer',
+                'First_Name' => $user?->first_name ?? '',
+                'Email'      => $user?->email ?? '',
+            ], $refreshToken);
+
+            // create deal
+            $deal = $zohoService->createDeal([
+                'Deal_Name'   => 'Property Purchase - ' . $invoice->invoice_number,
+                'Amount'      => $invoice->amount,
+                'Stage'       => 'Payment Made',
+                'Contact_Name'=> ['id' => $contactId],
+                'Description' => 'Customer confirmed payment via bank transfer'
+            ], $refreshToken);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Payment confirmed and sent to CRM',
+                'data' => [
+                    'invoice' => $invoice,
+                    'zoho' => $deal
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Payment confirmed but CRM sync failed',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 
 
 
