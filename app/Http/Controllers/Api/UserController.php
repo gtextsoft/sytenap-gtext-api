@@ -595,6 +595,93 @@ class UserController extends Controller {
     
 
    
+    /**
+     * @OA\Post(
+     *     path="/api/v1/invoices/{invoice}/confirm-payment",
+     *     tags={"Invoices"},
+     *     summary="Confirm invoice payment and send to Zoho CRM",
+     *     description="Marks the specified invoice as paid and sends the payment information to Zoho CRM. 
+     *                  Only unpaid invoices can be confirmed. This will create a contact (if not exists) 
+     *                  and a deal in Zoho CRM.",
+     *
+     *     @OA\Parameter(
+     *         name="invoice",
+     *         in="path",
+     *         required=true,
+     *         description="ID of the invoice to confirm payment for",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *
+     *     @OA\RequestBody(
+     *         required=false,
+     *         description="Optional data if needed, currently none",
+     *         @OA\JsonContent(
+     *             type="object"
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Payment confirmed and data sent to Zoho CRM successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Payment confirmed and sent to CRM"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(
+     *                     property="invoice",
+     *                     type="object",
+     *                     description="The confirmed invoice",
+     *                     @OA\Property(property="id", type="integer", example=1),
+     *                     @OA\Property(property="user_id", type="integer", example=3),
+     *                     @OA\Property(property="invoice_number", type="string", example="INV-20260212-0001"),
+     *                     @OA\Property(property="amount", type="number", example=3500000),
+     *                     @OA\Property(property="payment_status", type="string", example="paid"),
+     *                     @OA\Property(property="created_at", type="string", format="date-time"),
+     *                     @OA\Property(property="updated_at", type="string", format="date-time")
+     *                 ),
+     *                 @OA\Property(
+     *                     property="zoho",
+     *                     type="object",
+     *                     description="Response returned from Zoho CRM when creating deal/contact",
+     *                     example={
+     *                         "data": {
+     *                             {
+     *                                 "id": "1234567890",
+     *                                 "Deal_Name": "Property Purchase - INV-20260212-0001",
+     *                                 "Amount": 3500000,
+     *                                 "Stage": "Payment Made"
+     *                             }
+     *                         }
+     *                     }
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=400,
+     *         description="Invoice already marked as paid",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Invoice already marked as paid")
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=500,
+     *         description="Payment confirmed but CRM sync failed",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Payment confirmed but CRM sync failed"),
+     *             @OA\Property(property="error", type="string", example="Zoho CRM is not connected. Missing refresh token.")
+     *         )
+     *     ),
+     *
+     *     security={{"sanctum":{}}}
+     * )
+     */
 
     public function confirmPayment(Request $request, Invoice $invoice)
     {
