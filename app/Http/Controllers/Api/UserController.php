@@ -502,7 +502,7 @@ class UserController extends Controller {
         }
 
         //  Calculate total
-        $totalAmount = $cartItems->sum('price');
+        $totalAmount = $this->cartService->getCartTotal($user?->id, $tempUserId);
 
         //  Create invoice
         $invoice = $this->invoiceService->createInvoice($user?->id ?? null, $totalAmount);
