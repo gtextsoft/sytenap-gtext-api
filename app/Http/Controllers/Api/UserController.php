@@ -9,6 +9,8 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
 use App\Services\CartService;
 use Illuminate\Support\Str;
+use App\Models\Plot;
+
 
 
 class UserController extends Controller {
@@ -243,6 +245,18 @@ class UserController extends Controller {
 
         try {
 
+            //  FETCH PLOT
+            $plot = Plot::findOrFail($request->plot_id);
+
+            //  CHECK STATUS
+            if ($plot->status !== 'available') {
+                return response()->json([
+                    'success' => false,
+                    'message' => "This plot is currently {$plot->status} and cannot be added to cart."
+                ], 400);
+            }
+
+            //  ADD TO CART
             $cartItem = $this->cartService->addItem(
                 estateId: $request->estate_id,
                 plotId: $request->plot_id,
@@ -265,6 +279,7 @@ class UserController extends Controller {
             ], 400);
         }
     }
+
 
     /**
  * @OA\Get(
