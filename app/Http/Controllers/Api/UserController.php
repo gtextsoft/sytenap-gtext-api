@@ -735,7 +735,7 @@ class UserController extends Controller {
             'Last_Name'  => $user?->last_name ?? 'Customer',
             'First_Name' => $user?->first_name ?? '',
             'Email'      => $user?->email ?? '',
-        ]);
+        ], $refreshToken);
 
         // create deal using the contact ID
         $deal = $zohoService->createDeal([
