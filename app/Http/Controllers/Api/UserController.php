@@ -173,14 +173,17 @@ class UserController extends Controller {
         return session('temp_user_id');
     }
 
-   /**
+ 
+
+    /**
  * @OA\Post(
  *     path="/api/v1/cart/add",
  *     tags={"Cart"},
  *     summary="Add plot to cart",
  *     description="Adds a plot to the user's cart. 
  *                  Only plots with status 'available' can be added. 
- *                  If the plot is already sold or reserved, the request will fail.",
+ *                  If the plot is already sold or reserved, the request will fail.
+ *                  Guest users can provide a temporary_user_id; authenticated users can omit it.",
  *
  *     @OA\RequestBody(
  *         required=true,
@@ -205,11 +208,13 @@ class UserController extends Controller {
  *                 example=3500000,
  *                 description="Price of the plot at the time of adding to cart"
  *             ),
- *            @OA\Property(
- *                property="temporary_user_id",
- *               type="string",
- *              example="guest-uuid-string",
- *              description="(Optional) Temporary user ID for guest carts. Required if user is not logged in."
+ *             @OA\Property(
+ *                 property="temporary_user_id",
+ *                 type="string",
+ *                 nullable=true,
+ *                 example="f4740c0e-9011-4761-8485-f0c605f3e720",
+ *                 description="Temporary UUID for guest users to track their cart before login"
+ *             )
  *         )
  *     ),
  *
@@ -228,10 +233,10 @@ class UserController extends Controller {
  *                 @OA\Property(property="plot_id", type="integer", example=10),
  *                 @OA\Property(property="price", type="number", example=3500000),
  *                 @OA\Property(property="user_id", type="integer", nullable=true, example=3),
- *                 @OA\Property(property="temporary_user_id", type="string", nullable=true, example="guest-uuid-string"),
+ *                 @OA\Property(property="temporary_user_id", type="string", nullable=true, example="f4740c0e-9011-4761-8485-f0c605f3e720"),
  *                 @OA\Property(property="cart_status", type="string", example="active"),
- *                 @OA\Property(property="created_at", type="string", format="date-time"),
- *                 @OA\Property(property="updated_at", type="string", format="date-time")
+ *                 @OA\Property(property="created_at", type="string", format="date-time", example="2026-02-12T10:25:36.000000Z"),
+ *                 @OA\Property(property="updated_at", type="string", format="date-time", example="2026-02-12T10:25:36.000000Z")
  *             )
  *         )
  *     ),
@@ -267,14 +272,14 @@ class UserController extends Controller {
  *                 property="errors",
  *                 type="object",
  *                 example={
- *                     "plot_id": {"The selected plot id is invalid."}
+ *                     "plot_id": {"The selected plot id is invalid."},
+ *                     "temporary_user_id": {"The temporary user id must be a valid UUID."}
  *                 }
  *             )
  *         )
  *     )
  * )
  */
-
 
     public function addToCart(Request $request): JsonResponse
     {
