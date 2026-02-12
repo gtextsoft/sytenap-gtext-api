@@ -17,6 +17,7 @@ use App\Models\Estate;
 use App\Notifications\AdminEstateAssignedNotification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
+use App\Services\CartService;
 
 
 class AuthController extends Controller
@@ -205,6 +206,15 @@ class AuthController extends Controller
 
             $token = $user->createToken('api-token')->plainTextToken;
             $this->createReferralIfNotExists($user->id);
+
+            // Merge guest cart (if exists)
+            $tempUserId = session('temp_user_id');
+            if ($tempUserId) {
+                $cartService = new CartService();
+                $cartService->mergeGuestCart($tempUserId, $user->id);
+                // Optionally clear session temp ID
+                session()->forget('temp_user_id');
+            }
 
             return response()->json([
                 'success' => true,
