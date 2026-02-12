@@ -373,10 +373,10 @@ class UserController extends Controller {
             $this->getTempUserId()
         );
 
-        return response()->json([
-            'success' => true,
-            'data' => $items
-        ]);
+       return response()->json([
+        'success' => true,
+        'data' => $items
+        ], 200, [], JSON_UNESCAPED_UNICODE);
     }
 
 
