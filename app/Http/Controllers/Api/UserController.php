@@ -173,20 +173,38 @@ class UserController extends Controller {
         return session('temp_user_id');
     }
 
-    /**
+   /**
  * @OA\Post(
  *     path="/api/v1/cart/add",
  *     tags={"Cart"},
  *     summary="Add plot to cart",
- *     description="Adds a plot to the user's cart. Supports both authenticated users and guests.",
+ *     description="Adds a plot to the user's cart. 
+ *                  Only plots with status 'available' can be added. 
+ *                  If the plot is already sold or reserved, the request will fail.",
  *
  *     @OA\RequestBody(
  *         required=true,
  *         @OA\JsonContent(
  *             required={"estate_id","plot_id","price"},
- *             @OA\Property(property="estate_id", type="integer", example=1),
- *             @OA\Property(property="plot_id", type="integer", example=10),
- *             @OA\Property(property="price", type="number", format="float", example=3500000)
+ *             @OA\Property(
+ *                 property="estate_id",
+ *                 type="integer",
+ *                 example=1,
+ *                 description="ID of the estate where the plot belongs"
+ *             ),
+ *             @OA\Property(
+ *                 property="plot_id",
+ *                 type="integer",
+ *                 example=10,
+ *                 description="ID of the plot to add to cart"
+ *             ),
+ *             @OA\Property(
+ *                 property="price",
+ *                 type="number",
+ *                 format="float",
+ *                 example=3500000,
+ *                 description="Price of the plot at the time of adding to cart"
+ *             )
  *         )
  *     ),
  *
@@ -204,6 +222,8 @@ class UserController extends Controller {
  *                 @OA\Property(property="estate_id", type="integer", example=1),
  *                 @OA\Property(property="plot_id", type="integer", example=10),
  *                 @OA\Property(property="price", type="number", example=3500000),
+ *                 @OA\Property(property="user_id", type="integer", nullable=true, example=3),
+ *                 @OA\Property(property="temporary_user_id", type="string", nullable=true, example="guest-uuid-string"),
  *                 @OA\Property(property="cart_status", type="string", example="active"),
  *                 @OA\Property(property="created_at", type="string", format="date-time"),
  *                 @OA\Property(property="updated_at", type="string", format="date-time")
@@ -213,19 +233,43 @@ class UserController extends Controller {
  *
  *     @OA\Response(
  *         response=400,
- *         description="Plot already in cart",
+ *         description="Plot not available or already in cart",
  *         @OA\JsonContent(
  *             @OA\Property(property="success", type="boolean", example=false),
- *             @OA\Property(property="message", type="string", example="Plot already in cart")
+ *             @OA\Property(
+ *                 property="message",
+ *                 type="string",
+ *                 example="This plot is currently sold and cannot be added to cart."
+ *             )
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=404,
+ *         description="Plot not found",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="message", type="string", example="No query results for model [Plot] 99")
  *         )
  *     ),
  *
  *     @OA\Response(
  *         response=422,
- *         description="Validation failed"
+ *         description="Validation failed",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="success", type="boolean", example=false),
+ *             @OA\Property(property="message", type="string", example="Validation failed"),
+ *             @OA\Property(
+ *                 property="errors",
+ *                 type="object",
+ *                 example={
+ *                     "plot_id": {"The selected plot id is invalid."}
+ *                 }
+ *             )
+ *         )
  *     )
  * )
  */
+
 
     public function addToCart(Request $request): JsonResponse
     {
