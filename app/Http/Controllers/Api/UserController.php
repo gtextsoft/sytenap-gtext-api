@@ -488,7 +488,7 @@ class UserController extends Controller {
 
     /**
      * @OA\Post(
-     *     path="/api/v1/checkout/invoice",
+     *     path="/api/v1/create-invoice",
      *     tags={"Checkout"},
      *     summary="Create an invoice for all cart items",
      *     description="Calculates the total amount of items in the user's cart (or guest cart via temporary_user_id) and generates an invoice. Returns demo bank info for payment.",
