@@ -8,6 +8,7 @@ use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
 use App\Services\CartService;
+use App\Services\InvoiceService;
 use Illuminate\Support\Str;
 use App\Models\Plot;
 
@@ -16,10 +17,12 @@ use App\Models\Plot;
 class UserController extends Controller {
     protected $otpService;
     protected $cartService;
+    protected $invoiceService;
 
-    public function __construct(CartService $cartService)
+    public function __construct(CartService $cartService, InvoiceService $invoiceService)
     {
         $this->cartService = $cartService;
+        $this->invoiceService = $invoiceService;
     }
 
     /**
@@ -476,6 +479,49 @@ class UserController extends Controller {
         return response()->json([
             'success' => true,
             'message' => 'Cart cleared'
+        ]);
+    }
+
+
+    /**
+     * Create an invoice for all cart items
+     */
+    public function createInvoice(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $tempUserId = $request->header('X-Temp-User'); // if guest passed it in header
+
+        // Get cart items
+        $cartItems = $this->cartService->getCartItems($user?->id, $tempUserId);
+
+        if ($cartItems->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No items in cart'
+            ], 400);
+        }
+
+        //  Calculate total
+        $totalAmount = $cartItems->sum('price');
+
+        //  Create invoice
+        $invoice = $this->invoiceService->createInvoice($user?->id ?? null, $totalAmount);
+
+        // Return demo bank info for frontend
+        $bankInfo = [
+            'bank_name' => 'Demo Bank',
+            'account_name' => 'Gtext Land Limited',
+            'account_number' => '0123456789',
+            'reference' => $invoice->invoice_number,
+        ];
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Invoice created successfully',
+            'data' => [
+                'invoice' => $invoice,
+                'bank_info' => $bankInfo,
+            ]
         ]);
     }
 
