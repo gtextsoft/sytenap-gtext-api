@@ -731,7 +731,7 @@ class UserController extends Controller {
             // ], $refreshToken);
 
             // create contact and get Zoho contact ID
-        $contactId = $zohoService->createContact([
+        $contactId = $zohoService->getOrCreateContact([
             'Last_Name'  => $user?->last_name ?? 'Customer',
             'First_Name' => $user?->first_name ?? '',
             'Email'      => $user?->email ?? '',

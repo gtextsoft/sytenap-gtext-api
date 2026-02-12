@@ -122,4 +122,37 @@ class ZohoService
 
         return $resp['data'][0]['id']; // This is the numeric Zoho ID
     }
+
+    public function getOrCreateContact(array $contactData, string $refreshToken): string
+    {
+        $accessToken = $this->getAccessToken();
+
+        // Search contact by email
+        $response = Http::withToken($accessToken)
+            ->get($this->apiDomain . '/crm/v2/Contacts/search', [
+                'email' => $contactData['Email']
+            ]);
+
+        $resp = $response->json();
+
+        // If contact exists, return existing ID
+        if (!empty($resp['data'][0]['id'])) {
+            return $resp['data'][0]['id'];
+        }
+
+        // Otherwise, create new contact
+        $response = Http::withToken($accessToken)
+            ->post($this->apiDomain . '/crm/v2/Contacts', [
+                'data' => [$contactData]
+            ]);
+
+        $resp = $response->json();
+
+        if (!isset($resp['data'][0]['id'])) {
+            throw new \Exception('Failed to create Zoho contact: ' . json_encode($resp));
+        }
+
+        return $resp['data'][0]['id'];
+    }
+
 }
