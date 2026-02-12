@@ -735,6 +735,7 @@ class UserController extends Controller {
             'Last_Name'  => $user?->last_name ?? 'Customer',
             'First_Name' => $user?->first_name ?? '',
             'Email'      => $user?->email ?? '',
+            'Company'      => 'Gtext Land Limited', 
         ], $refreshToken);
 
         // create deal using the contact ID
