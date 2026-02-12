@@ -153,14 +153,12 @@ Route::prefix('v1')->group(function () {
     Route::get('/payments/callback', [PlotController::class, 'handlePaystackCallback']);
 
 
-    Route::middleware('auth:sanctum')->group(function () {
         Route::post('/cart/add', [UserController::class, 'addToCart']);
         Route::get('/cart', [UserController::class, 'getCart']);
         Route::delete('/cart/{id}', [UserController::class, 'removeCartItem']);
         Route::get('/cart-total', [UserController::class, 'cartTotal']);
         Route::delete('/cart-clear', [UserController::class, 'clearCart']);
 
-    });
 
 
 
