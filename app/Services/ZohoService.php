@@ -79,16 +79,25 @@ class ZohoService
     }
 
 
-    public function createDeal(array $dealData): array
+    public function createDeal(array $dealData, string $contactId): array
     {
         $accessToken = $this->getAccessToken();
+
+            // Ensure the contact ID is passed correctly
+        $dealData['Contact_Name'] = ['id' => $contactId];
 
         $response = Http::withToken($accessToken)
             ->post($this->apiDomain . '/crm/v2/Deals', [
                 'data' => [$dealData]
             ]);
 
-        return $response->json();
+        $resp = $response->json();
+
+        if (isset($resp['data'][0]['code']) && $resp['data'][0]['code'] === 'INVALID_DATA') {
+            throw new \Exception('Failed to create Zoho deal: ' . json_encode($resp));
+        }
+
+        return $resp;
     }
 
 
@@ -100,12 +109,17 @@ class ZohoService
         $accessToken = $this->getAccessToken();
 
         $response = Http::withToken($accessToken)
-            ->post($this->apiDomain . '/crm/v2/Contacts', [
-                'data' => [$contactData]
-            ]);
+        ->post($this->apiDomain . '/crm/v2/Contacts', [
+            'data' => [$contactData]
+        ]);
 
         $resp = $response->json();
 
-        return $resp['data'][0]['id'] ?? '';
+        // Check for success
+        if (!isset($resp['data'][0]['id'])) {
+            throw new \Exception('Failed to create Zoho contact: ' . json_encode($resp));
+        }
+
+        return $resp['data'][0]['id']; // This is the numeric Zoho ID
     }
 }

@@ -714,21 +714,37 @@ class UserController extends Controller {
             // 4️ Send to Zoho CRM
             $zohoService = new ZohoService();
 
-            // create contact
-            $contactId = $zohoService->createContact([
-                'Last_Name'  => $user?->last_name ?? 'Customer',
-                'First_Name' => $user?->first_name ?? '',
-                'Email'      => $user?->email ?? '',
-            ], $refreshToken);
+            // // create contact
+            // $contactId = $zohoService->createContact([
+            //     'Last_Name'  => $user?->last_name ?? 'Customer',
+            //     'First_Name' => $user?->first_name ?? '',
+            //     'Email'      => $user?->email ?? '',
+            // ], $refreshToken);
 
-            // create deal
-            $deal = $zohoService->createDeal([
-                'Deal_Name'   => 'Property Purchase - ' . $invoice->invoice_number,
-                'Amount'      => $invoice->amount,
-                'Stage'       => 'Payment Made',
-                'Contact_Name'=> ['id' => $contactId],
-                'Description' => 'Customer confirmed payment via bank transfer'
-            ], $refreshToken);
+            // // create deal
+            // $deal = $zohoService->createDeal([
+            //     'Deal_Name'   => 'Property Purchase - ' . $invoice->invoice_number,
+            //     'Amount'      => $invoice->amount,
+            //     'Stage'       => 'Payment Made',
+            //     'Contact_Name'=> ['id' => $contactId],
+            //     'Description' => 'Customer confirmed payment via bank transfer'
+            // ], $refreshToken);
+
+            // create contact and get Zoho contact ID
+        $contactId = $zohoService->createContact([
+            'Last_Name'  => $user?->last_name ?? 'Customer',
+            'First_Name' => $user?->first_name ?? '',
+            'Email'      => $user?->email ?? '',
+        ]);
+
+        // create deal using the contact ID
+        $deal = $zohoService->createDeal([
+            'Deal_Name'   => 'Property Purchase - ' . $invoice->invoice_number,
+            'Amount'      => $invoice->amount,
+            'Stage'       => 'Payment Made',
+            'Description' => 'Customer confirmed payment via bank transfer'
+        ], $contactId);
+
 
             return response()->json([
                 'success' => true,
