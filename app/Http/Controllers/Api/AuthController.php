@@ -208,12 +208,11 @@ class AuthController extends Controller
             $this->createReferralIfNotExists($user->id);
 
             // Merge guest cart (if exists)
-            $tempUserId = session('temp_user_id');
+            $tempUserId = $request->header('X-Temp-User');
             if ($tempUserId) {
                 $cartService = new CartService();
                 $cartService->mergeGuestCart($tempUserId, $user->id);
-                // Optionally clear session temp ID
-                session()->forget('temp_user_id');
+              
             }
 
             return response()->json([

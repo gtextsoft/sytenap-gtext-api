@@ -204,7 +204,12 @@ class UserController extends Controller {
  *                 format="float",
  *                 example=3500000,
  *                 description="Price of the plot at the time of adding to cart"
- *             )
+ *             ),
+ *            @OA\Property(
+ *                property="temporary_user_id",
+ *               type="string",
+ *              example="guest-uuid-string",
+ *              description="(Optional) Temporary user ID for guest carts. Required if user is not logged in."
  *         )
  *     ),
  *
@@ -277,6 +282,7 @@ class UserController extends Controller {
             'estate_id' => 'required|integer|exists:estates,id',
             'plot_id'   => 'required|integer|exists:plots,id',
             'price'     => 'required|numeric|min:0',
+            'temporary_user_id' => 'nullable|string|uuid',
         ]);
 
         if ($validator->fails()) {
@@ -306,7 +312,7 @@ class UserController extends Controller {
                 plotId: $request->plot_id,
                 price: $request->price,
                 userId: $request->user()?->id,
-                tempUserId: $this->getTempUserId()
+                tempUserId: $request->temporary_user_id ?? $this->getTempUserId()
             );
 
             return response()->json([
