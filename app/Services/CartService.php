@@ -83,7 +83,7 @@ class CartService
         return Cart::active()
             ->when($userId, fn ($q) => $q->where('user_id', $userId))
             ->when(!$userId && $tempUserId, fn ($q) => $q->where('temporary_user_id', $tempUserId))
-            ->with(['estate'])
+            ->with(['estate', 'plot'])
             ->get();
     }
 

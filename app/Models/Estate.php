@@ -30,6 +30,10 @@ class Estate extends Model
         'geom',
     ];
 
+    protected $hidden = [
+        'geom', // hide the geometry column
+    ];
+
     protected $casts = [
         'has_cerificate_of_occupancy' => 'boolean',
         'amenities' => 'array',
