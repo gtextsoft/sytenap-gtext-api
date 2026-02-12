@@ -171,6 +171,60 @@ class UserController extends Controller {
         return session('temp_user_id');
     }
 
+    /**
+ * @OA\Post(
+ *     path="/api/v1/cart/add",
+ *     tags={"Cart"},
+ *     summary="Add plot to cart",
+ *     description="Adds a plot to the user's cart. Supports both authenticated users and guests.",
+ *
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\JsonContent(
+ *             required={"estate_id","plot_id","price"},
+ *             @OA\Property(property="estate_id", type="integer", example=1),
+ *             @OA\Property(property="plot_id", type="integer", example=10),
+ *             @OA\Property(property="price", type="number", format="float", example=3500000)
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=200,
+ *         description="Plot added to cart successfully",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="success", type="boolean", example=true),
+ *             @OA\Property(property="message", type="string", example="Plot added to cart"),
+ *             @OA\Property(
+ *                 property="data",
+ *                 type="object",
+ *                 @OA\Property(property="id", type="integer", example=5),
+ *                 @OA\Property(property="cart_id", type="string", example="b2e5f1b3-9e3c-4b5e-9e11-23caa001aa22"),
+ *                 @OA\Property(property="estate_id", type="integer", example=1),
+ *                 @OA\Property(property="plot_id", type="integer", example=10),
+ *                 @OA\Property(property="price", type="number", example=3500000),
+ *                 @OA\Property(property="cart_status", type="string", example="active"),
+ *                 @OA\Property(property="created_at", type="string", format="date-time"),
+ *                 @OA\Property(property="updated_at", type="string", format="date-time")
+ *             )
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=400,
+ *         description="Plot already in cart",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="success", type="boolean", example=false),
+ *             @OA\Property(property="message", type="string", example="Plot already in cart")
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=422,
+ *         description="Validation failed"
+ *     )
+ * )
+ */
+
     public function addToCart(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
@@ -212,6 +266,36 @@ class UserController extends Controller {
         }
     }
 
+    /**
+ * @OA\Get(
+ *     path="/api/v1/cart",
+ *     tags={"Cart"},
+ *     summary="Get user cart items",
+ *     description="Retrieve all active cart items for the logged-in user or guest session.",
+ *
+ *     @OA\Response(
+ *         response=200,
+ *         description="Cart retrieved successfully",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="success", type="boolean", example=true),
+ *             @OA\Property(
+ *                 property="data",
+ *                 type="array",
+ *                 @OA\Items(
+ *                     @OA\Property(property="id", type="integer", example=1),
+ *                     @OA\Property(property="cart_id", type="string", example="b2e5f1b3-9e3c-4b5e-9e11-23caa001aa22"),
+ *                     @OA\Property(property="estate_id", type="integer", example=1),
+ *                     @OA\Property(property="plot_id", type="integer", example=10),
+ *                     @OA\Property(property="price", type="number", example=3500000),
+ *                     @OA\Property(property="cart_status", type="string", example="active"),
+ *                     @OA\Property(property="created_at", type="string", format="date-time"),
+ *                     @OA\Property(property="updated_at", type="string", format="date-time")
+ *                 )
+ *             )
+ *         )
+ *     )
+ * )
+ */
     public function getCart(Request $request): JsonResponse
     {
         $items = $this->cartService->getCartItems(
@@ -225,6 +309,33 @@ class UserController extends Controller {
         ]);
     }
 
+
+    /**
+ * @OA\Delete(
+ *     path="/api/v1/cart/{id}",
+ *     tags={"Cart"},
+ *     summary="Remove item from cart",
+ *     description="Remove a specific item from the cart.",
+ *
+ *     @OA\Parameter(
+ *         name="id",
+ *         in="path",
+ *         required=true,
+ *         description="Cart item ID",
+ *         @OA\Schema(type="integer", example=5)
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=200,
+ *         description="Item removed successfully",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="success", type="boolean", example=true),
+ *             @OA\Property(property="message", type="string", example="Item removed from cart")
+ *         )
+ *     )
+ * )
+ */
+
     public function removeCartItem(int $id): JsonResponse
     {
         $this->cartService->removeItem($id);
@@ -234,6 +345,25 @@ class UserController extends Controller {
             'message' => 'Item removed from cart'
         ]);
     }
+
+    /**
+ * @OA\Get(
+ *     path="/api/v1/cart-total",
+ *     tags={"Cart"},
+ *     summary="Get cart total",
+ *     description="Calculate total amount of all active cart items.",
+ *
+ *     @OA\Response(
+ *         response=200,
+ *         description="Cart total calculated successfully",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="success", type="boolean", example=true),
+ *             @OA\Property(property="total", type="number", example=10500000)
+ *         )
+ *     )
+ * )
+ */
+
 
     public function cartTotal(Request $request): JsonResponse
     {
@@ -247,6 +377,24 @@ class UserController extends Controller {
             'total' => $total
         ]);
     }
+
+    /**
+ * @OA\Delete(
+ *     path="/api/v1/cart-clear",
+ *     tags={"Cart"},
+ *     summary="Clear cart",
+ *     description="Remove all active items from the user's cart.",
+ *
+ *     @OA\Response(
+ *         response=200,
+ *         description="Cart cleared successfully",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="success", type="boolean", example=true),
+ *             @OA\Property(property="message", type="string", example="Cart cleared")
+ *         )
+ *     )
+ * )
+ */
 
     public function clearCart(Request $request): JsonResponse
     {
