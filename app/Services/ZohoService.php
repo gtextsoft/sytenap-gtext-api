@@ -84,7 +84,7 @@ class ZohoService
         $accessToken = $this->getAccessToken();
 
             // Ensure the contact ID is passed correctly
-        $dealData['Contact_Name'] = ['id' => $contactId];
+        $dealData['Client_Name'] = ['id' => $contactId];
 
         $response = Http::withToken($accessToken)
             ->post($this->apiDomain . '/crm/v2/Deals', [
@@ -154,5 +154,39 @@ class ZohoService
 
         return $resp['data'][0]['id'];
     }
+
+    public function getOrCreateClient(array $clientData, string $refreshToken): string
+    {
+        $accessToken = $this->getAccessToken();
+        $moduleName = 'Clients'; 
+
+        // Search client by email (or any unique field)
+        $response = Http::withToken($accessToken)
+            ->get($this->apiDomain . "/crm/v2/{$moduleName}/search", [
+                'email' => $clientData['Email'] // or use 'Company' if you want company name
+            ]);
+
+        $resp = $response->json();
+
+        // If client exists, return existing ID
+        if (!empty($resp['data'][0]['id'])) {
+            return $resp['data'][0]['id'];
+        }
+
+        // Otherwise, create new client
+        $response = Http::withToken($accessToken)
+            ->post($this->apiDomain . "/crm/v2/{$moduleName}", [
+                'data' => [$clientData]
+            ]);
+
+        $resp = $response->json();
+
+        if (!isset($resp['data'][0]['id'])) {
+            throw new \Exception('Failed to create Zoho client: ' . json_encode($resp));
+        }
+
+        return $resp['data'][0]['id'];
+    }
+
 
 }
