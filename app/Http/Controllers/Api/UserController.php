@@ -439,7 +439,7 @@ class UserController extends Controller {
     {
         $total = $this->cartService->getCartTotal(
             $request->user()?->id,
-            $this->getTempUserId()
+            $tempUserId = $request->header('X-Temp-User')
         );
 
         return response()->json([
