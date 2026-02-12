@@ -84,7 +84,7 @@ class ZohoService
         $accessToken = $this->getAccessToken();
 
             // Ensure the contact ID is passed correctly
-        $dealData['Client_Name'] = ['id' => $contactId];
+        $dealData['Contact_Name'] = ['id' => $contactId];
 
         $response = Http::withToken($accessToken)
             ->post($this->apiDomain . '/crm/v2/Deals', [

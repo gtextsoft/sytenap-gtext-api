@@ -731,27 +731,21 @@ class UserController extends Controller {
             // ], $refreshToken);
 
             // create contact and get Zoho contact ID
-        $clientId = $zohoService->getOrCreateClient([
+        $contactId = $zohoService->getOrCreateClient([
             'Last_Name'  => $user?->last_name ?? 'Customer',
             'First_Name' => $user?->first_name ?? '',
             'Email'      => $user?->email ?? '',
         ], $refreshToken);
 
-        // // create deal using the contact ID
-        // $deal = $zohoService->createDeal([
-        //     'Deal_Name'   => 'Property Purchase - ' . $invoice->invoice_number,
-        //     'Amount'      => $invoice->amount,
-        //     'Stage'       => 'Payment Made',
-        //     'Description' => 'Customer confirmed payment via bank transfer'
-        // ], $contactId);
-
+        // create deal using the contact ID
         $deal = $zohoService->createDeal([
             'Deal_Name'   => 'Property Purchase - ' . $invoice->invoice_number,
             'Amount'      => $invoice->amount,
             'Stage'       => 'Payment Made',
-            'Client_Name' => ['id' => $clientId], // link deal to client
             'Description' => 'Customer confirmed payment via bank transfer'
-        ]);
+        ], $contactId);
+
+        
 
 
             return response()->json([
