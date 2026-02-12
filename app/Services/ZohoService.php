@@ -8,7 +8,18 @@ use Illuminate\Support\Facades\Cache;
 
 class ZohoService
 {
-   
+    protected string $clientId;
+    protected string $clientSecret;
+    protected string $redirectUri;
+    protected string $apiDomain;
+
+    public function __construct()
+    {
+        $this->clientId = env('ZOHO_CLIENT_ID');
+        $this->clientSecret = env('ZOHO_CLIENT_SECRET');
+        $this->redirectUri = env('ZOHO_REDIRECT_URI');
+        $this->apiDomain = 'https://www.zohoapis.com'; // adjust if using EU/IN
+    }
 
     /**
      * Exchange authorization code for tokens (one-time)
