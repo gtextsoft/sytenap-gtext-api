@@ -444,7 +444,7 @@ class UserController extends Controller {
 
         return response()->json([
             'success' => true,
-            'total' => $total
+            'total' => number_format($total, 2)
         ]);
     }
 
