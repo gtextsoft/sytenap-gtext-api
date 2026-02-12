@@ -2131,4 +2131,9 @@ class PlotController extends Controller
         }
     }
 
+    public function handleZohoCallback(Request $request) { 
+        return response()->json([ 'success' => true, 'message' => 'Zoho callback received', 'data' => $request->all() ], 200);
+
+    }
+
 }
