@@ -160,7 +160,7 @@ class ZohoService
         $accessToken = $this->getAccessToken();
         $moduleName = 'Clients'; 
 
-        $criteria = '(Email:equals:' . $email . ')';
+        $criteria = '(Email:equals:' . $clientData['Email'] . ')';
         $response = Http::withToken($accessToken)
             ->get($this->apiDomain . '/crm/v2/Clients/search', [
                 'criteria' => $criteria
