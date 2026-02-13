@@ -10,8 +10,10 @@ class InvoiceService
     /**
      * Generate a new invoice for a user
      */
-    public function createInvoice(int $userId, float $amount, string $invoiceNumber, string $paymentStatus = 'pending'): Invoice
+    public function createInvoice(int $userId, float $amount, string $paymentStatus = 'pending'): Invoice
     {
+        $invoiceNumber = $this->generateInvoiceNumber();
+
         return Invoice::create([
             'user_id' => $userId,
             'invoice_number' => $invoiceNumber,

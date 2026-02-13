@@ -157,10 +157,10 @@ class CartService
     |--------------------------------------------------------------------------
     */
 
-    public function markCartAsCheckedOut(string $cartId): void
+    public function markCartAsCheckedOut(int $userId, string $invoiceNumber): void
     {
-        Cart::where('cart_id', $cartId)
-            ->update(['cart_status' => 'checked_out']);
+        Cart::where('user_id', $userId)
+            ->update(['cart_status' => 'checked_out', 'cart_id' => $invoiceNumber]);
     }
 
     public function getCartIDByUser(int $userId): ?string
