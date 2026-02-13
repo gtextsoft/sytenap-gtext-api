@@ -748,6 +748,8 @@ class UserController extends Controller {
             'First_Name' => $user?->first_name ?? '',
             'Email'      => $user?->email ?? '',
             'Company'      => 'Gtext Land Limited', 
+            'Invoice_Number' => $invoice->invoice_number,
+            'Payment_Status' => 'pending',
         ], $refreshToken);
 
         // create deal using the contact ID
