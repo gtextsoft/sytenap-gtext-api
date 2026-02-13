@@ -294,6 +294,7 @@ class UserController extends Controller {
             'plot_id'   => 'required|integer|exists:plots,id',
             'price'     => 'required|numeric|min:0',
             'temporary_user_id' => 'nullable|string|uuid',
+            'user_id' => 'nullable',
         ]);
 
         if ($validator->fails()) {
@@ -317,12 +318,19 @@ class UserController extends Controller {
                 ], 400);
             }
 
+            if($request->has('user_id'))
+            {
+                    $user_id = $request->user_id;
+            }else{
+                $user_id = null;
+            }
+
             //  ADD TO CART
             $cartItem = $this->cartService->addItem(
                 estateId: $request->estate_id,
                 plotId: $request->plot_id,
                 price: $request->price,
-                userId: $request->user()?->id,
+                userId: $user_id,
                 tempUserId: $request->temporary_user_id ?? $this->getTempUserId()
             );
 
