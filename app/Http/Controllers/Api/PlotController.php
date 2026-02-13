@@ -2202,7 +2202,7 @@ class PlotController extends Controller
     public function allocateFromInvoice(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'invoice_number' => 'required|string|exists:invoices,invoice_number'
+            'Invoice_Number' => 'required|string|exists:invoices,invoice_number'
         ]);
 
         if ($validator->fails()) {
@@ -2222,7 +2222,7 @@ class PlotController extends Controller
             | STEP 1 — Get invoice
             |--------------------------------------------------------------------------
             */
-            $invoice = Invoice::where('invoice_number', $request->invoice_number)
+            $invoice = Invoice::where('invoice_number', $request->Invoice_Number)
                 ->with('user')
                 ->firstOrFail();
 
