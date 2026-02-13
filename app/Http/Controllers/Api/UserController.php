@@ -575,7 +575,7 @@ class UserController extends Controller {
         //  Create invoice
         $invoice = $this->invoiceService->createInvoice($user?->id ?? null, $totalAmount);
 
-        $cart_updated = $this->cartService->markCartAsCheckedOut($user?->id, $invoice->id);
+        $cart_updated = $this->cartService->markCartAsCheckedOut($user?->id, $invoice->invoice_number);
 
         // Return demo bank info for frontend
         $bankInfo = [
