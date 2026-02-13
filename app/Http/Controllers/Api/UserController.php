@@ -742,7 +742,6 @@ class UserController extends Controller {
         // create deal using the contact ID
         $deal = $zohoService->createDeal([
             'Deal_Name'   => 'Property Purchase - ' . $invoice->invoice_number,
-            'Owner'       => $user?->first_name . ' ' . $user?->last_name ?? 'Gtext Land Limited',
             'Email'       => $user?->email ?? '',
             'Amount'      => $invoice->amount,
             'Stage'       => 'Payment Made',
