@@ -45,7 +45,7 @@ class GeoJsonController extends Controller
         return response()->json([
             "type" => "FeatureCollection",
             "name" => "Layout",
-            "features" => [$features],
+            "features" => $features,
         ]);
     }
 
