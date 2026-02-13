@@ -162,4 +162,11 @@ class CartService
         Cart::where('cart_id', $cartId)
             ->update(['cart_status' => 'checked_out']);
     }
+
+    public function getCartIDByUser(int $userId): ?string
+    {
+        return Cart::active()
+            ->where('user_id', $userId)
+            ->value('cart_id');
+    }
 }

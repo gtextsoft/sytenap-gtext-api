@@ -571,15 +571,19 @@ class UserController extends Controller {
         //  Calculate total
         $totalAmount = $this->cartService->getCartTotal($user?->id, $tempUserId);
 
+        $Invoice_Number = $this->cartService->getCartIDByUser($user?->id);
+
         //  Create invoice
-        $invoice = $this->invoiceService->createInvoice($user?->id ?? null, $totalAmount);
+        $invoice = $this->invoiceService->createInvoice($user?->id ?? null, $totalAmount, $Invoice_Number);
+
+        $cart_updated = $this->cartService->markCartAsCheckedOut($user?->id);
 
         // Return demo bank info for frontend
         $bankInfo = [
             'bank_name' => 'Demo Bank',
             'account_name' => 'Gtext Land Limited',
             'account_number' => '0123456789',
-            'reference' => $invoice->invoice_number,
+            'reference' => $Invoice_Number,
         ];
 
         return response()->json([
