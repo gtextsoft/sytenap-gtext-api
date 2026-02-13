@@ -160,12 +160,12 @@ class ZohoService
         $accessToken = $this->getAccessToken();
         $moduleName = 'Clients'; 
 
-        // Search client by email (or any unique field)
+        $criteria = '(Email:equals:' . $email . ')';
         $response = Http::withToken($accessToken)
-            ->get($this->apiDomain . "/crm/v2/{$moduleName}/search", [
-                //'email' => $clientData['Email'] // or use 'Company' if you want company name
-                 'data' => [$clientData]
-                ]);
+            ->get($this->apiDomain . '/crm/v2/Clients/search', [
+                'criteria' => $criteria
+            ]);
+
 
         $resp = $response->json();
 
