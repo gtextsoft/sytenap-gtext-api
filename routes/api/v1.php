@@ -205,7 +205,7 @@ Route::post('payments/callback', [PlotController::class, 'handlePaystackCallback
 Route::prefix('legal')->group(function () {
        Route::post('/send-document', [DocumentController::class, 'sendDocumentToClient'])->middleware('auth:sanctum');
 });
-Route::post('/crm-webhook', [PlotController::class, 'registerAndPurchase']);
+Route::post('/crm-webhook', [PlotController::class, 'allocateFromInvoice']);
 Route::get('/zoho-callback', [PlotController::class, 'handleZohoCallback']);
 
 });
