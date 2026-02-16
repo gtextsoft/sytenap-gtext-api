@@ -2247,7 +2247,7 @@ public function allocateFromInvoice(Request $request)
         | STEP 2 — Get cart group
         |--------------------------------------------------------------------------
         */
-        $cartItem = Cart::where('cart_id', $invoice->invoice_number)->first();
+        $cartItem = Cart::where('cart_id', $request->Invoice_Number)->first();
 
         if (!$cartItem) {
             throw new Exception('Cart group not found for this invoice');
