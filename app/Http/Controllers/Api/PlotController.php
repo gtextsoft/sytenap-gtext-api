@@ -2373,7 +2373,7 @@ public function allocateFromInvoice(Request $request)
             'total_price' => $totalPrice,
             'installment_months' => $installmentMonths,
             'payment_status' => $installmentMonths > 1 ? 'outstanding' : 'fully_paid',
-            'acquisition_status' => 'allocated',
+            //'acquisition_status' => 'allocated',
         ]);
 
         $invoice->payment_status = 'payment_verified';
