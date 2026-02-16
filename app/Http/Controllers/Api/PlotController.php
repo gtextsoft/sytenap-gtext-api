@@ -2385,11 +2385,12 @@ public function allocateFromInvoice(Request $request)
         | STEP 10 — Notification
         |--------------------------------------------------------------------------
         */
-        Notification::send($user, new PropertyAllocatedNotification(
+       Notification::send($user, new PropertyAllocatedNotification(
             $estate,
-            $plots,
+            $plots->pluck('id')->toArray(),
             $invoice->invoice_number
         ));
+
 
         DB::commit();
 
