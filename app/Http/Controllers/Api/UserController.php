@@ -723,9 +723,10 @@ class UserController extends Controller {
 
             $refreshToken = $zohoCredential->refresh_token;
 
-            $cart = Cart::where('cart_id', '=', $invoice->invoice_number)->first();
-            $estate = $cart->estate();
-            $estate_tite = $estate->title;
+           $cart = Cart::where('cart_id', $invoice->invoice_number)->first();
+
+            $estate_title = $cart->estate->title;
+
 
             // 4️ Send to Zoho CRM
             $zohoService = new ZohoService();
