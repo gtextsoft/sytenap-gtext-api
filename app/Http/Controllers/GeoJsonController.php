@@ -22,7 +22,7 @@ class GeoJsonController extends Controller
             ->selectRaw("
                 plots.*,
                 plot_purchases.user_id AS owner_id,
-                estate_plot_details.price_per_plot AS price,
+                COALESCE(NULLIF(plots.price, 0), estate_plot_details.price_per_plot) AS price,
                 ST_AsGeoJSON(plots.geom) AS geom_geojson
             ")
             ->get();
