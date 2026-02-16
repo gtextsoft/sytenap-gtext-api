@@ -789,6 +789,20 @@ class UserController extends Controller {
         }
     }
 
+    public function getInvoices(Request $request)
+    {
+        $user_id = $request->user()->id;
+        $invoices = Invoice::where('user_id', $user_id)
+                    ->where('payment_status', 'pending')
+                    ->get();
+
+        return response()->json([
+                'success' => true,
+                'message' => 'Customer Invoices',
+                'data' => $invoices
+            ]);
+    }
+
 
 
 }
