@@ -14,6 +14,7 @@ use App\Models\Plot;
 use App\Models\Invoice; 
 use App\Services\ZohoService;
 use App\Models\ZohoCredential;
+use App\Models\Cart;
 
 
 
@@ -722,6 +723,10 @@ class UserController extends Controller {
 
             $refreshToken = $zohoCredential->refresh_token;
 
+            $cart = Cart::where('cart_id', '=', $invoice->invoice_number)->first();
+            $estate = $cart->estate();
+            $estate_tite = $estate->title;
+
             // 4️ Send to Zoho CRM
             $zohoService = new ZohoService();
 
@@ -748,9 +753,6 @@ class UserController extends Controller {
             'First_Name' => $user?->first_name ?? '',
             'Email'      => $user?->email ?? '',
             'Company'      => 'Gtext Land Limited', 
-            'Invoice_Number' => $invoice->invoice_number,
-            'Payment_Status' => 'pending',
-            'Estate' => 'DEMO',
         ], $refreshToken);
 
         // create deal using the contact ID
@@ -759,7 +761,10 @@ class UserController extends Controller {
             'Email'       => $user?->email ?? '',
             'Amount'      => $invoice->amount,
             'Stage'       => 'Payment Made',
-            'Description' => 'Customer confirmed payment via bank transfer'
+            'Description' => 'Customer confirmed payment via bank transfer',
+            'Estate' => $estate_tite,
+             'Invoice_Number' => $invoice->invoice_number,
+             'Payment_Status' => 'pending',
         ], $contactId);
 
         
