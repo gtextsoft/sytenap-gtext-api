@@ -763,7 +763,7 @@ class UserController extends Controller {
             'Amount'      => $invoice->amount,
             'Stage'       => 'Payment Made',
             'Description' => 'Customer confirmed payment via bank transfer',
-            'Estate' => $estate_tite,
+            'Estate' => $estate_title,
              'Invoice_Number' => $invoice->invoice_number,
              'Payment_Status' => 'pending',
         ], $contactId);
