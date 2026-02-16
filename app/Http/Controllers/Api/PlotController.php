@@ -2253,10 +2253,11 @@ public function allocateFromInvoice(Request $request)
             throw new Exception('Cart group not found for this invoice');
         }
 
-        $cartItems = Cart::active()
-            ->byCartId($cartItem->cart_id)
-            ->lockForUpdate()
-            ->get();
+        $cartItems = Cart::where('cart_id', $cartItem->cart_id)
+                ->where('cart_status', 'checked_out')
+                ->lockForUpdate()
+                ->get();
+
 
         if ($cartItems->isEmpty()) {
             throw new Exception('Cart is empty');
