@@ -163,6 +163,7 @@ Route::prefix('v1')->group(function () {
         Route::middleware('auth:sanctum')->post(
                 '/invoice/{invoice}/confirm-payment',
                 [UserController::class, 'confirmPayment']
+                
         );
         Route::get('/invoices', [UserController::class, 'getInvoices'])->middleware('auth:sanctum');
 
