@@ -155,7 +155,7 @@ Route::prefix('v1')->group(function () {
 
 
         Route::post('/cart/add', [UserController::class, 'addToCart']);
-        Route::get('/cart', [UserController::class, 'getCart'])->middleware('auth:sanctum');
+        Route::get('/cart', [UserController::class, 'getCart']); //->middleware('auth:sanctum');
         Route::delete('/cart/{id}', [UserController::class, 'removeCartItem']);
         Route::get('/cart-total', [UserController::class, 'cartTotal'])->middleware('auth:sanctum');
         Route::delete('/cart-clear', [UserController::class, 'clearCart'])->middleware('auth:sanctum');

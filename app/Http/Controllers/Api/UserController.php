@@ -383,11 +383,23 @@ class UserController extends Controller {
  */
     public function getCart(Request $request): JsonResponse
     {
-        $items = $this->cartService->getCartItems(
+        if($request->has('user_id'))
+        {
+            
+            $items = $this->cartService->getCartItems(
+             $request->user_id,
+                $this->getTempUserId()
+            );
+
+        }else{
+
+            $items = $this->cartService->getCartItems(
             $request->user()?->id,
-            $this->getTempUserId()
+            $request->temporary_user_id
         );
 
+        }
+        
        return response()->json([
         'success' => true,
         'data' => $items
