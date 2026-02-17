@@ -2134,7 +2134,7 @@ class EstateController extends Controller
      */
     /**
  * @OA\Put(
- *     path="/api/v1/estate/media",
+ *     path="/api/v1/estate/media/update",
  *     tags={"Estate Management"},
  *     summary="Update estate media files",
  *     description="Update existing estate media. Newly uploaded files are appended to existing media, while uploaded video replaces the previous one.",
