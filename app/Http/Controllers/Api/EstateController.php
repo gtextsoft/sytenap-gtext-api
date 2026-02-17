@@ -2129,6 +2129,253 @@ class EstateController extends Controller
         }
     }
 
+    /**
+     * Update estate media
+     */
+    /**
+ * @OA\Put(
+ *     path="/api/v1/estate/media",
+ *     tags={"Estate Management"},
+ *     summary="Update estate media files",
+ *     description="Update existing estate media. Newly uploaded files are appended to existing media, while uploaded video replaces the previous one.",
+ *     
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\MediaType(
+ *             mediaType="multipart/form-data",
+ *             @OA\Schema(
+ *                 required={"estate_id"},
+ *                 
+ *                 @OA\Property(
+ *                     property="estate_id",
+ *                     type="integer",
+ *                     example=1,
+ *                     description="ID of the estate whose media is being updated"
+ *                 ),
+ *                 
+ *                 @OA\Property(
+ *                     property="photos",
+ *                     type="array",
+ *                     description="Multiple estate photo files (will be appended)",
+ *                     @OA\Items(type="string", format="binary")
+ *                 ),
+ *                 
+ *                 @OA\Property(
+ *                     property="third_dimension_model_images",
+ *                     type="array",
+ *                     description="Multiple 3D model image files (will be appended)",
+ *                     @OA\Items(type="string", format="binary")
+ *                 ),
+ *                 
+ *                 @OA\Property(
+ *                     property="third_dimension_model_video",
+ *                     type="string",
+ *                     format="binary",
+ *                     description="3D model video file (replaces existing video)"
+ *                 ),
+ *                 
+ *                 @OA\Property(
+ *                     property="virtual_tour_video_url",
+ *                     type="string",
+ *                     format="uri",
+ *                     example="https://youtube.com/watch?v=xyz",
+ *                     description="Virtual tour video URL"
+ *                 ),
+ *                 
+ *                 @OA\Property(
+ *                     property="status",
+ *                     type="string",
+ *                     enum={"draft", "publish", "unpublish"},
+ *                     example="publish",
+ *                     description="Publication status of estate media"
+ *                 )
+ *             )
+ *         )
+ *     ),
+ *     
+ *     @OA\Response(
+ *         response=200,
+ *         description="Estate media updated successfully",
+ *         @OA\JsonContent(
+ *             type="object",
+ *             
+ *             @OA\Property(
+ *                 property="message",
+ *                 type="string",
+ *                 example="Estate media updated successfully"
+ *             ),
+ *             
+ *             @OA\Property(
+ *                 property="data",
+ *                 type="object",
+ *                 
+ *                 @OA\Property(property="id", type="integer", example=1),
+ *                 @OA\Property(property="estate_id", type="integer", example=1),
+ *                 
+ *                 @OA\Property(
+ *                     property="photos",
+ *                     type="array",
+ *                     @OA\Items(type="string", example="https://res.cloudinary.com/...jpg")
+ *                 ),
+ *                 
+ *                 @OA\Property(
+ *                     property="third_dimension_model_images",
+ *                     type="array",
+ *                     @OA\Items(type="string", example="https://res.cloudinary.com/...jpg")
+ *                 ),
+ *                 
+ *                 @OA\Property(
+ *                     property="third_dimension_model_video",
+ *                     type="string",
+ *                     example="https://res.cloudinary.com/...mp4"
+ *                 ),
+ *                 
+ *                 @OA\Property(
+ *                     property="virtual_tour_video_url",
+ *                     type="string",
+ *                     example="https://youtube.com/watch?v=xyz"
+ *                 ),
+ *                 
+ *                 @OA\Property(
+ *                     property="status",
+ *                     type="string",
+ *                     example="publish"
+ *                 )
+ *             )
+ *         )
+ *     ),
+ *     
+ *     @OA\Response(
+ *         response=404,
+ *         description="Estate media not found"
+ *     ),
+ *     
+ *     @OA\Response(
+ *         response=422,
+ *         description="Validation error"
+ *     )
+ * )
+ */
+
+    public function media_update(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'estate_id' => 'required|exists:estates,id',
+
+            // Multiple photos
+            'photos' => 'nullable|array',
+            'photos.*' => 'image|mimes:jpg,jpeg,png|max:5120',
+
+            // Multiple 3D model images
+            'third_dimension_model_images' => 'nullable|array',
+            'third_dimension_model_images.*' => 'image|mimes:jpg,jpeg,png|max:5120',
+
+            // Single video
+            'third_dimension_model_video' => 'nullable|mimetypes:video/mp4,video/quicktime|max:20480',
+
+            // Virtual tour URL
+            'virtual_tour_video_url' => 'nullable|url',
+
+            'status' => ['nullable', Rule::in(['draft', 'publish', 'unpublish'])],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Validation error',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $data = $validator->validated();
+
+        // Find existing media
+        $estateMedia = EstateMedia::where('estate_id', $data['estate_id'])->first();
+
+        if (!$estateMedia) {
+            return response()->json([
+                'message' => 'Estate media not found'
+            ], 404);
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | PHOTOS (append to existing)
+        |--------------------------------------------------------------------------
+        */
+        $existingPhotos = $estateMedia->photos ?? [];
+
+        if ($request->hasFile('photos')) {
+            foreach ($request->file('photos') as $photo) {
+                $existingPhotos[] = $this->uploadToCloudinary(
+                    $photo->getRealPath(),
+                    'estates/photos'
+                );
+            }
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | 3D MODEL IMAGES (append to existing)
+        |--------------------------------------------------------------------------
+        */
+        $existingModelImages = $estateMedia->third_dimension_model_images ?? [];
+
+        if ($request->hasFile('third_dimension_model_images')) {
+            foreach ($request->file('third_dimension_model_images') as $image) {
+                $existingModelImages[] = $this->uploadToCloudinary(
+                    $image->getRealPath(),
+                    'estates/models'
+                );
+            }
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | 3D MODEL VIDEO (replace if new uploaded)
+        |--------------------------------------------------------------------------
+        */
+        $videoUrl = $estateMedia->third_dimension_model_video;
+
+        if ($request->hasFile('third_dimension_model_video')) {
+            $videoUrl = $this->uploadToCloudinary(
+                $request->file('third_dimension_model_video')->getRealPath(),
+                'estates/videos',
+                'video'
+            );
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | UPDATE RECORD
+        |--------------------------------------------------------------------------
+        */
+        $estateMedia->update([
+            'photos' => $existingPhotos,
+            'third_dimension_model_images' => $existingModelImages,
+            'third_dimension_model_video' => $videoUrl,
+            'virtual_tour_video_url' => $data['virtual_tour_video_url']
+                ?? $estateMedia->virtual_tour_video_url,
+            'status' => $data['status'] ?? $estateMedia->status,
+        ]);
+
+        return response()->json([
+            'message' => 'Estate media updated successfully',
+            'data' => $estateMedia->fresh()
+        ]);
+    }
+
+    private function uploadToCloudinary($filePath, $folder, $resourceType = 'image')
+    {
+        $upload = Cloudinary::uploadApi()->upload($filePath, [
+            'folder' => $folder,
+            'resource_type' => $resourceType
+        ]);
+
+        return $upload['secure_url'];
+    }
+
+
+
     
 }
 
