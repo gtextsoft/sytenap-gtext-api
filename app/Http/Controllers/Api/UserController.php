@@ -497,7 +497,7 @@ class UserController extends Controller {
     {
         $this->cartService->clearCart(
             $request->user()?->id,
-            $this->getTempUserId()
+            $tempUserId = $request->temporary_user_id
         );
 
         return response()->json([
