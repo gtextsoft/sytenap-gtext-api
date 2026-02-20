@@ -438,6 +438,7 @@ class AuthController extends Controller
         ]);
 
         $user = $request->user();
+        return $user;
 
         if ($user->account_type !== 'admin') {
             return response()->json([
