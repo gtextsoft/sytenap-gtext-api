@@ -573,7 +573,7 @@ class DocumentController extends Controller
         $client = $request->user();
 
         // Only client can reply
-        if ($client->account_type !== "client" || $client->account_type !== "prospect") {
+        if ($client->account_type->value !== "client" || $client->account_type->value !== "prospect") {
             return response()->json([
                 'success' => false,
                 'message' => 'Only clients can send signed documents.'

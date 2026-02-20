@@ -1702,7 +1702,7 @@ class PlotController extends Controller
     {
         // 0. Check Admin Authorization
         $user = $request->user();
-        if (!$user || $user->account_type !== 'admin') {
+        if (!$user || $user->account_type->value !== 'admin') {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized. Only admins can perform this action.'
