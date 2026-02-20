@@ -350,7 +350,7 @@ class DocumentController extends Controller
     {
         $legal = $request->user();
 
-        if ($legal->account_type->value !== "legal" || $legal->account_type->value !== "accountant") {
+        if ($legal->account_type !== \App\Enums\AccountType::Admin && $legal->account_type !== \App\Enums\AccountType::Accountant) {
             return response()->json([
                 'success' => false,
                 'message' => 'Access denied. Only legal and account users can send documents.'
