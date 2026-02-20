@@ -571,12 +571,6 @@ class DocumentController extends Controller
     public function sendSignedDocument(Request $request, Document $document)
     {
         $client = $request->user();
-        return response()->json([
-            'success' => false,
-            'message' => 'This endpoint is currently disabled for testing purposes.',
-            'info' => 'Client ID: '.$client->id.', Document ID: '.$document->id,
-            'data' => $client
-        ], 403);
 
         // Only client can reply
         if ($client->account_type->value !== "client" && $client->account_type->value !== "prospect") {
