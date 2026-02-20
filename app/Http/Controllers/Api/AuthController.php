@@ -436,7 +436,9 @@ class AuthController extends Controller
             return response()->json([
                 'message' => 'Unauthorized',
                 'user' => $user,
-                'account_type' => $account_type
+                'account_type' => $account_type,
+                'account_type_hex' => bin2hex($account_type),
+                'length' => strlen($account_type),
             ], 403);
         }
 
