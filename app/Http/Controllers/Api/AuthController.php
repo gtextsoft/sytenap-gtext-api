@@ -432,7 +432,7 @@ class AuthController extends Controller
          $user = $request->user();
          $account_type = $user->account_type;
 
-        if ($account_type !== "admin") {
+        if ($user->account_type->value !== 'admin') {
             return response()->json([
                 'message' => 'Unauthorized',
                 'user' => $user,
