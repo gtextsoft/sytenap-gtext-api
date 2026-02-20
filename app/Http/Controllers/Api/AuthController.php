@@ -430,11 +430,13 @@ class AuthController extends Controller
     public function createAdminAndAssignEstate(Request $request)
     {
          $user = $request->user();
-       
+         $account_type = $user->account_type;
 
-        if ($user->account_type !== "admin") {
+        if ($account_type !== "admin") {
             return response()->json([
-                'message' => 'Unauthorized'
+                'message' => 'Unauthorized',
+                'user' => $user,
+                'account_type' => $account_type
             ], 403);
         }
 
