@@ -429,6 +429,15 @@ class AuthController extends Controller
 
     public function createAdminAndAssignEstate(Request $request)
     {
+         $user = $request->user();
+       
+
+        if ($user->account_type !== 'admin') {
+            return response()->json([
+                'message' => 'Unauthorized'
+            ], 403);
+        }
+
         $request->validate([
             'first_name'   => 'required|string',
             'last_name'    => 'required|string',
@@ -437,14 +446,7 @@ class AuthController extends Controller
             'estate_id'    => 'required_if:account_type,admin|exists:estates,id',
         ]);
 
-        $user = $request->user();
        
-
-        if ($user->account_type != 'admin') {
-            return response()->json([
-                'message' => 'Unauthorized'
-            ], 403);
-        }
 
         return DB::transaction(function () use ($request) {
 
