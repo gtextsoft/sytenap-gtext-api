@@ -600,9 +600,9 @@ class UserController extends Controller {
 
         // Return demo bank info for frontend
         $bankInfo = [
-            'bank_name' => 'Demo Bank',
-            'account_name' => 'Gtext Land Limited',
-            'account_number' => '0123456789',
+            'bank_name' => 'Providus Bank | Access Bank',
+            'account_name' => 'GtextLand Limited',
+            'account_number' => '1308305323 | 1497602357',
             'reference' => $invoice->invoice_number,
         ];
 
