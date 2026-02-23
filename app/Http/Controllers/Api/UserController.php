@@ -765,6 +765,7 @@ class UserController extends Controller {
             'Last_Name'  => $user?->last_name ?? 'Customer',
             'First_Name' => $user?->first_name ?? '',
             'Email'      => $user?->email ?? '',
+            'Estate' => $estate_title,
             'Company'      => 'Gtext Land Limited', 
         ], $refreshToken);
 
