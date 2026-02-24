@@ -822,18 +822,18 @@ class UserController extends Controller {
         ], $refreshToken);
 
         // create deal using the contact ID
-        // $deal = $zohoService->createDeal([
-        //     'Deal_Name'   => 'Property Purchase - ' . $invoice->invoice_number,
-        //     'Full_Name'   => $user?->first_name . ' ' . $user?->last_name,
-        //     'Company'      => 'Gtext Land Limited', 
-        //     'Email'       => $user?->email ?? '',
-        //     'Amount'      => $invoice->amount,
-        //     'Stage'       => 'Payment Made',
-        //     'Description' => 'Customer confirmed payment via bank transfer',
-        //     'Estate' => $estate_title,
-        //      'Invoice_Number' => $invoice->invoice_number,
-        //      'Payment_Status' => 'pending',
-        // ], $contactId);
+        $deal = $zohoService->createDeal([
+            'Deal_Name'   => 'Property Purchase - ' . $invoice->invoice_number,
+            'Full_Name'   => $user?->first_name . ' ' . $user?->last_name,
+            'Company'      => 'Gtext Land Limited', 
+            'Email'       => $user?->email ?? '',
+            'Amount'      => $invoice->amount,
+            'Stage'       => 'Payment Made',
+            'Description' => 'Customer confirmed payment via bank transfer',
+            'Estate' => $estate_title,
+             'Invoice_Number' => $invoice->invoice_number,
+             'Payment_Status' => 'pending',
+        ], $contactId);
 
 
         $payment = $zohoService->createEstatePayment([
@@ -856,7 +856,8 @@ class UserController extends Controller {
                 'message' => 'Payment confirmed and sent to CRM',
                 'data' => [
                     'invoice' => $invoice,
-                    'zoho' => $payment
+                    'zoho' => $payment,
+                    'deal' => $deal,
                 ]
             ]);
 
