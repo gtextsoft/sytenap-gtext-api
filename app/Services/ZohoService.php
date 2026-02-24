@@ -189,5 +189,24 @@ class ZohoService
         return $resp['data'][0]['id'];
     }
 
+    public function createEstatePayment(array $paymentData): array
+    {
+        $accessToken = $this->getAccessToken();
+
+
+        $response = Http::withToken($accessToken)
+            ->post($this->apiDomain . '/crm/v2/Estate_Payments', [
+                'data' => [$paymentData]
+            ]);
+
+        $resp = $response->json();
+
+        if (isset($resp['data'][0]['code']) && $resp['data'][0]['code'] === 'INVALID_DATA') {
+            throw new \Exception('Failed to create Estate Payment: ' . json_encode($resp));
+        }
+
+        return $resp;
+    }
+
 
 }
