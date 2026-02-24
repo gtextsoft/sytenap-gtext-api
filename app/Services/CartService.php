@@ -160,6 +160,7 @@ class CartService
     public function markCartAsCheckedOut(int $userId, string $invoiceNumber): void
     {
         Cart::where('user_id', $userId)
+            ->where('cart_status', 'active')
             ->update(['cart_status' => 'checked_out', 'cart_id' => $invoiceNumber]);
     }
 
