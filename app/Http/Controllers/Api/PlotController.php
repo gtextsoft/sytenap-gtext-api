@@ -1228,6 +1228,7 @@ class PlotController extends Controller
 
                 $outstandingBalance = null;
                 if (!is_null($totalPrice)) {
+                    //$outstandingBalance = max(0, $totalPrice - $amountPaid);
                     $outstandingBalance = max(0, $totalPrice - $amountPaid);
                 }
 
