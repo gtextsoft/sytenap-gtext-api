@@ -14,6 +14,7 @@ class PlotPurchase extends Model
         'user_id',
         'plots',
         'total_price',
+        'amount_paid',
         'installment_months',
         'monthly_payment',
         'payment_schedule',

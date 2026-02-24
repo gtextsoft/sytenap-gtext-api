@@ -1221,7 +1221,8 @@ class PlotController extends Controller
 
                 // money fields - use correct DB column names
                 $totalPrice = isset($purchase->total_price) ? (float)$purchase->total_price : null;
-                $amountPaid = isset($purchase->amount_paid) ? (float)$purchase->amount_paid : 0.0;
+                //
+                $amountPaid = isset($purchase->total_price) ? (float)$purchase->total_price : 0.0;
 
                 // If you have a payments relationship, you can compute amountPaid:
                 // $amountPaid = $purchase->payments()->sum('amount');
@@ -2341,10 +2342,12 @@ public function allocateFromInvoice(Request $request)
         |--------------------------------------------------------------------------
         */
         PlotPurchase::create([
+            'payment_reference' => $invoice->invoice_number,
             'estate_id' => $estate->id,
             'user_id' => $user->id,
             'plots' => $plots->pluck('id')->toArray(),
             'total_price' => $totalPrice,
+            'amount_paid' => $invoice->amount,
             'installment_months' => $installmentMonths,
             'monthly_payment' => $monthlyPayment,
             'payment_schedule' => $schedule,
