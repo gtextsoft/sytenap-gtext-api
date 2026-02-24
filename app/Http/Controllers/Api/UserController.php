@@ -837,7 +837,7 @@ class UserController extends Controller {
 
 
         $payment = $zohoService->createEstatePayment([
-                    'Deal_Name'   => 'Property Purchase - ' . $invoice->invoice_number,
+                    'Name'   => 'Property Purchase - ' . $invoice->invoice_number,
                     'Client_Name'   => $user?->first_name . ' ' . $user?->last_name,
                     'Phone' => $user?->phone ?? '',
                     'Email'       => $user?->email ?? '',
