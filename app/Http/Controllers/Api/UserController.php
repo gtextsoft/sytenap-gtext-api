@@ -812,14 +812,14 @@ class UserController extends Controller {
 
         
             // create contact and get Zoho contact ID
-        $contactId = $zohoService->getOrCreateClient([
-            "Name" => "Gtext Land Limited",
-            'Last_Name'  => $user?->last_name ?? 'Customer',
-            'First_Name' => $user?->first_name ?? '',
-            'Email'      => $user?->email ?? '',
-            'Estate' => $estate_title,
-            'Company'      => 'Gtext Land Limited', 
-        ], $refreshToken);
+        // $contactId = $zohoService->getOrCreateClient([
+        //     "Name" => "Gtext Land Limited",
+        //     'Last_Name'  => $user?->last_name ?? 'Customer',
+        //     'First_Name' => $user?->first_name ?? '',
+        //     'Email'      => $user?->email ?? '',
+        //     'Estate' => $estate_title,
+        //     'Company'      => 'Gtext Land Limited', 
+        // ], $refreshToken);
 
         // create deal using the contact ID
         // $deal = $zohoService->createDeal([
