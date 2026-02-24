@@ -579,6 +579,20 @@ class UserController extends Controller {
         $user = $request->user();
         $tempUserId = $request->header('X-Temp-User'); // if guest passed it in header
 
+        if($request->has('estate_id') && $request->has('plot_id') && $request->has('price'))
+        {
+            $cartItem = $this->cartService->addItem(
+                estateId: $request->estate_id,
+                plotId: $request->plot_id,
+                price: $request->price,
+                userId: $user?->id,
+                tempUserId: null
+            );
+        }else
+        {
+
+        }
+
         // Get cart items
         $cartItems = $this->cartService->getCartItems($user?->id, $tempUserId);
 
