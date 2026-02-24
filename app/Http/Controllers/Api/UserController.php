@@ -813,7 +813,7 @@ class UserController extends Controller {
         
             // create contact and get Zoho contact ID
         $contactId = $zohoService->getOrCreateClient([
-            "Name" => "Gtext Land Limited",
+            "Name" => $user?->first_name ?? '',
             'Last_Name'  => $user?->last_name ?? 'Customer',
             'First_Name' => $user?->first_name ?? '',
             'Email'      => $user?->email ?? '',

@@ -183,7 +183,7 @@ class ZohoService
         $resp = $response->json();
 
         if (!isset($resp['data'][0]['id'])) {
-            //throw new \Exception('Failed to create Zoho client: ' . json_encode($resp));
+            throw new \Exception('Failed to create Zoho client: ' . json_encode($resp));
         }
 
         return $resp['data'][0]['id'];
