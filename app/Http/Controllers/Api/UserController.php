@@ -508,71 +508,122 @@ class UserController extends Controller {
 
 
     /**
-     * @OA\Post(
-     *     path="/api/v1/create-invoice",
-     *     tags={"Checkout"},
-     *     summary="Create an invoice for all cart items",
-     *     description="Calculates the total amount of items in the user's cart (or guest cart via temporary_user_id) and generates an invoice. Returns demo bank info for payment.",
-     *
-     *     @OA\Parameter(
-     *         name="X-Temp-User",
-     *         in="header",
-     *         required=false,
-     *         description="Temporary user ID for guests. Include if the user is not logged in.",
-     *         @OA\Schema(type="string", example="f4740c0e-9011-4761-8485-f0c605f3e720")
-     *     ),
-     *
-     *     @OA\Response(
-     *         response=200,
-     *         description="Invoice created successfully",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=true),
-     *             @OA\Property(property="message", type="string", example="Invoice created successfully"),
-     *             @OA\Property(
-     *                 property="data",
-     *                 type="object",
-     *                 @OA\Property(
-     *                     property="invoice",
-     *                     type="object",
-     *                     @OA\Property(property="id", type="integer", example=12),
-     *                     @OA\Property(property="user_id", type="integer", nullable=true, example=3),
-     *                     @OA\Property(property="invoice_number", type="string", example="INV-20260212-5F3A2B"),
-     *                     @OA\Property(property="payment_status", type="string", example="pending"),
-     *                     @OA\Property(property="amount", type="number", format="float", example=3500000),
-     *                     @OA\Property(property="created_at", type="string", format="date-time"),
-     *                     @OA\Property(property="updated_at", type="string", format="date-time")
-     *                 ),
-     *                 @OA\Property(
-     *                     property="bank_info",
-     *                     type="object",
-     *                     @OA\Property(property="bank_name", type="string", example="Demo Bank"),
-     *                     @OA\Property(property="account_name", type="string", example="Gtext Land Limited"),
-     *                     @OA\Property(property="account_number", type="string", example="0123456789"),
-     *                     @OA\Property(property="reference", type="string", example="INV-20260212-5F3A2B")
-     *                 )
-     *             )
-     *         )
-     *     ),
-     *
-     *     @OA\Response(
-     *         response=400,
-     *         description="No items in cart",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=false),
-     *             @OA\Property(property="message", type="string", example="No items in cart")
-     *         )
-     *     ),
-     *
-     *     @OA\Response(
-     *         response=401,
-     *         description="Unauthorized",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=false),
-     *             @OA\Property(property="message", type="string", example="Unauthenticated.")
-     *         )
-     *     )
-     * )
-     */
+ * @OA\Post(
+ *     path="/api/v1/create-invoice",
+ *     operationId="createInvoice",
+ *     tags={"Checkout"},
+ *     summary="Create invoice from cart items",
+ *     description="Creates an invoice from the authenticated user's cart or a guest cart using X-Temp-User header. Optionally allows adding one or multiple plots to the cart before generating invoice.",
+ *
+ *     @OA\Parameter(
+ *         name="X-Temp-User",
+ *         in="header",
+ *         required=false,
+ *         description="Temporary user UUID for guest checkout. Required if user is not authenticated.",
+ *         @OA\Schema(
+ *             type="string",
+ *             format="uuid",
+ *             example="f4740c0e-9011-4761-8485-f0c605f3e720"
+ *         )
+ *     ),
+ *
+ *     @OA\RequestBody(
+ *         required=false,
+ *         description="Optional payload to add one or multiple plots to cart before generating invoice. Only processed if plot_id is provided.",
+ *         @OA\JsonContent(
+ *             type="object",
+ *
+ *             @OA\Property(
+ *                 property="estate_id",
+ *                 type="integer",
+ *                 example=5,
+ *                 description="Estate ID containing the plots"
+ *             ),
+ *
+ *             @OA\Property(
+ *                 property="plot_id",
+ *                 type="array",
+ *                 description="Array of plot IDs to add to cart",
+ *                 @OA\Items(type="integer", example=102)
+ *             ),
+ *
+ *             @OA\Property(
+ *                 property="price",
+ *                 type="number",
+ *                 format="float",
+ *                 example=3500000,
+ *                 description="Total price for the selected plot(s)"
+ *             )
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=200,
+ *         description="Invoice created successfully",
+ *         @OA\JsonContent(
+ *             type="object",
+ *
+ *             @OA\Property(
+ *                 property="success",
+ *                 type="boolean",
+ *                 example=true
+ *             ),
+ *
+ *             @OA\Property(
+ *                 property="message",
+ *                 type="string",
+ *                 example="Invoice created successfully"
+ *             ),
+ *
+ *             @OA\Property(
+ *                 property="data",
+ *                 type="object",
+ *
+ *                 @OA\Property(
+ *                     property="invoice",
+ *                     type="object",
+ *                     @OA\Property(property="id", type="integer", example=12),
+ *                     @OA\Property(property="user_id", type="integer", nullable=true, example=3),
+ *                     @OA\Property(property="invoice_number", type="string", example="INV-20260212-5F3A2B"),
+ *                     @OA\Property(property="payment_status", type="string", example="pending"),
+ *                     @OA\Property(property="amount", type="number", format="float", example=3500000),
+ *                     @OA\Property(property="created_at", type="string", format="date-time", example="2026-02-12T10:00:00Z"),
+ *                     @OA\Property(property="updated_at", type="string", format="date-time", example="2026-02-12T10:00:00Z")
+ *                 ),
+ *
+ *                 @OA\Property(
+ *                     property="bank_info",
+ *                     type="object",
+ *                     @OA\Property(property="bank_name", type="string", example="Providus Bank | Access Bank"),
+ *                     @OA\Property(property="account_name", type="string", example="GtextLand Limited"),
+ *                     @OA\Property(property="account_number", type="string", example="1308305323 | 1497602357"),
+ *                     @OA\Property(property="reference", type="string", example="INV-20260212-5F3A2B")
+ *                 )
+ *             )
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=400,
+ *         description="No items found in cart",
+ *         @OA\JsonContent(
+ *             type="object",
+ *             @OA\Property(property="success", type="boolean", example=false),
+ *             @OA\Property(property="message", type="string", example="No items in cart")
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=401,
+ *         description="Unauthorized",
+ *         @OA\JsonContent(
+ *             type="object",
+ *             @OA\Property(property="success", type="boolean", example=false),
+ *             @OA\Property(property="message", type="string", example="Unauthenticated.")
+ *         )
+ *     )
+ * )
+ */
 
     public function createInvoice(Request $request): JsonResponse
     {
@@ -581,13 +632,15 @@ class UserController extends Controller {
 
         if($request->has('estate_id') && $request->has('plot_id') && $request->has('price'))
         {
-            $cartItem = $this->cartService->addItem(
-                estateId: $request->estate_id,
-                plotId: $request->plot_id,
-                price: $request->price,
-                userId: $user?->id,
-                tempUserId: null
-            );
+           foreach ($request->plot_id as $plotId) {
+                $this->cartService->addItem(
+                    estateId: $request->estate_id,
+                    plotId: $plotId,
+                    price: $request->price,
+                    userId: $user?->id,
+                    tempUserId: null
+                );
+            }
         }else
         {
 
