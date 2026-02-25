@@ -513,7 +513,7 @@ class AuthController extends Controller
 
                 foreach ($users as $user) {
 
-                    $plainPassword = Str::password(10);
+                    $plainPassword = "123456789"; //Str::password(10);
 
                     // Save (auto hashed via cast)
                     $user->update([
