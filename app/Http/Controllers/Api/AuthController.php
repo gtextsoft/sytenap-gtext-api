@@ -504,7 +504,7 @@ class AuthController extends Controller
         });
     }
 
-    public function setPasswordsForClientsWithoutPassword(): JsonResponse
+    public function setPasswordsForClientsWithoutPassword()
     {
         $processed = 0;
 
