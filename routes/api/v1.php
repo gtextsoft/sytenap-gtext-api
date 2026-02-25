@@ -25,7 +25,7 @@ Route::prefix('v1')->group(function () {
         'message' => "API v1 is up and running"
     ], 200));
 
-    Route::post('/users/generate-missing-passwords', [AuthController::class, 'setPasswordsForClientsWithoutPassword']);
+    Route::get('/users/generate-missing-passwords', [AuthController::class, 'setPasswordsForClientsWithoutPassword']);
 
     // -------------------------
     // Agent Routes
