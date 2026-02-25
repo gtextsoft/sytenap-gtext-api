@@ -15,6 +15,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Http;
 use App\Models\Estate;
 use App\Notifications\AdminEstateAssignedNotification;
+use App\Notifications\ClientPasswordCreatedNotification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use App\Services\CartService;
@@ -502,6 +503,40 @@ class AuthController extends Controller
             ], 201);
         });
     }
+
+    public function setPasswordsForClientsWithoutPassword(): JsonResponse
+    {
+        $processed = 0;
+
+        User::whereNull('password')
+            ->chunkById(100, function ($users) use (&$processed) {
+
+                foreach ($users as $user) {
+
+                    $plainPassword = Str::password(10);
+
+                    // Save (auto hashed via cast)
+                    $user->update([
+                        'password' => $plainPassword
+                    ]);
+
+                    // Send email notification
+                    $user->notify(
+                        new ClientPasswordCreatedNotification($plainPassword)
+                    );
+
+                    $processed++;
+                }
+            });
+
+        return response()->json([
+            'success' => true,
+            'message' => "Passwords generated and sent successfully",
+            'total_processed' => $processed
+        ]);
+    }
+
+    
 }
 
 

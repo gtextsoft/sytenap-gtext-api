@@ -7,48 +7,31 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class ClientPasswordCreatedNotification extends Notification
+class ClientPasswordCreatedNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
-    /**
-     * Create a new notification instance.
-     */
-    public function __construct()
+    public string $password;
+
+    public function __construct(string $password)
     {
-        //
+        $this->password = $password;
     }
 
-    /**
-     * Get the notification's delivery channels.
-     *
-     * @return array<int, string>
-     */
     public function via(object $notifiable): array
     {
         return ['mail'];
     }
 
-    /**
-     * Get the mail representation of the notification.
-     */
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->line('The introduction to the notification.')
-            ->action('Notification Action', url('/'))
-            ->line('Thank you for using our application!');
-    }
-
-    /**
-     * Get the array representation of the notification.
-     *
-     * @return array<string, mixed>
-     */
-    public function toArray(object $notifiable): array
-    {
-        return [
-            //
-        ];
+            ->subject('Your Account Password Has Been Set')
+            ->greeting('Hello ' . $notifiable->first_name)
+            ->line('Your account password has been created.')
+            ->line('Login using the password below:')
+            ->line('Password: ' . $this->password)
+            ->action('Login Now', url('/login'))
+            ->line('Please change your password after login.');
     }
 }
