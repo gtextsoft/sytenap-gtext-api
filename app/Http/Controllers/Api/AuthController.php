@@ -508,26 +508,28 @@ class AuthController extends Controller
     {
         $processed = 0;
 
-        User::whereNull('password')
-            ->chunkById(100, function ($users) use (&$processed) {
+       User::where(function ($query) {
+                $query->whereNull('password')
+                    ->orWhere('password', '')
+                    ->orWhere('password', '0000-00-00 00:00:00');
+        })
+        ->chunkById(100, function ($users) use (&$processed) {
 
-                foreach ($users as $user) {
+            foreach ($users as $user) {
 
-                    $plainPassword = "123456789"; //Str::password(10);
+        $plainPassword = "123456789"; // You can generate a random password if needed
 
-                    // Save (auto hashed via cast)
-                    $user->update([
-                        'password' => $plainPassword
-                    ]);
+        $user->update([
+            'password' => $plainPassword
+        ]);
 
-                    // Send email notification
-                    $user->notify(
-                        new ClientPasswordCreatedNotification($plainPassword)
-                    );
+        $user->notify(
+            new ClientPasswordCreatedNotification($plainPassword)
+        );
 
-                    $processed++;
-                }
-            });
+        $processed++;
+    }
+});
 
         return response()->json([
             'success' => true,
