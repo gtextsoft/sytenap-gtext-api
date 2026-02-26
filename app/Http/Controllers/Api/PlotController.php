@@ -1481,14 +1481,14 @@ class PlotController extends Controller
 
 
                 // Send notification to customer
-                Notification::send(
-                    $customer,
-                    new PropertyAllocatedNotification(
-                        $estate->title,
-                        $plots->pluck('plot_id')->toArray(),
-                        $allocationReference
-                    )
-                );
+                // Notification::send(
+                //     $customer,
+                //     new PropertyAllocatedNotification(
+                //         $estate->title,
+                //         $plots->pluck('plot_id')->toArray(),
+                //         $allocationReference
+                //     )
+                // );
                             return response()->json([
                 'success' => true,
                 'message' => 'Property allocated successfully to customer',
