@@ -31,7 +31,7 @@ class ClientPasswordCreatedNotification extends Notification implements ShouldQu
             ->line('Your account password has been created.')
             ->line('Login using the password below:')
             ->line('Password: ' . $this->password)
-            ->action('Login Now', url('/login'))
+            ->action('Login Now', 'https://portal.gtextland.com/sign-in')
             ->line('Please change your password after login.');
     }
 }
