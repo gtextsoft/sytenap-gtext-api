@@ -528,8 +528,8 @@ class AuthController extends Controller
         );
 
         $processed++;
-    }
-});
+            }
+        });
 
         return response()->json([
             'success' => true,
