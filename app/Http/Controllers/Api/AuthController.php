@@ -229,7 +229,8 @@ class AuthController extends Controller
                         'country' => $user->country,
                         'email_verified' => true,
                         'account_type' => $user->account_type,
-                        'created_at' => $user->created_at
+                        'created_at' => $user->created_at,
+                        'outstanding_balance' => $user->outstanding_balance,
                     ],
                     'token' => $token,
                     'token_type' => 'Bearer'
