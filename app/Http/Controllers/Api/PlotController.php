@@ -2206,218 +2206,389 @@ class PlotController extends Controller
 
     
     
-public function allocateFromInvoice(Request $request)
-{
-    $validator = Validator::make($request->all(), [
-        'Invoice_Number' => 'required|string|exists:invoices,invoice_number'
-    ]);
+    public function allocateFromInvoice(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'Invoice_Number' => 'required|string|exists:invoices,invoice_number'
+        ]);
 
-    if ($validator->fails()) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Validation error',
-            'errors' => $validator->errors(),
-        ], 422);
-    }
-
-    DB::beginTransaction();
-
-    try {
-
-        /*
-        |--------------------------------------------------------------------------
-        | STEP 1 — Get invoice
-        |--------------------------------------------------------------------------
-        */
-        $invoice = Invoice::where('invoice_number', $request->Invoice_Number)
-            ->with('user')
-            ->first();
-
-        if (!$invoice) {
-            throw new Exception('Invoice not found');
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $validator->errors(),
+            ], 422);
         }
 
-        if (!$invoice->user) {
-            throw new Exception('Invoice user not found');
-        }
+        DB::beginTransaction();
 
-        $user = $invoice->user;
+        try {
+
+            /*
+            |--------------------------------------------------------------------------
+            | STEP 1 — Get invoice
+            |--------------------------------------------------------------------------
+            */
+            $invoice = Invoice::where('invoice_number', $request->Invoice_Number)
+                ->with('user')
+                ->first();
+
+            if (!$invoice) {
+                throw new Exception('Invoice not found');
+            }
+
+            if (!$invoice->user) {
+                throw new Exception('Invoice user not found');
+            }
+
+            $user = $invoice->user;
 
 
-        /*
-        |--------------------------------------------------------------------------
-        | STEP 2 — Get cart group
-        |--------------------------------------------------------------------------
-        */
-        //'INV-20260213-HNKBJK'
-        $cartItem = Cart::where('cart_id', $request->Invoice_Number)->first();
+            /*
+            |--------------------------------------------------------------------------
+            | STEP 2 — Get cart group
+            |--------------------------------------------------------------------------
+            */
+            //'INV-20260213-HNKBJK'
+            $cartItem = Cart::where('cart_id', $request->Invoice_Number)->first();
 
-        if (!$cartItem) {
-            //throw new Exception('Cart group not found for this invoice');
-            return $cartItem;
-        }
+            if (!$cartItem) {
+                //throw new Exception('Cart group not found for this invoice');
+                return $cartItem;
+            }
 
-        $cartItems = Cart::where('cart_id', $cartItem->cart_id)
-                ->where('cart_status', 'checked_out')
+            $cartItems = Cart::where('cart_id', $cartItem->cart_id)
+                    ->where('cart_status', 'checked_out')
+                    ->lockForUpdate()
+                    ->get();
+
+
+            if ($cartItems->isEmpty()) {
+                throw new Exception('Cart is empty');
+            }
+
+            $estateId = $cartItems->first()->estate_id;
+            $plotIds = $cartItems->pluck('plot_id')->toArray();
+            $installmentMonths = $cartItems->first()->installment_months ?? 1;
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | STEP 3 — Fetch estate
+            |--------------------------------------------------------------------------
+            */
+            $estate = Estate::with('plotDetail')->where('id', $estateId)->first();
+
+            if (!$estate) {
+                throw new Exception("Estate not found. ID: {$estateId}");
+            }
+
+            if (!$estate->plotDetail) {
+                throw new Exception("Estate pricing not found for estate ID {$estateId}");
+            }
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | STEP 4 — Lock plots
+            |--------------------------------------------------------------------------
+            */
+            $plots = Plot::whereIn('id', $plotIds)
+                ->where('estate_id', $estate->id)
+                ->where('status', 'available')
                 ->lockForUpdate()
                 ->get();
 
+            if ($plots->count() !== count($plotIds)) {
+                throw new Exception('Some plots are no longer available or do not belong to this estate');
+            }
 
-        if ($cartItems->isEmpty()) {
-            throw new Exception('Cart is empty');
+
+            /*
+            |--------------------------------------------------------------------------
+            | STEP 5 — Pricing
+            |--------------------------------------------------------------------------
+            */
+            $pricePerPlot = $estate->plotDetail->promotion_price
+                ?? $estate->plotDetail->price_per_plot;
+
+            if (!$pricePerPlot) {
+                throw new Exception('Plot price could not be determined');
+            }
+
+            $totalPrice = $pricePerPlot * $plots->count();
+            $monthlyPayment = round($totalPrice / $installmentMonths, 2);
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | STEP 6 — Payment schedule
+            |--------------------------------------------------------------------------
+            */
+            $schedule = [];
+
+            for ($i = 1; $i <= $installmentMonths; $i++) {
+                $schedule[] = [
+                    'month' => $i,
+                    'amount' => $monthlyPayment,
+                    'due_date' => now()->addMonths($i - 1)->format('Y-m-d'),
+                ];
+            }
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | STEP 7 — Save purchase
+            |--------------------------------------------------------------------------
+            */
+            PlotPurchase::create([
+                'payment_reference' => $invoice->invoice_number,
+                'estate_id' => $estate->id,
+                'user_id' => $user->id,
+                'plots' => $plots->pluck('id')->toArray(),
+                'total_price' => $totalPrice,
+                'amount_paid' => $invoice->amount,
+                'installment_months' => $installmentMonths,
+                'monthly_payment' => $monthlyPayment,
+                'payment_schedule' => $schedule,
+                'payment_status' => 'paid',
+            ]);
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | STEP 8 — Mark plots sold
+            |--------------------------------------------------------------------------
+            */
+            Plot::whereIn('id', $plots->pluck('id'))->update([
+                'status' => 'sold'
+            ]);
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | STEP 9 — Assign property
+            |--------------------------------------------------------------------------
+            */
+            CustomerProperty::create([
+                'user_id' => $user->id,
+                'estate_id' => $estate->id,
+                'plots' => $plots->pluck('id')->toArray(),
+                'total_price' => $totalPrice,
+                'installment_months' => $installmentMonths,
+                'payment_status' => $installmentMonths > 1 ? 'outstanding' : 'fully_paid',
+                //'acquisition_status' => 'allocated',
+            ]);
+
+            $invoice->payment_status = 'payment_verified';
+            $invoice->save();
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | STEP 10 — Notification
+            |--------------------------------------------------------------------------
+            */
+        Notification::send($user, new PropertyAllocatedNotification(
+                $estate,
+                $plots->pluck('id')->toArray(),
+                $invoice->invoice_number
+            ));
+
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Property allocated successfully',
+                'invoice' => $invoice->invoice_number,
+                'estate' => $estate->title,
+                'plots' => $plots->pluck('id')
+            ]);
+
+        } catch (Throwable $e) {
+
+            DB::rollBack();
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Allocation failed',
+                'error' => $e->getMessage(),
+                'line' => $e->getLine(),
+                'file' => $e->getFile(),
+            ], 500);
         }
-
-        $estateId = $cartItems->first()->estate_id;
-        $plotIds = $cartItems->pluck('plot_id')->toArray();
-        $installmentMonths = $cartItems->first()->installment_months ?? 1;
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | STEP 3 — Fetch estate
-        |--------------------------------------------------------------------------
-        */
-        $estate = Estate::with('plotDetail')->where('id', $estateId)->first();
-
-        if (!$estate) {
-            throw new Exception("Estate not found. ID: {$estateId}");
-        }
-
-        if (!$estate->plotDetail) {
-            throw new Exception("Estate pricing not found for estate ID {$estateId}");
-        }
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | STEP 4 — Lock plots
-        |--------------------------------------------------------------------------
-        */
-        $plots = Plot::whereIn('id', $plotIds)
-            ->where('estate_id', $estate->id)
-            ->where('status', 'available')
-            ->lockForUpdate()
-            ->get();
-
-        if ($plots->count() !== count($plotIds)) {
-            throw new Exception('Some plots are no longer available or do not belong to this estate');
-        }
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | STEP 5 — Pricing
-        |--------------------------------------------------------------------------
-        */
-        $pricePerPlot = $estate->plotDetail->promotion_price
-            ?? $estate->plotDetail->price_per_plot;
-
-        if (!$pricePerPlot) {
-            throw new Exception('Plot price could not be determined');
-        }
-
-        $totalPrice = $pricePerPlot * $plots->count();
-        $monthlyPayment = round($totalPrice / $installmentMonths, 2);
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | STEP 6 — Payment schedule
-        |--------------------------------------------------------------------------
-        */
-        $schedule = [];
-
-        for ($i = 1; $i <= $installmentMonths; $i++) {
-            $schedule[] = [
-                'month' => $i,
-                'amount' => $monthlyPayment,
-                'due_date' => now()->addMonths($i - 1)->format('Y-m-d'),
-            ];
-        }
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | STEP 7 — Save purchase
-        |--------------------------------------------------------------------------
-        */
-        PlotPurchase::create([
-            'payment_reference' => $invoice->invoice_number,
-            'estate_id' => $estate->id,
-            'user_id' => $user->id,
-            'plots' => $plots->pluck('id')->toArray(),
-            'total_price' => $totalPrice,
-            'amount_paid' => $invoice->amount,
-            'installment_months' => $installmentMonths,
-            'monthly_payment' => $monthlyPayment,
-            'payment_schedule' => $schedule,
-            'payment_status' => 'paid',
-        ]);
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | STEP 8 — Mark plots sold
-        |--------------------------------------------------------------------------
-        */
-        Plot::whereIn('id', $plots->pluck('id'))->update([
-            'status' => 'sold'
-        ]);
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | STEP 9 — Assign property
-        |--------------------------------------------------------------------------
-        */
-        CustomerProperty::create([
-            'user_id' => $user->id,
-            'estate_id' => $estate->id,
-            'plots' => $plots->pluck('id')->toArray(),
-            'total_price' => $totalPrice,
-            'installment_months' => $installmentMonths,
-            'payment_status' => $installmentMonths > 1 ? 'outstanding' : 'fully_paid',
-            //'acquisition_status' => 'allocated',
-        ]);
-
-        $invoice->payment_status = 'payment_verified';
-        $invoice->save();
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | STEP 10 — Notification
-        |--------------------------------------------------------------------------
-        */
-       Notification::send($user, new PropertyAllocatedNotification(
-            $estate,
-            $plots->pluck('id')->toArray(),
-            $invoice->invoice_number
-        ));
-
-
-        DB::commit();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Property allocated successfully',
-            'invoice' => $invoice->invoice_number,
-            'estate' => $estate->title,
-            'plots' => $plots->pluck('id')
-        ]);
-
-    } catch (Throwable $e) {
-
-        DB::rollBack();
-
-        return response()->json([
-            'success' => false,
-            'message' => 'Allocation failed',
-            'error' => $e->getMessage(),
-            'line' => $e->getLine(),
-            'file' => $e->getFile(),
-        ], 500);
     }
-}
+    
+    /**
+     * @OA\Post(
+     *     path="/api/v1/admin/revoke-property",
+     *     tags={"Admin - Property Management"},
+     *     summary="Revoke allocated plots from a customer",
+     *     security={{"bearerAuth":{}}},
+     *
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"user_id","estate_id","plots"},
+     *             @OA\Property(property="user_id", type="integer", example=25),
+     *             @OA\Property(property="estate_id", type="integer", example=12),
+     *             @OA\Property(
+     *                 property="plots",
+     *                 type="array",
+     *                 @OA\Items(type="integer", example=45)
+     *             ),
+     *             @OA\Property(
+     *                 property="reason",
+     *                 type="string",
+     *                 example="Admin correction"
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=200, description="Property revoked successfully")
+     * )
+     */
+
+    public function revokeProperty(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'user_id' => 'required|integer|exists:users,id',
+            'estate_id' => 'required|integer|exists:estates,id',
+            'plots' => 'required|array|min:1',
+            'plots.*' => 'integer|exists:plots,id',
+            'reason' => 'nullable|string|max:500'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            $customer = User::findOrFail($request->user_id);
+            $estate = Estate::findOrFail($request->estate_id);
+
+            /*
+            |--------------------------------------------------------------------------
+            | LOCK PLOTS (must belong to estate and be sold)
+            |--------------------------------------------------------------------------
+            */
+            $plots = Plot::whereIn('id', $request->plots)
+                ->where('estate_id', $estate->id)
+                ->where('status', 'sold')
+                ->lockForUpdate()
+                ->get();
+
+            if ($plots->count() !== count($request->plots)) {
+                DB::rollBack();
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Some plots are not sold or do not belong to this estate'
+                ], 400);
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | FIND CUSTOMER PROPERTY
+            |--------------------------------------------------------------------------
+            */
+            $customerProperty = CustomerProperty::where('user_id', $customer->id)
+                ->where('estate_id', $estate->id)
+                ->first();
+
+            if (!$customerProperty) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Customer does not own property in this estate'
+                ], 404);
+            }
+
+            $currentPlots = collect($customerProperty->plots);
+
+            // ensure customer owns these plots
+            $diff = collect($request->plots)->diff($currentPlots);
+            if ($diff->isNotEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Customer does not own some of the selected plots'
+                ], 400);
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | UPDATE PLOT STATUS → AVAILABLE
+            |--------------------------------------------------------------------------
+            */
+            foreach ($plots as $plot) {
+                $plot->update(['status' => 'available']);
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | REMOVE PLOTS FROM CUSTOMER PROPERTY
+            |--------------------------------------------------------------------------
+            */
+            $remainingPlots = $currentPlots->diff($request->plots)->values();
+
+            if ($remainingPlots->isEmpty()) {
+                $customerProperty->delete();
+            } else {
+                $customerProperty->update([
+                    'plots' => $remainingPlots
+                ]);
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | UPDATE PURCHASE RECORD
+            |--------------------------------------------------------------------------
+            */
+            $purchase = PlotPurchase::where('user_id', $customer->id)
+                ->where('estate_id', $estate->id)
+                ->first();
+
+            if ($purchase) {
+                $purchasePlots = collect($purchase->plots);
+                $remainingPurchasePlots = $purchasePlots->diff($request->plots)->values();
+
+                if ($remainingPurchasePlots->isEmpty()) {
+                    $purchase->delete();
+                } else {
+                    $purchase->update([
+                        'plots' => $remainingPurchasePlots
+                    ]);
+                }
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Plots revoked successfully',
+                'data' => [
+                    'customer_id' => $customer->id,
+                    'estate_id' => $estate->id,
+                    'revoked_plots' => $request->plots,
+                    'remaining_plots' => $remainingPlots ?? [],
+                    'revoked_at' => now()->toISOString(),
+                    'reason' => $request->reason
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to revoke property',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 
 }
