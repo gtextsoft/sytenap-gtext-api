@@ -26,6 +26,10 @@ Route::prefix('v1')->group(function () {
     ], 200));
 
     Route::get('/users/generate-missing-passwords', [AuthController::class, 'setPasswordsForClientsWithoutPassword']);
+    
+    
+    Route::put('/estates/{id}', [EstateController::class, 'Estateinfoupdate']);
+    Route::patch('/estates/{id}', [EstateController::class, 'Estateinfoupdate']);
 
     // -------------------------
     // Agent Routes
@@ -137,7 +141,7 @@ Route::prefix('v1')->group(function () {
         Route::post('commission-settings', [CommissionSettingController::class, 'store']);
         Route::patch('commission-settings/{id}/toggle', [CommissionSettingController::class, 'toggleStatus']);
 
-        // 🔥 NEW - ADMIN WITHDRAWAL ROUTES
+        // ðŸ”¥ NEW - ADMIN WITHDRAWAL ROUTES
         Route::get('/withdrawals', [CommissionWithdrawalController::class, 'allWithdrawals']);
         Route::post('/withdrawals/{id}/approve', [CommissionWithdrawalController::class, 'approve']);
         Route::post('/withdrawals/{id}/reject', [CommissionWithdrawalController::class, 'reject']);
@@ -179,7 +183,7 @@ Route::prefix('v1')->group(function () {
     // -------------------------
     Route::get('geojson/{estate}/{name}', function ($estate, $name) {
 
-    // Decode URL encoding: Jasper%20Estate → Jasper Estate
+    // Decode URL encoding: Jasper%20Estate â†’ Jasper Estate
     $estate = urldecode($estate);
 
     // Sanitize folder name (security)

@@ -26,6 +26,10 @@ use Illuminate\Http\JsonResponse;
 class EstateController extends Controller
 {
 
+
+
+
+
    /**
      * @OA\Post(
      *     path="/api/v1/estate/new",
@@ -2372,6 +2376,110 @@ class EstateController extends Controller
         ]);
 
         return $upload['secure_url'];
+    }
+
+
+    public function EstateinfoUpdate(Request $request, $id)
+    {
+        $estate = Estate::find($id);
+
+        if (!$estate) {
+            return response()->json([
+                'message' => 'Estate not found'
+            ], 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'title' => 'sometimes|required|string|max:255',
+            'town_or_city' => 'sometimes|required|string|max:255',
+            'state' => 'sometimes|required|string|max:1000',
+            'cordinates' => 'nullable|string',
+            'zoning' => 'nullable|string|max:255',
+            'size' => 'nullable|string|max:255',
+            'direction' => 'nullable|string|max:255',
+            'description' => 'nullable|string',
+
+            'map_background_image' => 'nullable|image|mimes:jpeg,png,jpg',
+            'preview_display_image' => 'nullable|image|mimes:jpeg,png,jpg',
+
+            'has_cerificate_of_occupancy' => 'boolean',
+            'amenities' => 'nullable|array',
+            'amenities.*' => 'string',
+            'rating' => 'nullable|integer|min:1|max:5',
+            'status' => ['nullable', Rule::in(['draft', 'publish', 'unpublish'])],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Validation error',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $data = $validator->validated();
+
+        // Validate coordinates if provided
+        if ($request->has('cordinates') && !empty($data['cordinates'])) {
+
+            if (!preg_match('/^-?\d+(\.\d+)?,-?\d+(\.\d+)?$/', $data['cordinates'])) {
+                return response()->json([
+                    'message' => 'Validation error',
+                    'errors' => [
+                        'cordinates' => ['Coordinates must be in format: latitude,longitude (e.g., 6.4281,3.4219)']
+                    ],
+                ], 422);
+            }
+
+            [$lat, $lng] = explode(',', $data['cordinates']);
+            $lat = (float) $lat;
+            $lng = (float) $lng;
+
+            if ($lat < -90 || $lat > 90) {
+                return response()->json([
+                    'message' => 'Validation error',
+                    'errors' => [
+                        'cordinates' => ['Latitude must be between -90 and 90']
+                    ],
+                ], 422);
+            }
+
+            if ($lng < -180 || $lng > 180) {
+                return response()->json([
+                    'message' => 'Validation error',
+                    'errors' => [
+                        'cordinates' => ['Longitude must be between -180 and 180']
+                    ],
+                ], 422);
+            }
+        }
+
+        // Upload new map background image if provided
+        if ($request->hasFile('map_background_image')) {
+            $uploadResult = Cloudinary::uploadApi()->upload(
+                $request->file('map_background_image')->getRealPath(),
+                ['folder' => 'estates']
+            );
+
+            $data['map_background_image'] = $uploadResult['secure_url'];
+        }
+
+        // Upload new preview display image if provided
+        if ($request->hasFile('preview_display_image')) {
+            $uploadResult = Cloudinary::uploadApi()->upload(
+                $request->file('preview_display_image')->getRealPath(),
+                ['folder' => 'estates']
+            );
+
+            $data['preview_display_image'] = $uploadResult['secure_url'];
+        }
+
+        // Update estate
+        $estate->update($data);
+
+        return response()->json([
+            'message' => 'Estate updated successfully',
+            'data' => $estate
+        ], 200);
     }
 
 
