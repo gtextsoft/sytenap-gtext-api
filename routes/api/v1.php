@@ -137,6 +137,7 @@ Route::prefix('v1')->group(function () {
     Route::prefix('admin')->middleware(['auth:sanctum'])->group(function () {
         Route::post('allocate-property', [PlotController::class, 'allocateProperty']);
         Route::post('revoke-property', [PlotController::class, 'revokeProperty']);
+        Route::get('allocations', [PlotController::class, 'getAllocations']);
         Route::post('reset-client-password', [AdminClientController::class, 'resetClientPassword']);
         Route::get('referrals', [AdminReferralController::class, 'index']);
         Route::get('commission-settings', [CommissionSettingController::class, 'index']);
