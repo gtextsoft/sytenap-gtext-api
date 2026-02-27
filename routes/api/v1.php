@@ -30,6 +30,7 @@ Route::prefix('v1')->group(function () {
     
     Route::put('/estates/{id}', [EstateController::class, 'Estateinfoupdate']);
     Route::patch('/estates/{id}', [EstateController::class, 'Estateinfoupdate']);
+    Route::post('/estates/{id}', [EstateController::class, 'Estateinfoupdate']);
 
     // -------------------------
     // Agent Routes
