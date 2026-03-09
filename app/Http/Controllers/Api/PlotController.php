@@ -265,7 +265,7 @@ class PlotController extends Controller
      */
     public function previewPurchase(Request $request)
     {
-        $validator = \Validator::make($request->all(), [
+        $validator = Validator::make($request->all(), [
             'estate_id' => 'required|integer|exists:estates,id',
             'plots' => 'required|array|min:1',
             'plots.*' => 'integer|exists:plots,id',
@@ -651,7 +651,7 @@ class PlotController extends Controller
      */
     public function finalizePurchase(Request $request)
     {
-        $validator = \Validator::make($request->all(), [
+        $validator = Validator::make($request->all(), [
             'estate_id' => 'required|integer|exists:estates,id',
             'plots' => 'required|array|min:1',
             'plots.*' => 'integer|exists:plots,id',
@@ -2379,6 +2379,43 @@ class PlotController extends Controller
                 'payment_status' => $installmentMonths > 1 ? 'outstanding' : 'fully_paid',
                 //'acquisition_status' => 'allocated',
             ]);
+
+            /*
+            |--------------------------------------------------------------------------
+            | STEP 9.5 — Agent Commission Settlement
+            |--------------------------------------------------------------------------
+            */
+
+            if (!empty($invoice->agent_id)) {
+
+                $commissionSetting = \App\Models\CommissionSetting::where('status', '1')->first();
+
+                if ($commissionSetting) {
+
+                    $commissionAmount = 0;
+
+                    if ($commissionSetting->type === 'percentage') {
+
+                        // Example: 5 means 5%
+                        $commissionAmount = ($totalPrice * $commissionSetting->value) / 100;
+
+                    } elseif ($commissionSetting->type === 'fixed') {
+
+                        $commissionAmount = $commissionSetting->value;
+                    }
+
+                    if ($commissionAmount > 0) {
+
+                        \App\Models\AgentCommission::create([
+                            'agent_id' => $invoice->agent_id,
+                            'amount' => $commissionAmount,
+                            'reference' => $invoice->invoice_number,
+                            'estate_id' => $estate->id,
+                            'user_id' => $user->id
+                        ]);
+                    }
+                }
+            }
 
             $invoice->payment_status = 'payment_verified';
             $invoice->save();
