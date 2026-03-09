@@ -848,8 +848,9 @@ class UserController extends Controller {
             'Stage'       => 'Payment Made',
             'Description' => 'Customer confirmed payment via bank transfer',
             'Estate' => $estate_title,
-             'Invoice_Number' => $invoice->invoice_number,
-             'Payment_Status' => 'pending',
+            'Invoice_Number' => $invoice->invoice_number,
+            'Payment_Status' => 'pending',
+            'Agent_ID' => $invoice->agent_id,
         ], $contactId);
 
 
@@ -864,7 +865,8 @@ class UserController extends Controller {
                     'Invoice_Number' => $invoice->invoice_number,
                     'Amount_Paid'      => $invoice->amount,
                     'Payment_Status' => 'pending',
-                ]);
+                    'Agent_ID' => $invoice->agent_id,
+                ]); 
         
 
 
