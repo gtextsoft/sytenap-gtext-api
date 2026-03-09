@@ -12,6 +12,7 @@ class Invoice extends Model
         'invoice_number',
         'amount',
         'payment_status',
+        'agent_id',
     ];
 
     // Relation to User
