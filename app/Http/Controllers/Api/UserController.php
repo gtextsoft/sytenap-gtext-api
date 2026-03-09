@@ -650,6 +650,13 @@ class UserController extends Controller {
         if($request->has('agent_referral_id'))
         {
             $agent = Referral::where('referral_code', $request->agent_referral_id)->first();
+            if(!$agent)
+            {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid agent referral code'
+                ], 400);
+            }   
 
             $agentId = $agent->user_id ?? null;
 
@@ -671,7 +678,7 @@ class UserController extends Controller {
 
 
         //  Create invoice
-        $invoice = $this->invoiceService->createInvoice($user?->id ?? null, $totalAmount, $agentId);
+        $invoice = $this->invoiceService->createInvoice($user?->id ?? null, $totalAmount, $paymentStatus = 'pending', $agentId);
 
         $cart_updated = $this->cartService->markCartAsCheckedOut($user?->id, $invoice->invoice_number);
 
