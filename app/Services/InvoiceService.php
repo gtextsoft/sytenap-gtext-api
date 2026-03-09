@@ -10,7 +10,7 @@ class InvoiceService
     /**
      * Generate a new invoice for a user
      */
-    public function createInvoice(int $userId, float $amount, string $paymentStatus = 'pending'): Invoice
+    public function createInvoice(int $userId, float $amount, string $paymentStatus = 'pending', int $agentId = null): Invoice
     {
         $invoiceNumber = $this->generateInvoiceNumber();
 
@@ -19,6 +19,7 @@ class InvoiceService
             'invoice_number' => $invoiceNumber,
             'amount' => $amount,
             'payment_status' => $paymentStatus,
+            'agent_id' => $agentId,
         ]);
     }
 

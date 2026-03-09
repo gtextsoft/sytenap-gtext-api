@@ -15,6 +15,7 @@ use App\Models\Invoice;
 use App\Services\ZohoService;
 use App\Models\ZohoCredential;
 use App\Models\Cart;
+use App\Models\Referral;
 
 
 
@@ -646,6 +647,15 @@ class UserController extends Controller {
 
         }
 
+        if($request->has('agent_referral_id'))
+        {
+            $agent = Referral::where('referral_code', $request->agent_referral_id)->first();
+
+            $agentId = $agent->user_id ?? null;
+
+        }   else {
+            $agentId = null;
+        }
         // Get cart items
         $cartItems = $this->cartService->getCartItems($user?->id, $tempUserId);
 
@@ -661,7 +671,7 @@ class UserController extends Controller {
 
 
         //  Create invoice
-        $invoice = $this->invoiceService->createInvoice($user?->id ?? null, $totalAmount);
+        $invoice = $this->invoiceService->createInvoice($user?->id ?? null, $totalAmount, $agentId);
 
         $cart_updated = $this->cartService->markCartAsCheckedOut($user?->id, $invoice->invoice_number);
 
