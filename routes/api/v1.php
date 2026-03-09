@@ -43,6 +43,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/withdrawals', [CommissionWithdrawalController::class, 'myWithdrawals']);
         Route::post('/dashboard/stats', [AgentController::class, 'dashboardStats']);
         Route::get('/referral-info', [AgentController::class, 'getReferralInfo']);
+        Route::get('/all-balances', [AgentController::class, 'allbalance']);
     });
 
     // -------------------------

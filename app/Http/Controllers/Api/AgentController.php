@@ -48,35 +48,35 @@ class AgentController extends Controller {
 
     
 
-                                    public function balance( Request $request ) {
-                                            $validator = Validator::make( $request->all(), [
-                                                'agent_id' => 'required',
-                                                ] );
+    public function balance( Request $request ) {
+            $validator = Validator::make( $request->all(), [
+                    'agent_id' => 'required',
+            ] );
 
-                                        if ( $validator->fails() ) {
-                                            return response()->json( [ 'errors' => $validator->errors() ], 422 );
-                                        }
+            if ( $validator->fails() ) {
+                return response()->json( [ 'errors' => $validator->errors() ], 422 );
+            }
 
-                                        $agentId = $request->agent_id;
+            $agentId = $request->agent_id;
 
-                                        $exists = AgentCommission::where( 'agent_id', $agentId )->exists();
+            $exists = AgentCommission::where( 'agent_id', $agentId )->exists();
 
-                                        if ( !$exists ) {
-                                            AgentCommission::create( [
-                                                'agent_id' => $agentId,
-                                                'amount' => 0
-                                            ] );
-                                        }
+            if ( !$exists ) {
+                     AgentCommission::create( [
+                         'agent_id' => $agentId,
+                        'amount' => 0
+                        ] );
+            }
 
-                                        $balance = AgentCommission::where( 'agent_id', $agentId )->sum( 'amount' );
+            $balance = AgentCommission::where( 'agent_id', $agentId )->sum( 'amount' );
 
-                                        return response()->json( [
-                                            'agent_id' => $agentId,
-                                            'balance' => $balance
-                                        ] );
-                                    }
+            return response()->json( [
+                     'agent_id' => $agentId,
+             'balance' => $balance
+                    ] );
+            }
 
-                                   /**
+    /**
  * @OA\Post(
  *      path="/api/v1/agent/commission-history",
  *      operationId="getAgentCommissionHistory",
@@ -326,6 +326,13 @@ public function getReferralInfo(Request $request): JsonResponse
         ]
     ], 200);
 }
+
+
+public function allbalance( Request $request ) {
+    $agents = AgentCommission::all();
+    return response()->json( ['agents' => $agents] );
+}
+
                                                                          
 }
 
