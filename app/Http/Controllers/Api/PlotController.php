@@ -2299,9 +2299,9 @@ class PlotController extends Controller
                 ->lockForUpdate()
                 ->get();
 
-            if ($plots->count() !== count($plotIds)) {
-                throw new Exception('Some plots are no longer available or do not belong to this estate');
-            }
+            // if ($plots->count() !== count($plotIds)) {
+            //     throw new Exception('Some plots are no longer available or do not belong to this estate');
+            // }
 
 
             /*
