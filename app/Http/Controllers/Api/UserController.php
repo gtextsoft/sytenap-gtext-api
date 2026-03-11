@@ -16,6 +16,7 @@ use App\Services\ZohoService;
 use App\Models\ZohoCredential;
 use App\Models\Cart;
 use App\Models\Referral;
+use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 
 
 
@@ -754,192 +755,332 @@ public function addToCart(Request $request): JsonResponse
     
 
    
-    /**
-     * @OA\Post(
-     *     path="/api/v1/invoices/{invoice}/confirm-payment",
-     *     tags={"Invoices"},
-     *     summary="Confirm invoice payment and send to Zoho CRM",
-     *     description="Marks the specified invoice as paid and sends the payment information to Zoho CRM. 
-     *                  Only unpaid invoices can be confirmed. This will create a contact (if not exists) 
-     *                  and a deal in Zoho CRM.",
-     *
-     *     @OA\Parameter(
-     *         name="invoice",
-     *         in="path",
-     *         required=true,
-     *         description="ID of the invoice to confirm payment for",
-     *         @OA\Schema(type="integer", example=1)
-     *     ),
-     *
-     *     @OA\RequestBody(
-     *         required=false,
-     *         description="Optional data if needed, currently none",
-     *         @OA\JsonContent(
-     *             type="object"
-     *         )
-     *     ),
-     *
-     *     @OA\Response(
-     *         response=200,
-     *         description="Payment confirmed and data sent to Zoho CRM successfully",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=true),
-     *             @OA\Property(property="message", type="string", example="Payment confirmed and sent to CRM"),
-     *             @OA\Property(
-     *                 property="data",
-     *                 type="object",
-     *                 @OA\Property(
-     *                     property="invoice",
-     *                     type="object",
-     *                     description="The confirmed invoice",
-     *                     @OA\Property(property="id", type="integer", example=1),
-     *                     @OA\Property(property="user_id", type="integer", example=3),
-     *                     @OA\Property(property="invoice_number", type="string", example="INV-20260212-0001"),
-     *                     @OA\Property(property="amount", type="number", example=3500000),
-     *                     @OA\Property(property="payment_status", type="string", example="paid"),
-     *                     @OA\Property(property="created_at", type="string", format="date-time"),
-     *                     @OA\Property(property="updated_at", type="string", format="date-time")
-     *                 ),
-     *                 @OA\Property(
-     *                     property="zoho",
-     *                     type="object",
-     *                     description="Response returned from Zoho CRM when creating deal/contact",
-     *                     example={
-     *                         "data": {
-     *                             {
-     *                                 "id": "1234567890",
-     *                                 "Deal_Name": "Property Purchase - INV-20260212-0001",
-     *                                 "Amount": 3500000,
-     *                                 "Stage": "Payment Made"
-     *                             }
-     *                         }
-     *                     }
-     *                 )
-     *             )
-     *         )
-     *     ),
-     *
-     *     @OA\Response(
-     *         response=400,
-     *         description="Invoice already marked as paid",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=false),
-     *             @OA\Property(property="message", type="string", example="Invoice already marked as paid")
-     *         )
-     *     ),
-     *
-     *     @OA\Response(
-     *         response=500,
-     *         description="Payment confirmed but CRM sync failed",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=false),
-     *             @OA\Property(property="message", type="string", example="Payment confirmed but CRM sync failed"),
-     *             @OA\Property(property="error", type="string", example="Zoho CRM is not connected. Missing refresh token.")
-     *         )
-     *     ),
-     *
-     *     security={{"sanctum":{}}}
-     * )
-     */
+    
 
-    public function confirmPayment(Request $request, Invoice $invoice)
-    {
-        if ($invoice->payment_status === 'paid') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invoice already marked as paid'
-            ], 400);
-        }
+    // public function confirmPayment(Request $request, Invoice $invoice)
+    // {
+    //     if ($invoice->payment_status === 'paid') {
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Invoice already marked as paid'
+    //         ], 400);
+    //     }
 
-        try {
+    //     try {
 
-            // 1️⃣ Mark invoice as paid
-            $invoice->update([
-                'payment_status' => 'paid'
-            ]);
+    //         // 1️⃣ Mark invoice as paid
+    //         $invoice->update([
+    //             'payment_status' => 'paid'
+    //         ]);
 
-            // 2 Get user (optional if invoice allows null)
-            $user = $invoice->user;
+    //         // 2 Get user (optional if invoice allows null)
+    //         $user = $invoice->user;
 
-            // 3️⃣ Get Zoho refresh token from DB
-            $zohoCredential = ZohoCredential::first();
+    //         // 3️⃣ Get Zoho refresh token from DB
+    //         $zohoCredential = ZohoCredential::first();
 
-            if (!$zohoCredential || !$zohoCredential->refresh_token) {
-                throw new \Exception('Zoho CRM is not connected. Missing refresh token.');
-            }
+    //         if (!$zohoCredential || !$zohoCredential->refresh_token) {
+    //             throw new \Exception('Zoho CRM is not connected. Missing refresh token.');
+    //         }
 
-            $refreshToken = $zohoCredential->refresh_token;
+    //         $refreshToken = $zohoCredential->refresh_token;
 
-           $cart = Cart::where('cart_id', $invoice->invoice_number)->first();
+    //        $cart = Cart::where('cart_id', $invoice->invoice_number)->first();
 
-            $estate_title = $cart->estate->title;
+    //         $estate_title = $cart->estate->title;
 
 
-            // 4️ Send to Zoho CRM
-            $zohoService = new ZohoService();
+    //         // 4️ Send to Zoho CRM
+    //         $zohoService = new ZohoService();
 
         
-            // create contact and get Zoho contact ID
+    //         // create contact and get Zoho contact ID
+    //     $contactId = $zohoService->getOrCreateClient([
+    //         "Name" => $user?->first_name ?? '',
+    //         'Last_Name'  => $user?->last_name ?? 'Customer',
+    //         'First_Name' => $user?->first_name ?? '',
+    //         'Email'      => $user?->email ?? '',
+    //         'Estate' => $estate_title,
+    //         'Company'      => 'Gtext Land Limited', 
+    //     ], $refreshToken);
+
+    //     // create deal using the contact ID
+    //     $deal = $zohoService->createDeal([
+    //         'Deal_Name'   => 'Property Purchase - ' . $invoice->invoice_number,
+    //         'Full_Name'   => $user?->first_name . ' ' . $user?->last_name,
+    //         'Company'      => 'Gtext Land Limited', 
+    //         'Email'       => $user?->email ?? '',
+    //         'Amount'      => $invoice->amount,
+    //         'Stage'       => 'Payment Made',
+    //         'Description' => 'Customer confirmed payment via bank transfer',
+    //         'Estate' => $estate_title,
+    //         'Invoice_Number' => $invoice->invoice_number,
+    //         'Payment_Status' => 'pending',
+    //         'Agent_ID' => $invoice->agent_id,
+    //     ], $contactId);
+
+
+    //     $payment = $zohoService->createEstatePayment([
+    //                 'Name'   => 'Property Purchase - ' . $invoice->invoice_number,
+    //                 'Client_Name'   => $user?->first_name . ' ' . $user?->last_name,
+    //                 'First_Name' => $user?->first_name ?? '',
+    //                 'Last_Name'  => $user?->last_name ?? 'Customer',
+    //                 'Phone' => $user?->phone ?? '',
+    //                 'Email'       => $user?->email ?? '',
+    //                 'Estate_Name' => $estate_title,
+    //                 'Invoice_Number' => $invoice->invoice_number,
+    //                 'Amount_Paid'      => $invoice->amount,
+    //                 'Payment_Status' => 'pending',
+    //                 'Agent_ID' => $invoice->agent_id,
+    //             ]); 
+        
+
+
+    //         return response()->json([
+    //             'success' => true,
+    //             'message' => 'Payment confirmed and sent to CRM',
+    //             'data' => [
+    //                 'invoice' => $invoice,
+    //                 'zoho' => $payment,
+    //                 'deal' => $deal,
+    //             ]
+    //         ]);
+
+    //     } catch (\Exception $e) {
+
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Payment confirmed but CRM sync failed',
+    //             'error' => $e->getMessage()
+    //         ], 500);
+    //     }
+    // }
+
+    /**
+ * @OA\Post(
+ *     path="/api/v1/invoices/{invoice}/confirm-payment",
+ *     tags={"Invoices"},
+ *     summary="Confirm invoice payment, upload proof and send to Zoho CRM",
+ *     description="Marks invoice as paid, allows customer upload proof of payment and sends estate purchase data to Zoho CRM. 
+ *                  One invoice can contain multiple estate plots from cart.",
+ *
+ *     @OA\Parameter(
+ *         name="invoice",
+ *         in="path",
+ *         required=true,
+ *         description="Invoice ID",
+ *         @OA\Schema(type="integer", example=1)
+ *     ),
+ *
+ *     @OA\RequestBody(
+ *         required=false,
+ *         @OA\MediaType(
+ *             mediaType="multipart/form-data",
+ *             @OA\Schema(
+ *                 @OA\Property(
+ *                     property="payment_proof",
+ *                     type="string",
+ *                     format="binary",
+ *                     description="Proof of payment (PDF or image)"
+ *                 )
+ *             )
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=200,
+ *         description="Payment confirmed successfully"
+ *     ),
+ *
+ *     security={{"sanctum":{}}}
+ * )
+ */
+
+public function confirmPayment(Request $request, Invoice $invoice)
+{
+
+    if ($invoice->payment_status === 'paid') {
+        return response()->json([
+            'success' => false,
+            'message' => 'Invoice already marked as paid'
+        ], 400);
+    }
+
+    try {
+
+        $paymentProofUrl = null;
+
+        /*
+        |--------------------------------------------------------------------------
+        | Upload Payment Proof (Cloudinary)
+        |--------------------------------------------------------------------------
+        */
+
+        if ($request->hasFile('payment_proof')) {
+
+            $file = $request->file('payment_proof');
+
+            $uploadResult = Cloudinary::uploadApi()->upload(
+                $file->getRealPath(),
+                [
+                    'folder' => 'payment_proofs',
+                    'resource_type' => 'auto',
+                ]
+            );
+
+            $paymentProofUrl = $uploadResult['secure_url'];
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Mark Invoice Paid
+        |--------------------------------------------------------------------------
+        */
+
+        $invoice->update([
+            'payment_status' => 'paid',
+            'payment_prof' => $paymentProofUrl
+        ]);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Get User
+        |--------------------------------------------------------------------------
+        */
+
+        $user = $invoice->user;
+
+        /*
+        |--------------------------------------------------------------------------
+        | Get All Cart Items using Invoice Number
+        |--------------------------------------------------------------------------
+        */
+
+        $cartItems = Cart::where('cart_id', $invoice->invoice_number)->get();
+
+        if ($cartItems->isEmpty()) {
+            throw new \Exception('No cart items found for this invoice');
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Extract Estate Data
+        |--------------------------------------------------------------------------
+        */
+
+        $estateData = [];
+        $estateNames = [];
+
+        foreach ($cartItems as $item) {
+
+            $estateData[] = [
+                'estate_id' => $item->estate_id,
+                'plot_id' => $item->plot_id,
+                'amount' => $item->amount
+            ];
+
+            if ($item->estate) {
+                $estateNames[] = $item->estate->title;
+            }
+        }
+
+        $estateNamesString = implode(', ', $estateNames);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Zoho Credentials
+        |--------------------------------------------------------------------------
+        */
+
+        $zohoCredential = ZohoCredential::first();
+
+        if (!$zohoCredential || !$zohoCredential->refresh_token) {
+            throw new \Exception('Zoho CRM is not connected. Missing refresh token.');
+        }
+
+        $refreshToken = $zohoCredential->refresh_token;
+
+        $zohoService = new ZohoService();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Create / Get Zoho Contact
+        |--------------------------------------------------------------------------
+        */
+
         $contactId = $zohoService->getOrCreateClient([
             "Name" => $user?->first_name ?? '',
             'Last_Name'  => $user?->last_name ?? 'Customer',
             'First_Name' => $user?->first_name ?? '',
             'Email'      => $user?->email ?? '',
-            'Estate' => $estate_title,
-            'Company'      => 'Gtext Land Limited', 
+            'Estate' => $estateNamesString,
+            'Company' => 'Gtext Land Limited',
         ], $refreshToken);
 
-        // create deal using the contact ID
+
+        /*
+        |--------------------------------------------------------------------------
+        | Create Zoho Deal
+        |--------------------------------------------------------------------------
+        */
+
         $deal = $zohoService->createDeal([
-            'Deal_Name'   => 'Property Purchase - ' . $invoice->invoice_number,
-            'Full_Name'   => $user?->first_name . ' ' . $user?->last_name,
-            'Company'      => 'Gtext Land Limited', 
-            'Email'       => $user?->email ?? '',
-            'Amount'      => $invoice->amount,
-            'Stage'       => 'Payment Made',
+            'Deal_Name' => 'Property Purchase - ' . $invoice->invoice_number,
+            'Full_Name' => $user?->first_name . ' ' . $user?->last_name,
+            'Company' => 'Gtext Land Limited',
+            'Email' => $user?->email ?? '',
+            'Amount' => $invoice->amount, // total invoice amount
+            'Stage' => 'Payment Made',
             'Description' => 'Customer confirmed payment via bank transfer',
-            'Estate' => $estate_title,
+            'Estate' => $estateNamesString,
             'Invoice_Number' => $invoice->invoice_number,
             'Payment_Status' => 'pending',
             'Agent_ID' => $invoice->agent_id,
+            'Estate_Items' => json_encode($estateData)
         ], $contactId);
 
 
+        /*
+        |--------------------------------------------------------------------------
+        | Create Estate Payment Record in Zoho
+        |--------------------------------------------------------------------------
+        */
+
         $payment = $zohoService->createEstatePayment([
-                    'Name'   => 'Property Purchase - ' . $invoice->invoice_number,
-                    'Client_Name'   => $user?->first_name . ' ' . $user?->last_name,
-                    'First_Name' => $user?->first_name ?? '',
-                    'Last_Name'  => $user?->last_name ?? 'Customer',
-                    'Phone' => $user?->phone ?? '',
-                    'Email'       => $user?->email ?? '',
-                    'Estate_Name' => $estate_title,
-                    'Invoice_Number' => $invoice->invoice_number,
-                    'Amount_Paid'      => $invoice->amount,
-                    'Payment_Status' => 'pending',
-                    'Agent_ID' => $invoice->agent_id,
-                ]); 
-        
+            'Name' => 'Property Purchase - ' . $invoice->invoice_number,
+            'Client_Name' => $user?->first_name . ' ' . $user?->last_name,
+            'First_Name' => $user?->first_name ?? '',
+            'Last_Name' => $user?->last_name ?? 'Customer',
+            'Phone' => $user?->phone ?? '',
+            'Email' => $user?->email ?? '',
+            'Estate_Name' => $estateNamesString,
+            'Invoice_Number' => $invoice->invoice_number,
+            'Amount_Paid' => $invoice->amount,
+            'Payment_Status' => 'pending',
+            'Agent_ID' => $invoice->agent_id,
+        ]);
 
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Payment confirmed and sent to CRM',
-                'data' => [
-                    'invoice' => $invoice,
-                    'zoho' => $payment,
-                    'deal' => $deal,
-                ]
-            ]);
+        return response()->json([
+            'success' => true,
+            'message' => 'Payment confirmed and sent to CRM',
+            'data' => [
+                'invoice' => $invoice,
+                'estates' => $estateData,
+                'zoho_payment' => $payment,
+                'deal' => $deal
+            ]
+        ]);
 
-        } catch (\Exception $e) {
+    } catch (\Exception $e) {
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Payment confirmed but CRM sync failed',
-                'error' => $e->getMessage()
-            ], 500);
-        }
+        return response()->json([
+            'success' => false,
+            'message' => 'Payment confirmed but CRM sync failed',
+            'error' => $e->getMessage()
+        ], 500);
     }
+}
 
     public function getInvoices(Request $request)
     {
