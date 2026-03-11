@@ -735,7 +735,7 @@ public function addToCart(Request $request): JsonResponse
         //  Create invoice
         $invoice = $this->invoiceService->createInvoice($user?->id ?? null, $totalAmount, $paymentStatus = 'pending', $agentId);
 
-        $cart_updated = $this->cartService->markCartAsCheckedOut($user?->id, $invoice->invoice_number);
+        $cart_updated = $this->cartService->markCartAsCheckedOut($user->id, $invoice->invoice_number);
 
         // Return demo bank info for frontend
         $bankInfo = [
