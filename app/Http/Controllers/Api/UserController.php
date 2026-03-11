@@ -939,7 +939,7 @@ public function confirmPayment(Request $request, Invoice $invoice)
 
         $invoice->update([
             'payment_status' => 'paid',
-            'payment_prof' => $paymentProofUrl
+            'payment_proof' => $paymentProofUrl
         ]);
 
         /*
