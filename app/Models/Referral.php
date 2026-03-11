@@ -9,7 +9,7 @@ class Referral extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['user_id', 'referral_code'];
+    protected $fillable = ['user_id', 'referral_code', 'account_type'];
 
    
 }
