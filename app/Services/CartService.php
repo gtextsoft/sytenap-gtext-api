@@ -34,6 +34,7 @@ class CartService
         int $estateId,
         int $plotId,
         float $price,
+        float $amount,
         ?int $userId = null,
         ?string $tempUserId = null
     ): Cart {
@@ -55,6 +56,7 @@ class CartService
             'estate_id' => $estateId,
             'plot_id' => $plotId,
             'price' => $price,
+            'amount' => $amount,
             'user_id' => $userId,
             'temporary_user_id' => $tempUserId,
             'cart_status' => 'active',

@@ -385,8 +385,10 @@ public function addToCart(Request $request): JsonResponse
             estateId: $request->estate_id,
             plotId: $request->plot_id,
             price: $request->price,
+            amount: $request->price ?? null,
             userId: $userId,
             tempUserId: $tempUserId,
+           
         );
 
         return response()->json([
@@ -690,6 +692,7 @@ public function addToCart(Request $request): JsonResponse
                     estateId: $request->estate_id,
                     plotId: $plotId,
                     price: $request->price,
+                    amount: $request->price ?? null,
                     userId: $user?->id,
                     tempUserId: null
                 );
