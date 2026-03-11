@@ -2141,7 +2141,7 @@ class PlotController extends Controller
         }
     }
 
-   
+
 
     public function handleZohoCallback(Request $request)
     {

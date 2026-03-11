@@ -183,174 +183,225 @@ class UserController extends Controller {
 
  
 
-    /**
+  /**
  * @OA\Post(
  *     path="/api/v1/cart/add",
  *     tags={"Cart"},
- *     summary="Add plot to cart",
- *     description="Adds a plot to the user's cart. 
- *                  Only plots with status 'available' can be added. 
- *                  If the plot is already sold or reserved, the request will fail.
- *                  Guest users can provide a temporary_user_id; authenticated users can omit it.",
+ *     summary="Add or update plot in cart",
+ *     description="Adds a plot to the cart or updates an existing cart item. 
+ *                  If the plot already exists in the cart, the system updates the amount or payment_type. 
+ *                  Only plots with status 'available' can be added.",
  *
  *     @OA\RequestBody(
  *         required=true,
  *         @OA\JsonContent(
  *             required={"estate_id","plot_id","price"},
+ *
  *             @OA\Property(
  *                 property="estate_id",
  *                 type="integer",
  *                 example=1,
- *                 description="ID of the estate where the plot belongs"
+ *                 description="ID of the estate"
  *             ),
+ *
  *             @OA\Property(
  *                 property="plot_id",
  *                 type="integer",
  *                 example=10,
- *                 description="ID of the plot to add to cart"
+ *                 description="Plot ID"
  *             ),
+ *
  *             @OA\Property(
  *                 property="price",
  *                 type="number",
  *                 format="float",
  *                 example=3500000,
- *                 description="Price of the plot at the time of adding to cart"
+ *                 description="Plot price"
  *             ),
+ *
+ *             @OA\Property(
+ *                 property="amount",
+ *                 type="number",
+ *                 format="float",
+ *                 nullable=true,
+ *                 example=1000000,
+ *                 description="Amount customer wants to pay (optional)"
+ *             ),
+ *
+ *             @OA\Property(
+ *                 property="payment_type",
+ *                 type="string",
+ *                 enum={"full","installmental"},
+ *                 nullable=true,
+ *                 example="installmental",
+ *                 description="Payment type"
+ *             ),
+ *
  *             @OA\Property(
  *                 property="temporary_user_id",
  *                 type="string",
  *                 nullable=true,
  *                 example="f4740c0e-9011-4761-8485-f0c605f3e720",
- *                 description="Temporary UUID for guest users to track their cart before login"
+ *                 description="Temporary UUID for guest users"
+ *             ),
+ *
+ *             @OA\Property(
+ *                 property="user_id",
+ *                 type="integer",
+ *                 nullable=true,
+ *                 example=3,
+ *                 description="Authenticated user ID"
  *             )
  *         )
  *     ),
  *
  *     @OA\Response(
  *         response=200,
- *         description="Plot added to cart successfully",
+ *         description="Cart updated successfully",
  *         @OA\JsonContent(
  *             @OA\Property(property="success", type="boolean", example=true),
- *             @OA\Property(property="message", type="string", example="Plot added to cart"),
- *             @OA\Property(
- *                 property="data",
- *                 type="object",
- *                 @OA\Property(property="id", type="integer", example=5),
- *                 @OA\Property(property="cart_id", type="string", example="b2e5f1b3-9e3c-4b5e-9e11-23caa001aa22"),
- *                 @OA\Property(property="estate_id", type="integer", example=1),
- *                 @OA\Property(property="plot_id", type="integer", example=10),
- *                 @OA\Property(property="price", type="number", example=3500000),
- *                 @OA\Property(property="user_id", type="integer", nullable=true, example=3),
- *                 @OA\Property(property="temporary_user_id", type="string", nullable=true, example="f4740c0e-9011-4761-8485-f0c605f3e720"),
- *                 @OA\Property(property="cart_status", type="string", example="active"),
- *                 @OA\Property(property="created_at", type="string", format="date-time", example="2026-02-12T10:25:36.000000Z"),
- *                 @OA\Property(property="updated_at", type="string", format="date-time", example="2026-02-12T10:25:36.000000Z")
- *             )
+ *             @OA\Property(property="message", type="string", example="Cart item updated"),
+ *             @OA\Property(property="data", type="object")
  *         )
  *     ),
  *
  *     @OA\Response(
  *         response=400,
- *         description="Plot not available or already in cart",
+ *         description="Invalid request",
  *         @OA\JsonContent(
  *             @OA\Property(property="success", type="boolean", example=false),
- *             @OA\Property(
- *                 property="message",
- *                 type="string",
- *                 example="This plot is currently sold and cannot be added to cart."
- *             )
- *         )
- *     ),
- *
- *     @OA\Response(
- *         response=404,
- *         description="Plot not found",
- *         @OA\JsonContent(
- *             @OA\Property(property="message", type="string", example="No query results for model [Plot] 99")
+ *             @OA\Property(property="message", type="string", example="This plot is currently sold and cannot be added to cart.")
  *         )
  *     ),
  *
  *     @OA\Response(
  *         response=422,
- *         description="Validation failed",
+ *         description="Validation error",
  *         @OA\JsonContent(
  *             @OA\Property(property="success", type="boolean", example=false),
  *             @OA\Property(property="message", type="string", example="Validation failed"),
- *             @OA\Property(
- *                 property="errors",
- *                 type="object",
- *                 example={
- *                     "plot_id": {"The selected plot id is invalid."},
- *                     "temporary_user_id": {"The temporary user id must be a valid UUID."}
- *                 }
- *             )
+ *             @OA\Property(property="errors", type="object")
  *         )
  *     )
  * )
  */
 
-    public function addToCart(Request $request): JsonResponse
-    {
-        $validator = Validator::make($request->all(), [
-            'estate_id' => 'required|integer|exists:estates,id',
-            'plot_id'   => 'required|integer|exists:plots,id',
-            'price'     => 'required|numeric|min:0',
-            'temporary_user_id' => 'nullable|string|uuid',
-            'user_id' => 'nullable',
-        ]);
+public function addToCart(Request $request): JsonResponse
+{
+    $validator = Validator::make($request->all(), [
 
-        if ($validator->fails()) {
+        'estate_id' => 'required|integer|exists:estates,id',
+        'plot_id'   => 'required|integer|exists:plots,id',
+        'price'     => 'required|numeric|min:0',
+
+        'amount' => 'nullable|numeric|min:0',
+        'payment_type' => 'nullable|in:full,installmental',
+
+        'temporary_user_id' => 'nullable|string|uuid',
+        'user_id' => 'nullable'
+
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Validation failed',
+            'errors' => $validator->errors(),
+        ], 422);
+    }
+
+    try {
+
+        // FETCH PLOT
+        $plot = Plot::findOrFail($request->plot_id);
+
+        // CHECK PLOT STATUS
+        if ($plot->status !== 'available') {
             return response()->json([
                 'success' => false,
-                'message' => 'Validation failed',
-                'errors'  => $validator->errors(),
-            ], 422);
+                'message' => "This plot is currently {$plot->status} and cannot be added to cart."
+            ], 400);
         }
 
-        try {
+        $userId = $request->user_id ?? null;
+        $tempUserId = $request->temporary_user_id ?? $this->getTempUserId();
 
-            //  FETCH PLOT
-            $plot = Plot::findOrFail($request->plot_id);
+        // VALIDATE FULL PAYMENT RULE
+        if ($request->payment_type === 'full') {
 
-            //  CHECK STATUS
-            if ($plot->status !== 'available') {
+            $amount = $request->amount ?? $request->price;
+
+            if ($amount != $request->price) {
                 return response()->json([
                     'success' => false,
-                    'message' => "This plot is currently {$plot->status} and cannot be added to cart."
-                ], 400);
+                    'message' => 'For full payment, amount must equal the plot price.'
+                ], 422);
+            }
+        }
+
+        // CHECK IF ITEM EXISTS IN CART
+        $existingItem = Cart::where('plot_id', $request->plot_id)
+            ->where(function ($query) use ($userId, $tempUserId) {
+
+                if ($userId) {
+                    $query->where('user_id', $userId);
+                }
+
+                if ($tempUserId) {
+                    $query->orWhere('temporary_user_id', $tempUserId);
+                }
+
+            })->first();
+
+        // UPDATE EXISTING CART ITEM
+        if ($existingItem) {
+
+            $updateData = [];
+
+            if ($request->has('amount')) {
+                $updateData['amount'] = $request->amount;
             }
 
-            if($request->has('user_id'))
-            {
-                    $user_id = $request->user_id;
-            }else{
-                $user_id = null;
+            if ($request->has('payment_type')) {
+                $updateData['payment_type'] = $request->payment_type;
             }
 
-            //  ADD TO CART
-            $cartItem = $this->cartService->addItem(
-                estateId: $request->estate_id,
-                plotId: $request->plot_id,
-                price: $request->price,
-                userId: $user_id,
-                tempUserId: $request->temporary_user_id ?? $this->getTempUserId()
-            );
+            if ($request->has('price')) {
+                $updateData['price'] = $request->price;
+            }
+
+            $existingItem->update($updateData);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Plot added to cart',
-                'data' => $cartItem
+                'message' => 'Cart item updated',
+                'data' => $existingItem
             ]);
-
-        } catch (\Exception $e) {
-
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage()
-            ], 400);
         }
-    }
 
+        // ADD NEW ITEM
+        $cartItem = $this->cartService->addItem(
+            estateId: $request->estate_id,
+            plotId: $request->plot_id,
+            price: $request->price,
+            userId: $userId,
+            tempUserId: $tempUserId,
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Plot added to cart',
+            'data' => $cartItem
+        ]);
+
+    } catch (\Exception $e) {
+
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage()
+        ], 400);
+    }
+}
 
     /**
  * @OA\Get(

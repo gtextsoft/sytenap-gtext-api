@@ -1389,7 +1389,7 @@ class EstateController extends Controller
     {
         try {
             // Validate the request
-            $validator = \Validator::make($request->all(), [
+            $validator = Validator::make($request->all(), [
                 'user_id' => 'required|integer|exists:users,id',
                 'latitude' => 'required|numeric|between:-90,90',
                 'longitude' => 'required|numeric|between:-180,180',

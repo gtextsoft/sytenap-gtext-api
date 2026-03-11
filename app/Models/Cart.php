@@ -12,6 +12,8 @@ class Cart extends Model
         'estate_id',
         'plot_id',
         'price',
+        'payment_type',
+        'amount',
         'user_id',
         'temporary_user_id',
         'cart_status',
