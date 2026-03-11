@@ -8,7 +8,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
-
+use Illuminate\Validation\Rule;
 class CommissionSettingController extends Controller {
 
 
@@ -50,12 +50,12 @@ public function index(Request $request)
     $admin = $request->user();
     Log::error('Authenticated user: ', ['user' => $admin]);
 
-    // if ($admin->account_type !== 'admin') {
-    //     return response()->json([
-    //         'success' => false,
-    //         'message' => 'Access denied.'
-    //     ], 403);
-    // }
+    if ($admin->account_type->value !== "admin") {
+        return response()->json([
+            'success' => false,
+            'message' => 'Access denied.'
+        ], 403);
+    }
 
     $settings = CommissionSetting::orderBy('id', 'desc')->get();
 
@@ -178,8 +178,12 @@ public function index(Request $request)
  * )
  */
 
-public function store(Request $request) {
+use Illuminate\Validation\Rule;
+
+public function store(Request $request)
+{
     $admin = $request->user();
+
     if ($admin->account_type->value !== "admin") {
         return response()->json([
             'success' => false,
@@ -188,16 +192,43 @@ public function store(Request $request) {
     }
 
     $validator = Validator::make($request->all(), [
-        'value' => 'required|numeric|min:0',
-        'type' => 'required|in:percentage,flat',
+
+        'type' => ['required', Rule::in(['percentage', 'flat'])],
+
+        'value' => [
+            'required',
+            'numeric',
+
+            Rule::when($request->type === 'percentage', [
+                'min:1',
+                'max:100'
+            ]),
+
+            Rule::when($request->type === 'flat', [
+                'min:1',
+                'max:1000000000000' // up to trillions if needed
+            ]),
+        ],
+
         'status' => 'nullable|boolean',
+
         'min' => 'nullable|numeric|min:0',
-        'max' => 'nullable|numeric|min:0',
+
+        'max' => 'nullable|numeric|gte:min',
+
         'agent_role' => 'nullable|string|in:associate,staff,all'
+
+    ], [
+        'value.min' => 'Commission value must be at least 1.',
+        'value.max' => 'Percentage commission cannot exceed 100%.',
+        'max.gte' => 'Max amount must be greater than or equal to min.',
     ]);
 
     if ($validator->fails()) {
-        return response()->json(['errors' => $validator->errors()], 422);
+        return response()->json([
+            'success' => false,
+            'errors' => $validator->errors()
+        ], 422);
     }
 
     $setting = CommissionSetting::create([
