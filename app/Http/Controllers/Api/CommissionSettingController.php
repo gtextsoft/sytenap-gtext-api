@@ -179,8 +179,8 @@ public function index(Request $request)
  */
 
 public function store(Request $request) {
-    $admin = Auth::user();
-    if ($admin->account_type !== 'admin') {
+    $admin = $request->user();
+    if ($admin->account_type->value !== "admin") {
         return response()->json([
             'success' => false,
             'message' => 'Access denied.'
