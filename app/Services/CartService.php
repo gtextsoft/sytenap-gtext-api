@@ -96,7 +96,7 @@ class CartService
     public function getCartTotal(?int $userId = null, ?string $tempUserId = null): float
     {
         return $this->getCartItems($userId, $tempUserId)
-            ->sum('price');
+            ->sum('amount');
     }
 
     /*
