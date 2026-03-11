@@ -685,22 +685,22 @@ public function addToCart(Request $request): JsonResponse
         $user = $request->user();
         $tempUserId = $request->header('X-Temp-User'); // if guest passed it in header
 
-        if($request->has('estate_id') && $request->has('plot_id') && $request->has('price'))
-        {
-           foreach ($request->plot_id as $plotId) {
-                $this->cartService->addItem(
-                    estateId: $request->estate_id,
-                    plotId: $plotId,
-                    price: $request->price,
-                    amount: $request->price ?? null,
-                    userId: $user?->id,
-                    tempUserId: null
-                );
-            }
-        }else
-        {
+        // if($request->has('estate_id') && $request->has('plot_id') && $request->has('price') )
+        // {
+        //    foreach ($request->plot_id as $plotId) {
+        //         $this->cartService->addItem(
+        //             estateId: $request->estate_id,
+        //             plotId: $plotId,
+        //             price: $request->price,
+        //             amount: $request->price ?? null,
+        //             userId: $user?->id,
+        //             tempUserId: null
+        //         );
+        //     }
+        // }else
+        // {
 
-        }
+        // }
 
         if($request->has('agent_referral_id'))
         {
