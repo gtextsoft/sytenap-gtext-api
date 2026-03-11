@@ -178,7 +178,7 @@ public function index(Request $request)
  * )
  */
 
-use Illuminate\Validation\Rule;
+
 
 public function store(Request $request)
 {
