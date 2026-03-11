@@ -62,61 +62,100 @@ public function index(Request $request)
     return response()->json($settings);
 }
 
+
 /**
  * @OA\Post(
  *      path="/api/v1/admin/commission-settings",
  *      operationId="createCommissionSetting",
  *      tags={"Admin - Commission Settings"},
- *      summary="Add a new commission setting",
- *      description="Allows an admin to create a new commission setting by providing value, type, and optional status.",
+ *      summary="Create commission setting",
+ *      description="Creates a new commission configuration for agents. 
+ *                   Commission can be defined as percentage or flat value 
+ *                   and optionally restricted by transaction amount range 
+ *                   and agent role.",
  *      security={{"sanctum": {}}},
  *
  *      @OA\RequestBody(
  *          required=true,
  *          @OA\JsonContent(
- *              required={"value", "type"},
+ *              required={"value","type"},
+ *
  *              @OA\Property(
  *                  property="value",
  *                  type="number",
  *                  format="float",
  *                  example=10,
- *                  description="The commission value"
+ *                  description="Commission value. Represents percentage or flat value depending on the type."
  *              ),
+ *
  *              @OA\Property(
  *                  property="type",
  *                  type="string",
+ *                  enum={"percentage","flat"},
  *                  example="percentage",
- *                  description="The type of commission: percentage or flat"
+ *                  description="Commission calculation type"
  *              ),
+ *
  *              @OA\Property(
  *                  property="status",
  *                  type="boolean",
  *                  example=true,
- *                  description="Whether the commission setting is active or not"
+ *                  description="Whether this commission rule is active"
+ *              ),
+ *
+ *              @OA\Property(
+ *                  property="min",
+ *                  type="number",
+ *                  format="float",
+ *                  example=100000,
+ *                  description="Minimum transaction amount this commission applies to"
+ *              ),
+ *
+ *              @OA\Property(
+ *                  property="max",
+ *                  type="number",
+ *                  format="float",
+ *                  example=5000000,
+ *                  description="Maximum transaction amount this commission applies to"
+ *              ),
+ *
+ *              @OA\Property(
+ *                  property="agent_role",
+ *                  type="string",
+ *                  enum={"associate","staff","all"},
+ *                  example="associate",
+ *                  description="Agent role this commission applies to"
  *              )
  *          )
  *      ),
  *
  *      @OA\Response(
  *          response=200,
- *          description="Commission setting added successfully",
+ *          description="Commission setting created successfully",
  *          @OA\JsonContent(
  *              @OA\Property(property="success", type="boolean", example=true),
  *              @OA\Property(property="message", type="string", example="Commission setting added successfully."),
+ *
  *              @OA\Property(
  *                  property="data",
  *                  type="object",
+ *
  *                  @OA\Property(property="id", type="integer", example=1),
  *                  @OA\Property(property="value", type="number", format="float", example=10),
  *                  @OA\Property(property="type", type="string", example="percentage"),
- *                  @OA\Property(property="status", type="boolean", example=true)
+ *                  @OA\Property(property="status", type="boolean", example=true),
+ *                  @OA\Property(property="min", type="number", example=100000),
+ *                  @OA\Property(property="max", type="number", example=5000000),
+ *                  @OA\Property(property="agent_role", type="string", example="associate"),
+ *                  @OA\Property(property="created_at", type="string", format="date-time"),
+ *                  @OA\Property(property="updated_at", type="string", format="date-time")
  *              )
  *          )
  *      ),
  *
  *      @OA\Response(
  *          response=403,
- *          description="Access denied. Only admin can add commission settings.",
+ *          description="Access denied. Only admins can create commission settings.",
  *          @OA\JsonContent(
  *              @OA\Property(property="success", type="boolean", example=false),
  *              @OA\Property(property="message", type="string", example="Access denied.")
@@ -127,7 +166,13 @@ public function index(Request $request)
  *          response=422,
  *          description="Validation error",
  *          @OA\JsonContent(
- *              @OA\Property(property="errors", type="object")
+ *              @OA\Property(property="success", type="boolean", example=false),
+ *              @OA\Property(property="errors", type="object",
+ *                  example={
+ *                      "value": {"The value field is required."},
+ *                      "type": {"The selected type is invalid."}
+ *                  }
+ *              )
  *          )
  *      )
  * )
@@ -145,7 +190,10 @@ public function store(Request $request) {
     $validator = Validator::make($request->all(), [
         'value' => 'required|numeric|min:0',
         'type' => 'required|in:percentage,flat',
-        'status' => 'nullable|boolean'
+        'status' => 'nullable|boolean',
+        'min' => 'nullable|numeric|min:0',
+        'max' => 'nullable|numeric|min:0',
+        'agent_role' => 'nullable|string|in:associate,staff,all'
     ]);
 
     if ($validator->fails()) {
@@ -155,7 +203,10 @@ public function store(Request $request) {
     $setting = CommissionSetting::create([
         'value' => $request->value,
         'type' => $request->type,
-        'status' => $request->status ?? false
+        'status' => $request->status ?? false,
+        'min' => $request->min ?? 0,
+        'max' => $request->max ?? 0,
+        'agent_role' => $request->agent_role ?? 'all'
     ]);
 
     return response()->json([

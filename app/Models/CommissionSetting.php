@@ -9,5 +9,8 @@ class CommissionSetting extends Model {
         'value',
         'type',
         'status',
+        'min',
+        'max',
+        'agent_role',
     ];
 }
