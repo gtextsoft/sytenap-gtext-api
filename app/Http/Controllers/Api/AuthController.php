@@ -206,7 +206,7 @@ class AuthController extends Controller
             }
 
             $token = $user->createToken('api-token')->plainTextToken;
-            $this->createReferralIfNotExists($user->id);
+            //$this->createReferralIfNotExists($user->id);
 
             // Merge guest cart (if exists)
             $tempUserId = $request->header('X-Temp-User');
@@ -272,7 +272,7 @@ class AuthController extends Controller
 
             if ($response->successful() && isset($data['success']) && $data['success'] === true) {
                 $agentId = $data['data']['user']['id'] ?? null;
-                $agent_role = $data['data']['user']['account_type'] ?? null;
+                $agent_role = $data['data']['user']['agent_role'] ?? null;
                 $this->createReferralIfNotExists($agentId, $agent_role);
 
                 return response()->json([
