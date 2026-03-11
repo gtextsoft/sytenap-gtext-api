@@ -1940,7 +1940,7 @@ class PlotController extends Controller
      */
     public function registerAndPurchase(Request $request)
     {
-        $validator = \Validator::make($request->all(), [
+        $validator = Validator::make($request->all(), [
             // User fields
             'first_name' => 'required_without:user_id|string|max:100',
             'last_name'  => 'required_without:user_id|string|max:100',
@@ -1992,10 +1992,10 @@ class PlotController extends Controller
                 //     'email_verification'
                 // );
 
-                Notification::send(
-                    $user,
-                    new SendAccountCredentialsNotification($user, $plainPassword)
-                );
+                // Notification::send(
+                //     $user,
+                //     new SendAccountCredentialsNotification($user, $plainPassword)
+                // );
             }
 
             /**
@@ -2385,7 +2385,7 @@ class PlotController extends Controller
             | STEP 9.5 — Agent Commission Settlement
             |--------------------------------------------------------------------------
             */
-
+            /*
             if (!empty($invoice->agent_id)) {
 
                 $commissionSetting = \App\Models\CommissionSetting::where('status', '1')->first();
@@ -2415,7 +2415,83 @@ class PlotController extends Controller
                         ]);
                     }
                 }
+            }*/
+
+            /*
+        |--------------------------------------------------------------------------
+        | STEP 9.5 — Agent Commission Settlement
+        |--------------------------------------------------------------------------
+        */
+        if (!empty($invoice->agent_id)) {
+
+            // 1️⃣ Determine agent role via referral table using agent_id
+            $referral = \App\Models\Referral::where('user_id', $invoice->agent_id)->first();
+
+            // default to associate if not found
+            $agentRole = 'associate';
+
+            if ($referral) {
+                $agentRole = ($referral->account_type === 'user') ? 'associate' : 'staff';
             }
+
+            // 2️⃣ Fetch appropriate commission setting
+            $commissionSetting = \App\Models\CommissionSetting::where('status', true)
+                ->where(function ($query) use ($agentRole) {
+                    $query->where('agent_role', $agentRole)
+                        ->orWhere('agent_role', 'all');
+                })
+                ->where(function ($query) use ($invoice) {
+                    // Rule with min/max range
+                    $query->where(function ($q) use ($invoice) {
+                        $q->whereNotNull('min')
+                        ->whereNotNull('max')
+                        ->where('min', '<=', $invoice->amount)
+                        ->where('max', '>=', $invoice->amount);
+                    })
+                    // Rule without range
+                    ->orWhere(function ($q) {
+                        $q->whereNull('min')->whereNull('max');
+                    });
+                })
+                ->orderByRaw("
+                    CASE
+                        WHEN agent_role = ? THEN 1
+                        WHEN agent_role = 'all' THEN 2
+                    END
+                ", [$agentRole])
+                ->first();
+
+            // 3️⃣ Apply commission if found
+            if ($commissionSetting) {
+
+                $commissionAmount = 0;
+
+                if ($commissionSetting->type === 'percentage') {
+                    $commissionAmount = ($invoice->amount * $commissionSetting->value) / 100;
+                } elseif ($commissionSetting->type === 'flat') {
+                    $commissionAmount = $commissionSetting->value;
+                }
+
+                if ($commissionAmount > 0) {
+                    $commission = \App\Models\AgentCommission::create([
+                        'agent_id' => $invoice->agent_id,
+                        'amount' => $commissionAmount,
+                        'reference' => $invoice->invoice_number,
+                        'estate_id' => $estate->id ?? null,
+                        'user_id' => $invoice->user_id,
+                    ]);
+
+                    \App\Models\CommissionHistory::create([
+                        'agent_id' => $invoice->agent_id,
+                        'commission_id' => $commission->id,
+                        'estate_id' => $estate->id ?? null,
+                        'description' => "Commission from invoice {$invoice->invoice_number}",
+                        'amount_paid' => $commissionAmount,
+                        'type' => 'credit'
+                    ]);
+                }
+            }
+        }
 
             $invoice->payment_status = 'payment_verified';
             $invoice->save();
