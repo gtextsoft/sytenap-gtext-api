@@ -138,10 +138,9 @@ class AgentController extends Controller {
                         ->orderBy( 'id', 'desc' )
                     ->paginate( 5 );
         } else {
-            $history = CommissionHistory::all()
-                        ->with('commission', 'estate', 'plot')
-                        ->orderBy( 'id', 'desc' )
-                    ->paginate( 5 );
+            $history = CommissionHistory::with('commission', 'estate', 'plot')
+            ->orderBy('id', 'desc')
+            ->paginate(5);
         }
 
 
