@@ -124,17 +124,26 @@ class AgentController extends Controller {
 
  public function history( Request $request ) {
      $validator = Validator::make( $request->all(), [
-                'agent_id' => 'required|exists:agent_commissions,agent_id',
+                'agent_id' => 'nullable|exists:agent_commissions,agent_id',
         ] );
 
         if ( $validator->fails() ) {
                     return response()->json( [ 'errors' => $validator->errors() ], 422 );
         }
 
+        if($request->has('agent_id')) {
+           
         $history = CommissionHistory::where( 'agent_id', $request->agent_id )
                         ->with('commission', 'estate', 'plot')
                         ->orderBy( 'id', 'desc' )
                     ->paginate( 5 );
+        } else {
+            $history = CommissionHistory::all()
+                        ->with('commission', 'estate', 'plot')
+                        ->orderBy( 'id', 'desc' )
+                    ->paginate( 5 );
+        }
+
 
                 return response()->json( $history );
     }

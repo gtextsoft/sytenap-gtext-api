@@ -1039,6 +1039,7 @@ public function confirmPayment(Request $request, Invoice $invoice)
             'Invoice_Number' => $invoice->invoice_number,
             'Payment_Status' => 'pending',
             'Agent_ID' => $invoice->agent_id,
+            'Payment_Proof' => $paymentProofUrl,
             'Estate_Items' => json_encode($estateData)
         ], $contactId);
 
@@ -1061,6 +1062,7 @@ public function confirmPayment(Request $request, Invoice $invoice)
             'Amount_Paid' => $invoice->amount,
             'Payment_Status' => 'pending',
             'Agent_ID' => $invoice->agent_id,
+            'Payment_Proof' => $paymentProofUrl
         ]);
 
 
