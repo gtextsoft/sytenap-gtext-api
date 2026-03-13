@@ -1091,7 +1091,7 @@ public function confirmPayment(Request $request, Invoice $invoice)
     {
         $user_id = $request->user()->id;
         $invoices = Invoice::where('user_id', $user_id)
-                    ->where('payment_status', 'pending')
+                    //->where('payment_status', 'pending')
                     ->get();
 
         return response()->json([
