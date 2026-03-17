@@ -320,9 +320,26 @@ class AuthController extends Controller
     /**
      * Private: Create referral if not exists
      */
-    private function  createReferralIfNotExists($agentId, $agent_role = 'associate', $first_name = 'Agent', $last_name = 'User', $email = null)
+    // private function  createReferralIfNotExists($agentId, $agent_role = 'associate', $first_name = 'Agent', $last_name = 'User', $email = null)
+    // {
+    //     if (!Referral::where('user_id', $agentId)->exists()) {
+    //         Referral::create([
+    //             'user_id' => $agentId,
+    //             'first_name' => $first_name,
+    //             'last_name' => $last_name,
+    //             'email' => $email,
+    //             'referral_code' => 'REF-' . strtoupper(Str::random(8)),
+    //             'account_type' => $agent_role
+    //         ]);
+    //     }
+    // }
+
+    private function createReferralIfNotExists($agentId, $agent_role = 'associate', $first_name = 'Agent', $last_name = 'User', $email = null)
     {
-        if (!Referral::where('user_id', $agentId)->exists()) {
+        $referral = Referral::where('user_id', $agentId)->first();
+
+        if (!$referral) {
+            // Create new referral
             Referral::create([
                 'user_id' => $agentId,
                 'first_name' => $first_name,
@@ -331,6 +348,25 @@ class AuthController extends Controller
                 'referral_code' => 'REF-' . strtoupper(Str::random(8)),
                 'account_type' => $agent_role
             ]);
+        } else {
+            // Update fields only if they are NULL
+            $updateData = [];
+
+            if (is_null($referral->first_name) && $first_name) {
+                $updateData['first_name'] = $first_name;
+            }
+
+            if (is_null($referral->last_name) && $last_name) {
+                $updateData['last_name'] = $last_name;
+            }
+
+            if (is_null($referral->email) && $email) {
+                $updateData['email'] = $email;
+            }
+
+            if (!empty($updateData)) {
+                $referral->update($updateData);
+            }
         }
     }
 
