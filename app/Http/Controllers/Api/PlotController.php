@@ -2444,14 +2444,22 @@ class PlotController extends Controller
                 }
 
                 if ($commissionAmount > 0) {
-                    $commission = \App\Models\AgentCommission::create([
-                        'agent_id' => $invoice->agent_id,
-                        'amount' => $commissionAmount,
-                        'reference' => $invoice->invoice_number,
-                        'estate_id' => $estate->id ?? null,
-                        'user_id' => $invoice->user_id,
-                    ]);
 
+                    // Find existing commission for the agent
+                    $commission = \App\Models\AgentCommission::where('agent_id', $invoice->agent_id)->first();
+
+                    if ($commission) {
+                        // Update existing commission amount
+                        $commission->increment('amount', $commissionAmount);
+                    } else {
+                        // Create new commission record
+                        $commission = \App\Models\AgentCommission::create([
+                            'agent_id' => $invoice->agent_id,
+                            'amount' => $commissionAmount,
+                        ]);
+                    }
+
+                    // Record commission history
                     \App\Models\CommissionHistory::create([
                         'agent_id' => $invoice->agent_id,
                         'commission_id' => $commission->id,
