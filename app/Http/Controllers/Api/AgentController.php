@@ -340,6 +340,9 @@ public function getReferralInfo(Request $request): JsonResponse
         'data' => [
             'agent_id' => $agentId,
             'referral_code' => $referral->referral_code,
+            'first_name' => $referral->first_name,
+            'last_name' => $referral->last_name,
+            'email' => $referral->email,
         ]
     ], 200);
 }
