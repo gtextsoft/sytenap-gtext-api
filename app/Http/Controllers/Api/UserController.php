@@ -16,6 +16,7 @@ use App\Services\ZohoService;
 use App\Models\ZohoCredential;
 use App\Models\Cart;
 use App\Models\Referral;
+use App\Models\User;
 use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 use Illuminate\Support\Facades\Hash;
 
@@ -164,6 +165,8 @@ class UserController extends Controller {
             'country'    => 'sometimes|string|max:255',
             'password' => 'sometimes',
         ] );
+
+        
 
         // Update user details
         $user->update( 
