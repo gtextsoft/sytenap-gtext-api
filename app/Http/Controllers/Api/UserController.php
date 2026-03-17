@@ -163,22 +163,33 @@ class UserController extends Controller {
             'last_name'  => 'sometimes|string|max:255',
             'state'      => 'sometimes|string|max:255',
             'country'    => 'sometimes|string|max:255',
-            'password' => 'sometimes',
+            'password' =>  'sometimes|string'
         ] );
+
+        if($request->has('password'))
+        {
+            $data = [
+                'first_name' => $request->first_name,
+                'last_name' => $request->last_name,
+                'password' => Hash::make($request->password),
+                'state' => $request->state,
+                'country' => $request->country
+            ];
+        }else{
+
+             $data = [
+                'first_name' => $request->first_name,
+                'last_name' => $request->last_name,
+                'state' => $request->state,
+                'country' => $request->country
+            ];
+
+        }
 
         
 
         // Update user details
-        $user->update( 
-            [
-                'first_name' => $request->first_name,
-                'last_name' => $request->last_name,
-                'email' => $request->email,
-                'password' => Hash::make($request->password),
-                'state' => $request->state,
-                'country' => $request->country
-            ]
-         );
+        $user->update($data);
 
         return response()->json( [
             'success' => true,
