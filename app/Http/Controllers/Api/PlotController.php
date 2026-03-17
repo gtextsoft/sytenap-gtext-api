@@ -2243,6 +2243,20 @@ class PlotController extends Controller
 
             $user = $invoice->user;
 
+            /*
+            |--------------------------------------------------------------------------
+            | STEP 1.5 — Determine Installment Status from Invoice
+            |--------------------------------------------------------------------------
+            */
+
+            $outstandingAmount        = $invoice->outstanding_amount ?? 0;
+            $outstandingPaymentStatus = $invoice->outstanding_payment_status ?? 'paid';
+
+            // If there's an unpaid outstanding balance, treat as 2-installment plan
+            // Otherwise, it's a one-time full payment
+            $hasOutstanding = $outstandingAmount > 0 && $outstandingPaymentStatus === 'unpaid';
+            $installmentMonths = $hasOutstanding ? 2 : 1;
+
 
             /*
             |--------------------------------------------------------------------------
@@ -2269,7 +2283,7 @@ class PlotController extends Controller
 
             $estateId = $cartItems->first()->estate_id;
             $plotIds = $cartItems->pluck('plot_id')->toArray();
-            $installmentMonths = $cartItems->first()->installment_months ?? 1;
+           // $installmentMonths = $cartItems->first()->installment_months ?? 1;
 
 
             /*
@@ -2299,9 +2313,7 @@ class PlotController extends Controller
                 ->lockForUpdate()
                 ->get();
 
-            // if ($plots->count() !== count($plotIds)) {
-            //     throw new Exception('Some plots are no longer available or do not belong to this estate');
-            // }
+            
 
 
             /*
@@ -2336,22 +2348,22 @@ class PlotController extends Controller
             }
 
 
-            /*
+           /*
             |--------------------------------------------------------------------------
             | STEP 7 — Save purchase
             |--------------------------------------------------------------------------
             */
             PlotPurchase::create([
-                'payment_reference' => $invoice->invoice_number,
-                'estate_id' => $estate->id,
-                'user_id' => $user->id,
-                'plots' => $plots->pluck('id')->toArray(),
-                'total_price' => $totalPrice,
-                'amount_paid' => $invoice->amount,
-                'installment_months' => $installmentMonths,
-                'monthly_payment' => $monthlyPayment,
-                'payment_schedule' => $schedule,
-                'payment_status' => 'paid',
+                'payment_reference'  => $invoice->invoice_number,
+                'estate_id'          => $estate->id,
+                'user_id'            => $user->id,
+                'plots'              => $plots->pluck('id')->toArray(),
+                'total_price'        => $totalPrice,
+                'amount_paid'        => $invoice->amount,             // what they've paid so far
+                'installment_months' => $installmentMonths,           // 2 if outstanding, 1 if fully paid
+                'monthly_payment'    => $monthlyPayment,
+                'payment_schedule'   => $schedule,
+                'payment_status'     => $hasOutstanding ? 'installment' : 'paid',
             ]);
 
 
@@ -2370,53 +2382,16 @@ class PlotController extends Controller
             | STEP 9 — Assign property
             |--------------------------------------------------------------------------
             */
-            CustomerProperty::create([
-                'user_id' => $user->id,
-                'estate_id' => $estate->id,
-                'plots' => $plots->pluck('id')->toArray(),
-                'total_price' => $totalPrice,
-                'installment_months' => $installmentMonths,
-                'payment_status' => $installmentMonths > 1 ? 'outstanding' : 'fully_paid',
-                //'acquisition_status' => 'allocated',
-            ]);
+          CustomerProperty::create([
+            'user_id'            => $user->id,
+            'estate_id'          => $estate->id,
+            'plots'              => $plots->pluck('id')->toArray(),
+            'total_price'        => $totalPrice,
+            'installment_months' => $installmentMonths,
+            'payment_status'     => $hasOutstanding ? 'outstanding' : 'fully_paid',
+        ]);
 
-            /*
-            |--------------------------------------------------------------------------
-            | STEP 9.5 — Agent Commission Settlement
-            |--------------------------------------------------------------------------
-            */
-            /*
-            if (!empty($invoice->agent_id)) {
-
-                $commissionSetting = \App\Models\CommissionSetting::where('status', '1')->first();
-
-                if ($commissionSetting) {
-
-                    $commissionAmount = 0;
-
-                    if ($commissionSetting->type === 'percentage') {
-
-                        // Example: 5 means 5%
-                        $commissionAmount = ($totalPrice * $commissionSetting->value) / 100;
-
-                    } elseif ($commissionSetting->type === 'fixed') {
-
-                        $commissionAmount = $commissionSetting->value;
-                    }
-
-                    if ($commissionAmount > 0) {
-
-                        \App\Models\AgentCommission::create([
-                            'agent_id' => $invoice->agent_id,
-                            'amount' => $commissionAmount,
-                            'reference' => $invoice->invoice_number,
-                            'estate_id' => $estate->id,
-                            'user_id' => $user->id
-                        ]);
-                    }
-                }
-            }*/
-
+           
             /*
         |--------------------------------------------------------------------------
         | STEP 9.5 — Agent Commission Settlement
