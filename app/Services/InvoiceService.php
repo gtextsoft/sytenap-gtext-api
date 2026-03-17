@@ -10,14 +10,18 @@ class InvoiceService
     /**
      * Generate a new invoice for a user
      */
-    public function createInvoice(int $userId, float $amount, string $paymentStatus = 'pending', int $agentId = null): Invoice
+    public function createInvoice(int $userId, float $amount, float $totalPrice, string $paymentStatus = 'pending', int $agentId = null): Invoice
     {
         $invoiceNumber = $this->generateInvoiceNumber();
+        $outstandingAmount = $totalPrice - $amount; // Assuming amount is the paid amount and price is the total price
+        $outstanding_payment_status = $outstandingAmount > 0 ? 'unpaid' : 'paid';
 
         return Invoice::create([
             'user_id' => $userId,
             'invoice_number' => $invoiceNumber,
             'amount' => $amount,
+            'outstanding_amount' => $outstandingAmount,
+            'outstanding_payment_status' => $outstanding_payment_status,
             'payment_status' => $paymentStatus,
             'agent_id' => $agentId,
         ]);

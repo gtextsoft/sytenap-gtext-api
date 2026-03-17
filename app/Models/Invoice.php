@@ -11,6 +11,8 @@ class Invoice extends Model
         'user_id',
         'invoice_number',
         'amount',
+        'outstanding_amount',
+        'outstanding_payment_status',
         'payment_status',
         'agent_id',
         'payment_proof',

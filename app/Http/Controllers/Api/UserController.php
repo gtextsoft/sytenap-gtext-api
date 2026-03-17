@@ -756,9 +756,11 @@ public function addToCart(Request $request): JsonResponse
         //  Calculate total
         $totalAmount = $this->cartService->getCartTotal($user?->id, $tempUserId);
 
+        $totalPrice = $this->cartService->getCartTotalPrice($user?->id, $tempUserId);
+
 
         //  Create invoice
-        $invoice = $this->invoiceService->createInvoice($user?->id ?? null, $totalAmount, $paymentStatus = 'pending', $agentId);
+        $invoice = $this->invoiceService->createInvoice($user?->id ?? null, $totalAmount,$totalPrice, $paymentStatus = 'pending', $agentId);
 
         $cart_updated = $this->cartService->markCartAsCheckedOut($user->id, $invoice->invoice_number);
 
