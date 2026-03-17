@@ -1219,13 +1219,10 @@ class PlotController extends Controller
                     ],
                 ];
 
-                // money fields - use correct DB column names
                 $totalPrice = isset($purchase->total_price) ? (float)$purchase->total_price : null;
-                //
-                $amountPaid = isset($purchase->total_price) ? (float)$purchase->total_price : 0.0;
+                $amountPaid = isset($purchase->amount_paid) ? (float)$purchase->amount_paid : 0.0; // ← was total_price
 
-                // If you have a payments relationship, you can compute amountPaid:
-                // $amountPaid = $purchase->payments()->sum('amount');
+                
 
                 $outstandingBalance = null;
                 if (!is_null($totalPrice)) {
@@ -1237,7 +1234,7 @@ class PlotController extends Controller
                     'purchase_id' => $purchase->id,
                     'payment_status' => $purchase->payment_status, 
                     'total_price' => $totalPrice,
-                    //'amount_paid' => $amountPaid,
+                    'amount_paid' => $amountPaid,
                     'outstanding_balance' => $outstandingBalance,
                     'installment_months' => $purchase->installment_months ?? null,
                     'payment_schedule' => $purchase->payment_schedule ?? null,
@@ -1249,10 +1246,9 @@ class PlotController extends Controller
                 // group by status
                 if ($purchase->payment_status === 'paid') {
                     $fullyPaid[] = $item;
-                } elseif (in_array($purchase->payment_status, ['pending', 'outstanding'])) {
+                } elseif (in_array($purchase->payment_status, ['pending', 'outstanding', 'installment'])) { // ← add 'installment'
                     $outstanding[] = $item;
                 } else {
-                    // treat other states (eg 'held', 'reserved') as held
                     $held[] = $item;
                 }
             }
