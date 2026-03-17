@@ -60,19 +60,28 @@ class AgentController extends Controller {
             $agentId = $request->agent_id;
 
             $exists = AgentCommission::where( 'agent_id', $agentId )->exists();
+            $agent_info = Referral::where('user_id', $agentId)->first();
 
             if ( !$exists ) {
                      AgentCommission::create( [
                          'agent_id' => $agentId,
-                        'amount' => 0
+                        'amount' => 0,
+                        'first_name' => $agent_info->first_name ?? 'Agent',
+                        'last_name' => $agent_info->last_name ?? 'User',
                         ] );
+            }else {
+                $agent_info = Referral::where('user_id', $agentId)->first();
+                 AgentCommission::where('agent_id', $agentId)->update( [
+                    'first_name' => $agent_info->first_name ?? 'Agent',
+                    'last_name' => $agent_info->last_name ?? 'User',
+                    ] );
             }
 
             $balance = AgentCommission::where( 'agent_id', $agentId )->sum( 'amount' );
 
             return response()->json( [
                      'agent_id' => $agentId,
-             'balance' => $balance
+                    'balance' => $balance
                     ] );
             }
 

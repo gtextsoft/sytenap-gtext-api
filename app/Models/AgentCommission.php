@@ -9,6 +9,8 @@ class AgentCommission extends Model {
     protected $fillable = [
         'agent_id',
         'amount',
+        'first_name',
+        'last_name',
     ];
 
     public function agent() {
