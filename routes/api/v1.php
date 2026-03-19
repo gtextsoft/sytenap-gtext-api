@@ -63,6 +63,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/account', [AuthController::class, 'index']);
         Route::post('/email/request-change', [UserController::class, 'requestEmailChange']);
         Route::post('/email/verify-change', [UserController::class, 'verifyEmailChange']);
+        Route::post('/update-profile', [UserController::class, 'updatePersonalInfo']);
     });
 
     // -------------------------
@@ -177,7 +178,7 @@ Route::prefix('v1')->group(function () {
         );
         
         Route::get('/invoices', [UserController::class, 'getInvoices'])->middleware('auth:sanctum');
-
+        Route::get('/all-invoices',[UserController::class, 'getAllInvoices'])->middleware("auth:sanctum");
 
 
 

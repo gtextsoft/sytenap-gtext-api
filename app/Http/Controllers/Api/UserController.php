@@ -17,6 +17,7 @@ use App\Models\ZohoCredential;
 use App\Models\Cart;
 use App\Models\Referral;
 use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
+use Illuminate\Support\Facades\Hash;
 
 
 
@@ -161,10 +162,20 @@ class UserController extends Controller {
             'last_name'  => 'sometimes|string|max:255',
             'state'      => 'sometimes|string|max:255',
             'country'    => 'sometimes|string|max:255',
+            'password' => 'sometimes',
         ] );
 
         // Update user details
-        $user->update( $validated );
+        $user->update( 
+            [
+                'first_name' => $request->first_name,
+                'last_name' => $request->last_name,
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+                'state' => $request->state,
+                'country' => $request->country
+            ]
+         );
 
         return response()->json( [
             'success' => true,
@@ -1101,6 +1112,19 @@ public function confirmPayment(Request $request, Invoice $invoice)
             ]);
     }
 
+    public function getAllInvoices(Request $request)
+    {
+        $invoices = Invoice::all();
 
+        return response()->json([
+                'success' => true,
+                'message' => 'All Customers Invoices',
+                'data' => $invoices
+            ]);
+    }
+
+    
+
+    
 
 }
