@@ -223,36 +223,37 @@ class PlotController extends Controller
 
         $plots = $estate->plots;
 
-        // Get all purchases for this estate with users
-        $purchases = \App\Models\PlotPurchase::with('estate', 'user')
+        // Get all purchases with users
+        $purchases = \App\Models\PlotPurchase::with('user')
             ->where('estate_id', $estateId)
             ->get();
 
-        // Transform plots
         $plots = $plots->map(function ($plot) use ($purchases) {
 
             $buyer = null;
 
-            foreach ($purchases as $purchase) {
-                if (in_array($plot->id, $purchase->plots)) {
+            // ✅ Only check buyer if plot is sold
+            if ($plot->status === 'sold') {
 
-                    if ($purchase->acquisition_status === 'sold') {
+                foreach ($purchases as $purchase) {
+                    if (in_array($plot->id, $purchase->plots ?? [])) {
+
                         $buyer = [
                             'id' => $purchase->user->id,
                             'name' => $purchase->user->first_name . ' ' . $purchase->user->last_name,
                             'email' => $purchase->user->email,
                             'phone' => $purchase->user->phone ?? null,
                         ];
-                    }
 
-                    break;
+                        break;
+                    }
                 }
             }
 
             return [
                 'id' => $plot->id,
-                'plot_number' => $plot->plot_number,
-                'status' => $buyer ? 'sold' : 'available',
+                'plot_number' => $plot->plot_number ?? $plot->Plot,
+                'status' => $plot->status, // ✅ use DB status directly
                 'customer' => $buyer
             ];
         });
