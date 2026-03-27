@@ -221,7 +221,41 @@ class PlotController extends Controller
             ], 404);
         }
 
-        $plots = $estate->plots; // relationship in Estate model: hasMany(Plot::class)
+        $plots = $estate->plots;
+
+        // Get all purchases for this estate with users
+        $purchases = \App\Models\PlotPurchase::with('estate', 'user')
+            ->where('estate_id', $estateId)
+            ->get();
+
+        // Transform plots
+        $plots = $plots->map(function ($plot) use ($purchases) {
+
+            $buyer = null;
+
+            foreach ($purchases as $purchase) {
+                if (in_array($plot->id, $purchase->plots)) {
+
+                    if ($purchase->acquisition_status === 'sold') {
+                        $buyer = [
+                            'id' => $purchase->user->id,
+                            'name' => $purchase->user->first_name . ' ' . $purchase->user->last_name,
+                            'email' => $purchase->user->email,
+                            'phone' => $purchase->user->phone ?? null,
+                        ];
+                    }
+
+                    break;
+                }
+            }
+
+            return [
+                'id' => $plot->id,
+                'plot_number' => $plot->plot_number,
+                'status' => $buyer ? 'sold' : 'available',
+                'customer' => $buyer
+            ];
+        });
 
         return response()->json([
             'success' => true,
@@ -235,6 +269,32 @@ class PlotController extends Controller
             'plots' => $plots
         ]);
     }
+
+    /*public function getPlotsByEstate($estateId)
+    {
+        $estate = Estate::find($estateId);
+
+        if (!$estate) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Estate not found'
+            ], 404);
+        }
+
+        $plots = $estate->plots; // relationship in Estate model: hasMany(Plot::class)
+
+        return response()->json([
+            'success' => true,
+            'estate' => [
+                'id' => $estate->id,
+                'title' => $estate->title,
+                'size' => $estate->size,
+                'town_or_city' => $estate->town_or_city,
+                'state' => $estate->state,
+            ],
+            'plots' => $plots
+        ]);
+    }*/
 
 
     /**

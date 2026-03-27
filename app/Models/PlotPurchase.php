@@ -36,9 +36,14 @@ class PlotPurchase extends Model
         return $this->belongsTo(Estate::class);
     }
 
-    public function plot()
+    // public function plot()
+    // {
+    //     return $this->belongsTo(Plot::class);
+    // }
+
+    public function user()
     {
-        return $this->belongsTo(Plot::class);
+        return $this->belongsTo(User::class);
     }
 
    
