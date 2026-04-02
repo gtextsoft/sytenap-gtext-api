@@ -1508,6 +1508,7 @@ class PlotController extends Controller
                 'user_id' => $customer->id,
                 'plots' => $plots->pluck('id')->toArray(),
                 'total_price' => $totalPrice,
+                'amount_paid' => $totalPrice,
                 'installment_months' => $installmentMonths,
                 'monthly_payment' => $monthlyPayment,
                 'payment_schedule' => $paymentSchedule,
