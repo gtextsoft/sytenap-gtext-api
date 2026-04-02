@@ -212,6 +212,8 @@ class GeoJsonController extends Controller
         $data = $request->validate([
             'status' => ['required', 'string', 'in:available,allocated,sold'],
             'price' => ['nullable', 'numeric']
+            'block'  => ['nullable', 'string', 'max:50'],
+            'plot'   => ['nullable', 'string', 'max:50'],
         ]);
 
         $estateId = (int) $estate;
@@ -222,10 +224,12 @@ class GeoJsonController extends Controller
             ->where('estate_id', $estateId)
             ->where('id', $plotId)
             ->update([
-                // match your existing GeoJSON properties naming
                 'status' => $data['status'],
-                'Price' => $data['price'], // numeric or null
-                'updated_at' => now(), // remove if your table doesn't have timestamps
+                'Price' => $data['price'],
+                'Block'  => $data['block'] ?? null,
+                'Plot'   => $data['plot'] ?? null,
+
+                'updated_at' => now(),
             ]);
 
         if ($updated === 0) {
