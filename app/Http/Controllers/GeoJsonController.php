@@ -225,7 +225,7 @@ class GeoJsonController extends Controller
             ->where('id', $plotId)
             ->update([
                 'status' => $data['status'],
-                'Price' => $data['price'],  ?? null,
+                'Price' => $data['price'] ?? null,
                 'Block'  => $data['block'] ?? null,
                 'Plot'   => $data['plot'] ?? null,
 
