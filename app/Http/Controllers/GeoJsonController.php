@@ -210,7 +210,7 @@ class GeoJsonController extends Controller
 
     public function updateLayoutFeature(Request $request, $estate, $id){
         $data = $request->validate([
-            'status' => ['required', 'string', 'in:available,allocated,sold'],
+            'status' => ['required', 'string', 'in:available,allocated,sold,infrastructures'],
             'price' => ['nullable', 'numeric'],
             'block'  => ['nullable', 'string', 'max:50'],
             'plot'   => ['nullable', 'string', 'max:50'],
