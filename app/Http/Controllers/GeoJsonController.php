@@ -229,6 +229,14 @@ class GeoJsonController extends Controller
                 'Block'  => $data['block'] ?? null,
                 'Plot'   => $data['plot'] ?? null,
 
+                'plot_id' => DB::raw('CONCAT(
+                    SUBSTRING_INDEX(plot_id, ":", 1),
+                    ": ",
+                    IF(`Block` IS NULL OR `Block` = "", "", CONCAT(`Block`, "-")),
+                    `Plot`
+                )'),
+
+
                 'updated_at' => now(),
             ]);
 
