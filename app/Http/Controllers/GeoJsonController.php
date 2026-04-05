@@ -207,6 +207,7 @@ class GeoJsonController extends Controller
 
 
 
+    use Illuminate\Database\QueryException;
 
     public function updateLayoutFeature(Request $request, $estate, $id){
         $data = $request->validate([
@@ -219,31 +220,47 @@ class GeoJsonController extends Controller
         $estateId = (int) $estate;
         $plotId   = (int) $id;
 
-        // Update the DB row
-        $updated = DB::table('plots') // 
-            ->where('estate_id', $estateId)
-            ->where('id', $plotId)
-            ->update([
-                'status' => $data['status'],
-                'Price' => $data['price'] ?? null,
-                'Block'  => $data['block'] ?? null,
-                'Plot'   => $data['plot'] ?? null,
+        try {
+            $updated = DB::table('plots')
+                ->where('estate_id', $estateId)
+                ->where('id', $plotId)
+                ->update([
+                    'status' => $data['status'],
+                    'Price' => $data['price'] ?? null,
+                    'Block' => $data['block'] ?? null,
+                    'Plot'  => $data['plot'] ?? null,
 
-                'plot_id' => DB::raw('CONCAT(
-                    SUBSTRING_INDEX(plot_id, ":", 1),
-                    ": ",
-                    IF(`Block` IS NULL OR `Block` = "", "", CONCAT(`Block`, "-")),
-                    `Plot`
-                )'),
+                    'plot_id' => DB::raw('CONCAT(
+                        SUBSTRING_INDEX(plot_id, ":", 1),
+                        ": ",
+                        IF(`Block` IS NULL OR `Block` = "", "", CONCAT(`Block`, "-")),
+                        `Plot`
+                    )'),
 
+                    'updated_at' => now(),
+                ]);
 
-                'updated_at' => now(),
-            ]);
+            if ($updated === 0) {
+                return response()->json(['message' => 'Plot not found'], 404);
+            }
 
-        if ($updated === 0) {
-            return response()->json(['message' => 'Plot not found'], 404);
+            return response()->json(['message' => 'Updated', 'id' => $plotId]);
+
+        } catch (QueryException $e) {
+
+            // MySQL duplicate entry error code = 1062
+            if ($e->errorInfo[1] == 1062) {
+                return response()->json([
+                    'message' => 'Ensure the block and plot names are not repeated'
+                ], 422);
+            }
+
+            return response()->json([
+                'message' => 'Database error',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        return response()->json(['message' => 'Updated', 'id' => $plotId]);
     }
+
+    
 }
