@@ -633,7 +633,8 @@ class AuthController extends Controller
                            // $user->update(['password' => '123456789']);
                             
                             // Send notification
-                            $user->notify(new ClientPortalAccessNotification());
+                            //$user->notify(new ClientPortalAccessNotification());
+                            Notification::sendNow($user, new ClientPortalAccessNotification());
                             
                             $processed++;
                             
