@@ -11,6 +11,8 @@ class ClientPortalAccessNotification extends Notification
 {
     use Queueable;
 
+    public const DEFAULT_PASSWORD = '123456789';
+
     /**
      * Create a new notification instance.
      */
