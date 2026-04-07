@@ -26,6 +26,7 @@ Route::prefix('v1')->group(function () {
     ], 200));
 
     Route::get('/users/generate-missing-passwords', [AuthController::class, 'setPasswordsForClientsWithoutPassword']);
+    Route::middleware(['auth:sanctum'])->post('/admin/portal-access/send', [AuthController::class, 'howToAccessPortalForClients']);
     
     
     Route::put('/estates/{id}', [EstateController::class, 'Estateinfoupdate']);

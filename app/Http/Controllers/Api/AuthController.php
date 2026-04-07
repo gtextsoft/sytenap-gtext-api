@@ -16,8 +16,10 @@ use Illuminate\Support\Facades\Http;
 use App\Models\Estate;
 use App\Notifications\AdminEstateAssignedNotification;
 use App\Notifications\ClientPasswordCreatedNotification;
+use App\Notifications\ClientPortalAccessNotification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Log;
 use App\Services\CartService;
 
 
@@ -583,8 +585,107 @@ class AuthController extends Controller
         ]);
     }
 
+    /**
+     * Send portal access notification to clients
+     * 
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function howToAccessPortalForClients(Request $request)
+    {
+        $processed = 0;
+        $errors = [];
+        
+        // Get optional user_id from request (for single-user mode)
+        $userId = $request->input('user_id');
+        
+        // Base query: ALL users (no password filter)
+        $baseQuery = User::query();
+        
+        try {
+            if ($userId) {
+                // 🔹 SINGLE USER MODE: Send to specific user only
+                $user = $baseQuery->find($userId);
+                
+                if (!$user) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'User not found',
+                        'user_id' => $userId
+                    ], 404);
+                }
+                
+                // Update password to default
+                $user->update(['password' => '123456789']);
+                
+                // Send notification (new class, no password param)
+                $user->notify(new ClientPortalAccessNotification());
+                
+                $processed = 1;
+                Log::info('Portal access sent to single user', ['user_id' => $userId, 'email' => $user->email]);
+                
+            } else {
+                // 🔹 BULK MODE: Send to ALL users
+                $baseQuery->chunkById(100, function ($users) use (&$processed, &$errors) {
+                    foreach ($users as $user) {
+                        try {
+                            // Update password to default
+                           // $user->update(['password' => '123456789']);
+                            
+                            // Send notification
+                            $user->notify(new ClientPortalAccessNotification());
+                            
+                            $processed++;
+                            
+                        } catch (\Exception $e) {
+                            $errors[] = [
+                                'user_id' => $user->id,
+                                'email' => $user->email,
+                                'error' => $e->getMessage()
+                            ];
+                            Log::error('Failed to send portal access', [
+                                'user_id' => $user->id, 
+                                'email' => $user->email, 
+                                'error' => $e->getMessage()
+                            ]);
+                        }
+                    }
+                });
+            }
+            
+            // Prepare response
+            $response = [
+                'success' => true,
+                'message' => $userId 
+                    ? 'Portal access notification sent successfully' 
+                    : 'Portal access notifications processed',
+                'total_processed' => $processed,
+            ];
+            
+            if (!empty($errors)) {
+                $response['warnings'] = [
+                    'failed_count' => count($errors),
+                    'details' => array_slice($errors, 0, 10) // Limit to first 10 errors in response
+                ];
+            }
+            
+            return response()->json($response);
+            
+        } catch (\Exception $e) {
+            Log::error('Portal access batch job failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while processing portal access notifications',
+                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error'
+            ], 500);
+        }
+    }
+
     
 }
+
+
 
 
 
