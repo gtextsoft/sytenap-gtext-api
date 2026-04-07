@@ -33,10 +33,12 @@ class ClientPortalAccessNotification extends Notification
             ->line('⚠️ For security, please change your password immediately after your first login.')
             ->line('')
             ->line('🎬 New to the platform? Watch our quick explainer video to learn how to navigate your portal:')
-            ->action('📺 Watch Explainer Video', 'https://portal.gtextland.com/video-guide')
+            ->line('')
+            ->action('📺 Watch Explainer Video', 'https://www.loom.com/share/799c102e23c7477f9612d68b52652b11')
             ->line('')
             ->action('🚀 Login to Your Portal', 'https://portal.gtextland.com/sign-in')
             ->line('If you have any questions, reply to this email or contact our support team.')
-            ->salutation('Best regards,<br>' . config('app.name') . ' Team');
+            ->salutation('Best regards')
+            ->line('The Gtext Team');
     }
 }
