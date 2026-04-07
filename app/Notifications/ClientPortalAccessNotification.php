@@ -38,7 +38,7 @@ class ClientPortalAccessNotification extends Notification
             // ✅ Login button
             //->action('🚀 Login to Your Portal', 'https://portal.gtextland.com/sign-in')
             ->line('')
-            ->line('If you have any questions, reply to this email or contact our support team.')
+            ->line('If you have any questions, contact us at cfu@gtexthome.com or call +234 703 193 0951. We’re here to help!')
             ->salutation('Best regards, The GTEXT Land Team');
     }
    
