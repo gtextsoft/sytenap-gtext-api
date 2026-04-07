@@ -28,8 +28,8 @@ Great news! You can now log in to your client portal to access your purchased pr
 
 ---
 
-If you have any questions, contact us at  
-cfu@gtexthome.com  
+If you have any questions, contact us at  or
+cfu@gtexthomes.com  
 +234 703 193 0951  
 
 We’re here to help!
