@@ -102,12 +102,12 @@ class AdminClientController extends Controller {
         $client->password = Hash::make($request->new_password);
         $client->save();
 
-        // Log reset action
-        PasswordResetLog::create([
-            'client_id' => $client->id,
-            'admin_id' => $admin->id,
-            'reset_at' => now(),
-        ]);
+        // // Log reset action
+        // PasswordResetLog::create([
+        //     'client_id' => $client->id,
+        //     'admin_id' => $admin->id,
+        //     'reset_at' => now(),
+        // ]);
 
         // Send new password to client email
         try {

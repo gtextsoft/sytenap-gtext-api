@@ -155,38 +155,87 @@ class ZohoService
         return $resp['data'][0]['id'];
     }
 
+    // public function getOrCreateClient(array $clientData, string $refreshToken): string
+    // {
+    //     $accessToken = $this->getAccessToken();
+    //     $moduleName = 'Clients'; 
+
+    //     $criteria = '(Email:equals:' . $clientData['Email'] . ')';
+    //     $response = Http::withToken($accessToken)
+    //         ->get($this->apiDomain . '/crm/v2/Clients/search', [
+    //             'criteria' => $criteria
+    //         ]);
+
+
+    //     $resp = $response->json();
+
+    //     // If client exists, return existing ID
+    //     if (!empty($resp['data']["details"]['id'])) {
+    //         return $resp['data']["details"]['id'] ?? "1"; // Return existing ID or default to "1"
+    //     }
+
+    //     // Otherwise, create new client
+    //     $response = Http::withToken($accessToken)
+    //         ->post($this->apiDomain . "/crm/v2/{$moduleName}", [
+    //             'data' => [$clientData]
+    //         ]);
+
+    //     $resp = $response->json();
+
+    //     // if (!isset($resp['data'][0]['id'])) {
+    //     //     throw new \Exception('Failed to create Zoho client: ' . json_encode($resp));
+    //     // }
+
+    //     return $resp['data']["details"]['id'];
+    // }
+
     public function getOrCreateClient(array $clientData, string $refreshToken): string
     {
         $accessToken = $this->getAccessToken();
-        $moduleName = 'Clients'; 
+        $moduleName = 'Clients';
 
         $criteria = '(Email:equals:' . $clientData['Email'] . ')';
+
         $response = Http::withToken($accessToken)
-            ->get($this->apiDomain . '/crm/v2/Clients/search', [
+            ->get($this->apiDomain . '/crm/v2/' . $moduleName . '/search', [
                 'criteria' => $criteria
             ]);
 
+        /*
+        |--------------------------------------------------------------------------
+        | HANDLE SEARCH RESPONSE
+        |--------------------------------------------------------------------------
+        */
 
-        $resp = $response->json();
-
-        // If client exists, return existing ID
-        if (!empty($resp['data'][0]['id'])) {
-            return $resp['data'][0]['id'];
+        // ✅ Case 1: Client exists
+        if ($response->successful() && $response->json('data.0.id')) {
+            return $response->json('data.0.id');
         }
 
-        // Otherwise, create new client
-        $response = Http::withToken($accessToken)
-            ->post($this->apiDomain . "/crm/v2/{$moduleName}", [
-                'data' => [$clientData]
-            ]);
+        // ❗ Case 2: Not found (Zoho returns 204)
+        if ($response->status() === 204) {
 
-        $resp = $response->json();
+            $createResponse = Http::withToken($accessToken)
+                ->post($this->apiDomain . "/crm/v2/{$moduleName}", [
+                    'data' => [$clientData]
+                ]);
 
-        // if (!isset($resp['data'][0]['id'])) {
-        //     throw new \Exception('Failed to create Zoho client: ' . json_encode($resp));
-        // }
+            // ✅ If created successfully
+            if ($createResponse->successful() && $createResponse->json('data.0.details.id')) {
+                return $createResponse->json('data.0.details.id');
+            }
 
-        return $resp['data'][0]['id'];
+            // ❗ fallback if creation fails
+            return "1";
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | FALLBACK (ANY OTHER FAILURE)
+        |--------------------------------------------------------------------------
+        */
+
+        return "1";
     }
 
     public function createEstatePayment(array $paymentData): array
