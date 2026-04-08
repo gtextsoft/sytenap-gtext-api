@@ -195,7 +195,7 @@ class ZohoService
 
 
         $response = Http::withToken($accessToken)
-            ->post($this->apiDomain . '/crm/v2/Estate_Payments', [
+            ->post($this->apiDomain . '/crm/v2/EstatePayments', [
                 'data' => [$paymentData]
             ]);
 
