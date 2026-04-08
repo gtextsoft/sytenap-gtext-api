@@ -89,7 +89,7 @@ class AdminClientController extends Controller {
         $admin = Auth::user();
 
         // Confirm admin privilege
-        if ($admin->account_type !== 'admin') {
+        if ($admin->account_type->value !== 'admin') {
             return response()->json([
                 'success' => false,
                 'message' => 'Access denied. Only admins can reset passwords.'
