@@ -252,7 +252,7 @@ class PlotController extends Controller
 
             return [
                 'id' => $plot->id,
-                'plot_number' => $plot->plot_number ?? $plot->Plot,
+                'plot_number' =>  $plot->plot_id,//$plot->plot_number ?? $plot->Plot,
                 'status' => $plot->status, // ✅ use DB status directly
                 'customer' => $buyer
             ];
