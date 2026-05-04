@@ -158,7 +158,9 @@ Route::prefix('v1')->group(function () {
 
         Route::post('/create-new-admin', [AuthController::class, 'createAdminAndAssignEstate']);
         Route::post('/create-user-from-admin', [AuthController::class, 'CreateUserFromAdmin']);
-    });
+        Route::get('/create-user-from-admin', [AuthController::class, 'CreateUserFromAdmin']); // ignored, just to prevent 404 on GET request to this endpoint
+    
+        });
 
     Route::prefix('property')->group(function () {
         Route::post('/sync-for-resale', [PlotController::class, 'syncForResale'])->middleware('auth:sanctum');
