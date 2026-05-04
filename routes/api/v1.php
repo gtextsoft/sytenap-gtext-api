@@ -157,7 +157,7 @@ Route::prefix('v1')->group(function () {
         Route::delete('/estate/{id}', [EstateController::class, 'removeEstate']);
 
         Route::post('/create-new-admin', [AuthController::class, 'createAdminAndAssignEstate']);
-        Route::get('/create-user-from-admin', [AuthController::class, 'CreateUserFromAdmin']);
+        Route::post('/create-user-from-admin', [AuthController::class, 'CreateUserFromAdmin']);
     });
 
     Route::prefix('property')->group(function () {
