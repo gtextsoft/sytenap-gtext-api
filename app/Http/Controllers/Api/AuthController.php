@@ -693,6 +693,52 @@ class AuthController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Register a new user. Supports both public registration and admin creation.
+     */
+    public function CreateUserFromAdmin(RegisterRequest $request)
+    {
+        try {
+             $incomingrequest = $request->user();
+
+            if ($incomingrequest->account_type->value !== 'admin') {
+                return response()->json([
+                    'message' => 'Unauthorized',
+                ], 403);
+            }
+
+            $user = User::create([
+                'first_name' => $request->first_name,
+                'last_name' => $request->last_name,
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+                'state' => $request->state,
+                'country' => $request->country,
+                'email_verified_at' => now(),
+            ]);
+
+            if ($user) {
+                return response()->json([
+                    'message' => 'User created successfully with email verified.',
+                    'user' => [
+                        'id' => $user->id,
+                        'email' => $user->email,
+                        'first_name' => $user->first_name,
+                        'last_name' => $user->last_name,
+                        'email_verified' => true,
+                    ],
+                ], 201);
+            }
+
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Registration failed',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
     
 }
 
