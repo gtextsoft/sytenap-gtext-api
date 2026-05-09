@@ -48,35 +48,44 @@ class AgentController extends Controller {
 
     
 
-                                    public function balance( Request $request ) {
-                                            $validator = Validator::make( $request->all(), [
-                                                'agent_id' => 'required',
-                                                ] );
+    public function balance( Request $request ) {
+            $validator = Validator::make( $request->all(), [
+                    'agent_id' => 'required',
+            ] );
 
-                                        if ( $validator->fails() ) {
-                                            return response()->json( [ 'errors' => $validator->errors() ], 422 );
-                                        }
+            if ( $validator->fails() ) {
+                return response()->json( [ 'errors' => $validator->errors() ], 422 );
+            }
 
-                                        $agentId = $request->agent_id;
+            $agentId = $request->agent_id;
 
-                                        $exists = AgentCommission::where( 'agent_id', $agentId )->exists();
+            $exists = AgentCommission::where( 'agent_id', $agentId )->exists();
+            $agent_info = Referral::where('user_id', $agentId)->first();
 
-                                        if ( !$exists ) {
-                                            AgentCommission::create( [
-                                                'agent_id' => $agentId,
-                                                'amount' => 0
-                                            ] );
-                                        }
+            if ( !$exists ) {
+                     AgentCommission::create( [
+                         'agent_id' => $agentId,
+                        'amount' => 0,
+                        'first_name' => $agent_info->first_name ?? 'Agent',
+                        'last_name' => $agent_info->last_name ?? 'User',
+                        ] );
+            }else {
+                $agent_info = Referral::where('user_id', $agentId)->first();
+                 AgentCommission::where('agent_id', $agentId)->update( [
+                    'first_name' => $agent_info->first_name ?? 'Agent',
+                    'last_name' => $agent_info->last_name ?? 'User',
+                    ] );
+            }
 
-                                        $balance = AgentCommission::where( 'agent_id', $agentId )->sum( 'amount' );
+            $balance = AgentCommission::where( 'agent_id', $agentId )->sum( 'amount' );
 
-                                        return response()->json( [
-                                            'agent_id' => $agentId,
-                                            'balance' => $balance
-                                        ] );
-                                    }
+            return response()->json( [
+                     'agent_id' => $agentId,
+                    'balance' => $balance
+                    ] );
+            }
 
-                                   /**
+    /**
  * @OA\Post(
  *      path="/api/v1/agent/commission-history",
  *      operationId="getAgentCommissionHistory",
@@ -124,17 +133,25 @@ class AgentController extends Controller {
 
  public function history( Request $request ) {
      $validator = Validator::make( $request->all(), [
-                'agent_id' => 'required|exists:agent_commissions,agent_id',
+                'agent_id' => 'nullable|exists:agent_commissions,agent_id',
         ] );
 
         if ( $validator->fails() ) {
                     return response()->json( [ 'errors' => $validator->errors() ], 422 );
         }
 
+        if($request->has('agent_id')) {
+           
         $history = CommissionHistory::where( 'agent_id', $request->agent_id )
                         ->with('commission', 'estate', 'plot')
                         ->orderBy( 'id', 'desc' )
                     ->paginate( 5 );
+        } else {
+            $history = CommissionHistory::with('commission', 'estate', 'plot')
+            ->orderBy('id', 'desc')
+            ->paginate(5);
+        }
+
 
                 return response()->json( $history );
     }
@@ -323,9 +340,19 @@ public function getReferralInfo(Request $request): JsonResponse
         'data' => [
             'agent_id' => $agentId,
             'referral_code' => $referral->referral_code,
+            'first_name' => $referral->first_name,
+            'last_name' => $referral->last_name,
+            'email' => $referral->email,
         ]
     ], 200);
 }
+
+
+public function allbalance( Request $request ) {
+    $agents = AgentCommission::all();
+    return response()->json( ['agents' => $agents] );
+}
+
                                                                          
 }
 

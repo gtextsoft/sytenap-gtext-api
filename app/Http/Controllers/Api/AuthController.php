@@ -15,8 +15,12 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Http;
 use App\Models\Estate;
 use App\Notifications\AdminEstateAssignedNotification;
+use App\Notifications\ClientPasswordCreatedNotification;
+use App\Notifications\ClientPortalAccessNotification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Log;
+use App\Services\CartService;
 
 
 class AuthController extends Controller
@@ -204,7 +208,15 @@ class AuthController extends Controller
             }
 
             $token = $user->createToken('api-token')->plainTextToken;
-            $this->createReferralIfNotExists($user->id);
+            //$this->createReferralIfNotExists($user->id);
+
+            // Merge guest cart (if exists)
+            $tempUserId = $request->header('X-Temp-User');
+            if ($tempUserId) {
+                $cartService = new CartService();
+                $cartService->mergeGuestCart($tempUserId, $user->id);
+              
+            }
 
             return response()->json([
                 'success' => true,
@@ -219,7 +231,8 @@ class AuthController extends Controller
                         'country' => $user->country,
                         'email_verified' => true,
                         'account_type' => $user->account_type,
-                        'created_at' => $user->created_at
+                        'created_at' => $user->created_at,
+                        'outstanding_balance' => $user->outstanding_balance,
                     ],
                     'token' => $token,
                     'token_type' => 'Bearer'
@@ -261,7 +274,11 @@ class AuthController extends Controller
 
             if ($response->successful() && isset($data['success']) && $data['success'] === true) {
                 $agentId = $data['data']['user']['id'] ?? null;
-                $this->createReferralIfNotExists($agentId);
+                $agent_role = $data['data']['user']['agent_role'] ?? null;
+                $first_name = $data['data']['user']['first_name'] ?? 'Agent';
+                $last_name = $data['data']['user']['last_name'] ?? 'User';
+                $email = $data['data']['user']['email'] ?? $request->email;
+                $this->createReferralIfNotExists($agentId, $agent_role, $first_name, $last_name, $email);
 
                 return response()->json([
                     'status' => 'success',
@@ -305,13 +322,53 @@ class AuthController extends Controller
     /**
      * Private: Create referral if not exists
      */
-    private function createReferralIfNotExists($agentId)
+    // private function  createReferralIfNotExists($agentId, $agent_role = 'associate', $first_name = 'Agent', $last_name = 'User', $email = null)
+    // {
+    //     if (!Referral::where('user_id', $agentId)->exists()) {
+    //         Referral::create([
+    //             'user_id' => $agentId,
+    //             'first_name' => $first_name,
+    //             'last_name' => $last_name,
+    //             'email' => $email,
+    //             'referral_code' => 'REF-' . strtoupper(Str::random(8)),
+    //             'account_type' => $agent_role
+    //         ]);
+    //     }
+    // }
+
+    private function createReferralIfNotExists($agentId, $agent_role = 'associate', $first_name = 'Agent', $last_name = 'User', $email = null)
     {
-        if (!Referral::where('user_id', $agentId)->exists()) {
+        $referral = Referral::where('user_id', $agentId)->first();
+
+        if (!$referral) {
+            // Create new referral
             Referral::create([
                 'user_id' => $agentId,
+                'first_name' => $first_name,
+                'last_name' => $last_name,
+                'email' => $email,
                 'referral_code' => 'REF-' . strtoupper(Str::random(8)),
+                'account_type' => $agent_role
             ]);
+        } else {
+            // Update fields only if they are NULL
+            $updateData = [];
+
+            if (is_null($referral->first_name) && $first_name) {
+                $updateData['first_name'] = $first_name;
+            }
+
+            if (is_null($referral->last_name) && $last_name) {
+                $updateData['last_name'] = $last_name;
+            }
+
+            if (is_null($referral->email) && $email) {
+                $updateData['email'] = $email;
+            }
+
+            if (!empty($updateData)) {
+                $referral->update($updateData);
+            }
         }
     }
 
@@ -420,6 +477,19 @@ class AuthController extends Controller
 
     public function createAdminAndAssignEstate(Request $request)
     {
+         $user = $request->user();
+         $account_type = $user->account_type;
+
+        if ($user->account_type->value !== 'admin') {
+            return response()->json([
+                'message' => 'Unauthorized',
+                'user' => $user,
+                'account_type' => $account_type,
+                'account_type_hex' => bin2hex($account_type),
+                'length' => strlen($account_type),
+            ], 403);
+        }
+
         $request->validate([
             'first_name'   => 'required|string',
             'last_name'    => 'required|string',
@@ -428,13 +498,7 @@ class AuthController extends Controller
             'estate_id'    => 'required_if:account_type,admin|exists:estates,id',
         ]);
 
-        $user = $request->user();
-
-        if ($user->account_type !== 'admin') {
-            return response()->json([
-                'message' => 'Unauthorized'
-            ], 403);
-        }
+       
 
         return DB::transaction(function () use ($request) {
 
@@ -486,7 +550,199 @@ class AuthController extends Controller
             ], 201);
         });
     }
+
+    public function setPasswordsForClientsWithoutPassword()
+    {
+        $processed = 0;
+
+       User::where(function ($query) {
+                $query->whereNull('password')
+                    ->orWhere('password', '')
+                    ->orWhere('password', '0000-00-00 00:00:00');
+        })
+        ->chunkById(100, function ($users) use (&$processed) {
+
+            foreach ($users as $user) {
+
+        $plainPassword = "123456789"; // You can generate a random password if needed
+
+        $user->update([
+            'password' => $plainPassword
+        ]);
+
+        $user->notify(
+            new ClientPasswordCreatedNotification($plainPassword)
+        );
+
+        $processed++;
+            }
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => "Passwords generated and sent successfully",
+            'total_processed' => $processed
+        ]);
+    }
+
+    public function howToAccessPortalForClients(Request $request)
+    {
+        $processed = 0;
+        $errors = [];
+
+        $userId = $request->input('user_id');
+        $fromId = $request->input('from_user_id');
+        $toId   = $request->input('to_user_id');
+
+        try {
+
+            // 🔹 SINGLE USER MODE
+            if ($userId) {
+
+                $user = User::find($userId);
+
+                if (!$user) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'User not found',
+                        'user_id' => $userId
+                    ], 404);
+                }
+
+                Notification::sendNow($user, new ClientPortalAccessNotification());
+
+                $processed = 1;
+
+            // 🔹 RANGE MODE
+            } elseif ($fromId && $toId) {
+
+                User::whereBetween('id', [$fromId, $toId])
+                    ->chunkById(100, function ($users) use (&$processed, &$errors) {
+
+                        foreach ($users as $user) {
+                            try {
+
+                                Notification::sendNow($user, new ClientPortalAccessNotification());
+
+                                $processed++;
+
+                            } catch (\Exception $e) {
+
+                                $errors[] = [
+                                    'user_id' => $user->id,
+                                    'email' => $user->email,
+                                    'error' => $e->getMessage()
+                                ];
+
+                                Log::error('Failed to send portal access', [
+                                    'user_id' => $user->id,
+                                    'email' => $user->email,
+                                    'error' => $e->getMessage()
+                                ]);
+                            }
+                        }
+                    });
+
+            // 🔹 ALL USERS MODE
+            } else {
+
+                User::chunkById(100, function ($users) use (&$processed, &$errors) {
+
+                    foreach ($users as $user) {
+                        try {
+
+                            Notification::sendNow($user, new ClientPortalAccessNotification());
+
+                            $processed++;
+
+                        } catch (\Exception $e) {
+
+                            $errors[] = [
+                                'user_id' => $user->id,
+                                'email' => $user->email,
+                                'error' => $e->getMessage()
+                            ];
+
+                            Log::error('Failed to send portal access', [
+                                'user_id' => $user->id,
+                                'email' => $user->email,
+                                'error' => $e->getMessage()
+                            ]);
+                        }
+                    }
+                });
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Portal access notifications processed',
+                'total_processed' => $processed,
+                'failed_count' => count($errors)
+            ]);
+
+        } catch (\Exception $e) {
+
+            Log::error('Portal access batch job failed', [
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Batch failed',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Register a new user. Supports both public registration and admin creation.
+     */
+    public function CreateUserFromAdmin(RegisterRequest $request)
+    {
+        try {
+             $incomingrequest = $request->user();
+
+            if ($incomingrequest->account_type->value !== 'admin') {
+                return response()->json([
+                    'message' => 'Unauthorized',
+                ], 403);
+            }
+
+            $user = User::create([
+                'first_name' => $request->first_name,
+                'last_name' => $request->last_name,
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+                'state' => $request->state,
+                'country' => $request->country,
+                'email_verified_at' => now(),
+            ]);
+
+            if ($user) {
+                return response()->json([
+                    'message' => 'User created successfully with email verified.',
+                    'user' => [
+                        'id' => $user->id,
+                        'email' => $user->email,
+                        'first_name' => $user->first_name,
+                        'last_name' => $user->last_name,
+                        'email_verified' => true,
+                    ],
+                ], 201);
+            }
+
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Registration failed',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+    
 }
+
+
 
 
 

@@ -13,6 +13,8 @@ class CommissionHistory extends Model {
         'plot_id',
         'estate_id',
         'description',
+        'amount_paid',
+        'type', //e.g 'credit' or 'debit'
     ];
 
     public function commission() {

@@ -27,7 +27,8 @@ class User extends Authenticatable
         'account_type',
         'password',
         'state',
-        'country'
+        'country',
+        'outstanding_balance',
     ];
 
     /**

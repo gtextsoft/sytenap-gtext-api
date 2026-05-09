@@ -20,6 +20,14 @@ use App\Services\OtpService;
 use Illuminate\Support\Facades\Notification;
 use App\Notifications\SendAccountCredentialsNotification;
 use App\Notifications\PropertyAllocatedNotification;
+use Illuminate\Support\Facades\Cache;
+use App\Services\ZohoService;
+use App\Models\ZohoCredential; 
+use App\Models\Cart;
+use App\Models\Invoice;
+use Exception;
+use Throwable;
+
 
 
 class PlotController extends Controller
@@ -213,7 +221,42 @@ class PlotController extends Controller
             ], 404);
         }
 
-        $plots = $estate->plots; // relationship in Estate model: hasMany(Plot::class)
+        $plots = $estate->plots;
+
+        // Get all purchases with users
+        $purchases = \App\Models\PlotPurchase::with('user')
+            ->where('estate_id', $estateId)
+            ->get();
+
+        $plots = $plots->map(function ($plot) use ($purchases) {
+
+            $buyer = null;
+
+            // ✅ Only check buyer if plot is sold
+            if ($plot->status === 'sold') {
+
+                foreach ($purchases as $purchase) {
+                    if (in_array($plot->id, $purchase->plots ?? [])) {
+
+                        $buyer = [
+                            'id' => $purchase->user->id,
+                            'name' => $purchase->user->first_name . ' ' . $purchase->user->last_name,
+                            'email' => $purchase->user->email,
+                            'phone' => $purchase->user->phone ?? null,
+                        ];
+
+                        break;
+                    }
+                }
+            }
+
+            return [
+                'id' => $plot->id,
+                'plot_number' =>  $plot->plot_id,//$plot->plot_number ?? $plot->Plot,
+                'status' => $plot->status, // ✅ use DB status directly
+                'customer' => $buyer
+            ];
+        });
 
         return response()->json([
             'success' => true,
@@ -227,6 +270,32 @@ class PlotController extends Controller
             'plots' => $plots
         ]);
     }
+
+    /*public function getPlotsByEstate($estateId)
+    {
+        $estate = Estate::find($estateId);
+
+        if (!$estate) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Estate not found'
+            ], 404);
+        }
+
+        $plots = $estate->plots; // relationship in Estate model: hasMany(Plot::class)
+
+        return response()->json([
+            'success' => true,
+            'estate' => [
+                'id' => $estate->id,
+                'title' => $estate->title,
+                'size' => $estate->size,
+                'town_or_city' => $estate->town_or_city,
+                'state' => $estate->state,
+            ],
+            'plots' => $plots
+        ]);
+    }*/
 
 
     /**
@@ -257,7 +326,7 @@ class PlotController extends Controller
      */
     public function previewPurchase(Request $request)
     {
-        $validator = \Validator::make($request->all(), [
+        $validator = Validator::make($request->all(), [
             'estate_id' => 'required|integer|exists:estates,id',
             'plots' => 'required|array|min:1',
             'plots.*' => 'integer|exists:plots,id',
@@ -643,7 +712,7 @@ class PlotController extends Controller
      */
     public function finalizePurchase(Request $request)
     {
-        $validator = \Validator::make($request->all(), [
+        $validator = Validator::make($request->all(), [
             'estate_id' => 'required|integer|exists:estates,id',
             'plots' => 'required|array|min:1',
             'plots.*' => 'integer|exists:plots,id',
@@ -1211,15 +1280,14 @@ class PlotController extends Controller
                     ],
                 ];
 
-                // money fields - use correct DB column names
                 $totalPrice = isset($purchase->total_price) ? (float)$purchase->total_price : null;
-                $amountPaid = isset($purchase->amount_paid) ? (float)$purchase->amount_paid : 0.0;
+                $amountPaid = isset($purchase->amount_paid) ? (float)$purchase->amount_paid : 0.0; // ← was total_price
 
-                // If you have a payments relationship, you can compute amountPaid:
-                // $amountPaid = $purchase->payments()->sum('amount');
+                
 
                 $outstandingBalance = null;
                 if (!is_null($totalPrice)) {
+                    //$outstandingBalance = max(0, $totalPrice - $amountPaid);
                     $outstandingBalance = max(0, $totalPrice - $amountPaid);
                 }
 
@@ -1227,7 +1295,7 @@ class PlotController extends Controller
                     'purchase_id' => $purchase->id,
                     'payment_status' => $purchase->payment_status, 
                     'total_price' => $totalPrice,
-                    //'amount_paid' => $amountPaid,
+                    'amount_paid' => $amountPaid,
                     'outstanding_balance' => $outstandingBalance,
                     'installment_months' => $purchase->installment_months ?? null,
                     'payment_schedule' => $purchase->payment_schedule ?? null,
@@ -1239,10 +1307,9 @@ class PlotController extends Controller
                 // group by status
                 if ($purchase->payment_status === 'paid') {
                     $fullyPaid[] = $item;
-                } elseif (in_array($purchase->payment_status, ['pending', 'outstanding'])) {
+                } elseif (in_array($purchase->payment_status, ['pending', 'outstanding', 'installment'])) { // ← add 'installment'
                     $outstanding[] = $item;
                 } else {
-                    // treat other states (eg 'held', 'reserved') as held
                     $held[] = $item;
                 }
             }
@@ -1441,6 +1508,7 @@ class PlotController extends Controller
                 'user_id' => $customer->id,
                 'plots' => $plots->pluck('id')->toArray(),
                 'total_price' => $totalPrice,
+                'amount_paid' => $totalPrice,
                 'installment_months' => $installmentMonths,
                 'monthly_payment' => $monthlyPayment,
                 'payment_schedule' => $paymentSchedule,
@@ -1471,14 +1539,14 @@ class PlotController extends Controller
 
 
                 // Send notification to customer
-                Notification::send(
-                    $customer,
-                    new PropertyAllocatedNotification(
-                        $estate->title,
-                        $plots->pluck('plot_id')->toArray(),
-                        $allocationReference
-                    )
-                );
+                // Notification::send(
+                //     $customer,
+                //     new PropertyAllocatedNotification(
+                //         $estate->title,
+                //         $plots->pluck('plot_id')->toArray(),
+                //         $allocationReference
+                //     )
+                // );
                             return response()->json([
                 'success' => true,
                 'message' => 'Property allocated successfully to customer',
@@ -1694,7 +1762,7 @@ class PlotController extends Controller
     {
         // 0. Check Admin Authorization
         $user = $request->user();
-        if (!$user || $user->account_type !== 'admin') {
+        if (!$user || $user->account_type->value !== 'admin') {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized. Only admins can perform this action.'
@@ -1930,7 +1998,7 @@ class PlotController extends Controller
      */
     public function registerAndPurchase(Request $request)
     {
-        $validator = \Validator::make($request->all(), [
+        $validator = Validator::make($request->all(), [
             // User fields
             'first_name' => 'required_without:user_id|string|max:100',
             'last_name'  => 'required_without:user_id|string|max:100',
@@ -1982,10 +2050,10 @@ class PlotController extends Controller
                 //     'email_verification'
                 // );
 
-                Notification::send(
-                    $user,
-                    new SendAccountCredentialsNotification($user, $plainPassword)
-                );
+                // Notification::send(
+                //     $user,
+                //     new SendAccountCredentialsNotification($user, $plainPassword)
+                // );
             }
 
             /**
@@ -2127,6 +2195,552 @@ class PlotController extends Controller
                 'success' => false,
                 'message' => 'Process failed',
                 'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+
+
+    public function handleZohoCallback(Request $request)
+    {
+        try {
+
+            if (!$request->has('code')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Authorization code not provided by Zoho'
+                ], 400);
+            }
+
+            $code = $request->code;
+
+            $zohoService = new ZohoService();
+
+            // Exchange code for tokens
+            $tokens = $zohoService->getTokensFromCode($code);
+
+            if (!isset($tokens['refresh_token'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Refresh token not returned by Zoho',
+                    'zoho_response' => $tokens
+                ], 400);
+            }
+
+            // -----------------------------------
+            // STORE TOKENS PERMANENTLY
+            // -----------------------------------
+
+            ZohoCredential::updateOrCreate(
+                ['id' => 1], // single Zoho account
+                [
+                    'refresh_token' => $tokens['refresh_token'],
+                    'access_token'  => $tokens['access_token'],
+                    'expires_in'    => $tokens['expires_in'],
+                ]
+            );
+
+            // cache access token
+            Cache::put(
+                'zoho_access_token',
+                $tokens['access_token'],
+                now()->addSeconds($tokens['expires_in'] - 60)
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Zoho connected successfully. Refresh token stored.'
+            ]);
+
+        } catch (\Exception $e) {
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Zoho connection failed',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    
+    
+    public function allocateFromInvoice(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'Invoice_Number' => 'required|string|exists:invoices,invoice_number'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        DB::beginTransaction();
+
+        try {
+
+            /*
+            |--------------------------------------------------------------------------
+            | STEP 1 — Get invoice
+            |--------------------------------------------------------------------------
+            */
+            $invoice = Invoice::where('invoice_number', $request->Invoice_Number)
+                ->with('user')
+                ->first();
+
+            if (!$invoice) {
+                throw new Exception('Invoice not found');
+            }
+
+            if (!$invoice->user) {
+                throw new Exception('Invoice user not found');
+            }
+
+            $user = $invoice->user;
+
+            /*
+            |--------------------------------------------------------------------------
+            | STEP 1.5 — Determine Installment Status from Invoice
+            |--------------------------------------------------------------------------
+            */
+
+            $outstandingAmount        = $invoice->outstanding_amount ?? 0;
+            $outstandingPaymentStatus = $invoice->outstanding_payment_status ?? 'paid';
+
+            // If there's an unpaid outstanding balance, treat as 2-installment plan
+            // Otherwise, it's a one-time full payment
+            $hasOutstanding = $outstandingAmount > 0 && $outstandingPaymentStatus === 'unpaid';
+            $installmentMonths = $hasOutstanding ? 2 : 1;
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | STEP 2 — Get cart group
+            |--------------------------------------------------------------------------
+            */
+            //'INV-20260213-HNKBJK'
+            $cartItem = Cart::where('cart_id', $request->Invoice_Number)->first();
+
+            if (!$cartItem) {
+                //throw new Exception('Cart group not found for this invoice');
+                return $cartItem;
+            }
+
+            $cartItems = Cart::where('cart_id', $cartItem->cart_id)
+                    ->where('cart_status', 'checked_out')
+                    ->lockForUpdate()
+                    ->get();
+
+
+            if ($cartItems->isEmpty()) {
+                throw new Exception('Cart is empty');
+            }
+
+            $estateId = $cartItems->first()->estate_id;
+            $plotIds = $cartItems->pluck('plot_id')->toArray();
+           // $installmentMonths = $cartItems->first()->installment_months ?? 1;
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | STEP 3 — Fetch estate
+            |--------------------------------------------------------------------------
+            */
+            $estate = Estate::with('plotDetail')->where('id', $estateId)->first();
+
+            if (!$estate) {
+                throw new Exception("Estate not found. ID: {$estateId}");
+            }
+
+            if (!$estate->plotDetail) {
+                throw new Exception("Estate pricing not found for estate ID {$estateId}");
+            }
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | STEP 4 — Lock plots
+            |--------------------------------------------------------------------------
+            */
+            $plots = Plot::whereIn('id', $plotIds)
+                ->where('estate_id', $estate->id)
+                ->where('status', 'available')
+                ->lockForUpdate()
+                ->get();
+
+            
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | STEP 5 — Pricing
+            |--------------------------------------------------------------------------
+            */
+            $pricePerPlot = $estate->plotDetail->promotion_price
+                ?? $estate->plotDetail->price_per_plot;
+
+            if (!$pricePerPlot) {
+                throw new Exception('Plot price could not be determined');
+            }
+
+            $totalPrice = $pricePerPlot * $plots->count();
+            $monthlyPayment = round($totalPrice / $installmentMonths, 2);
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | STEP 6 — Payment schedule
+            |--------------------------------------------------------------------------
+            */
+            $schedule = [];
+
+            for ($i = 1; $i <= $installmentMonths; $i++) {
+                $schedule[] = [
+                    'month' => $i,
+                    'amount' => $monthlyPayment,
+                    'due_date' => now()->addMonths($i - 1)->format('Y-m-d'),
+                ];
+            }
+
+
+           /*
+            |--------------------------------------------------------------------------
+            | STEP 7 — Save purchase
+            |--------------------------------------------------------------------------
+            */
+            PlotPurchase::create([
+                'payment_reference'  => $invoice->invoice_number,
+                'estate_id'          => $estate->id,
+                'user_id'            => $user->id,
+                'plots'              => $plots->pluck('id')->toArray(),
+                'total_price'        => $totalPrice,
+                'amount_paid'        => $invoice->amount,             // what they've paid so far
+                'installment_months' => $installmentMonths,           // 2 if outstanding, 1 if fully paid
+                'monthly_payment'    => $monthlyPayment,
+                'payment_schedule'   => $schedule,
+                'payment_status'     => $hasOutstanding ? 'installment' : 'paid',
+            ]);
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | STEP 8 — Mark plots sold
+            |--------------------------------------------------------------------------
+            */
+            Plot::whereIn('id', $plots->pluck('id'))->update([
+                'status' => 'sold'
+            ]);
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | STEP 9 — Assign property
+            |--------------------------------------------------------------------------
+            */
+          CustomerProperty::create([
+            'user_id'            => $user->id,
+            'estate_id'          => $estate->id,
+            'plots'              => $plots->pluck('id')->toArray(),
+            'total_price'        => $totalPrice,
+            'installment_months' => $installmentMonths,
+            'payment_status'     => $hasOutstanding ? 'outstanding' : 'fully_paid',
+        ]);
+
+           
+            /*
+        |--------------------------------------------------------------------------
+        | STEP 9.5 — Agent Commission Settlement
+        |--------------------------------------------------------------------------
+        */
+        if (!empty($invoice->agent_id)) {
+
+            // 1️⃣ Determine agent role via referral table using agent_id
+            $referral = \App\Models\Referral::where('user_id', $invoice->agent_id)->first();
+
+            // default to associate if not found
+            $agentRole = 'associate';
+
+            if ($referral) {
+                $agentRole = ($referral->account_type === 'user') ? 'associate' : 'staff';
+            }
+
+            // 2️⃣ Fetch appropriate commission setting
+            $commissionSetting = \App\Models\CommissionSetting::where('status', true)
+                ->where(function ($query) use ($agentRole) {
+                    $query->where('agent_role', $agentRole)
+                        ->orWhere('agent_role', 'all');
+                })
+                ->where(function ($query) use ($invoice) {
+                    // Rule with min/max range
+                    $query->where(function ($q) use ($invoice) {
+                        $q->whereNotNull('min')
+                        ->whereNotNull('max')
+                        ->where('min', '<=', $invoice->amount)
+                        ->where('max', '>=', $invoice->amount);
+                    })
+                    // Rule without range
+                    ->orWhere(function ($q) {
+                        $q->whereNull('min')->whereNull('max');
+                    });
+                })
+                ->orderByRaw("
+                    CASE
+                        WHEN agent_role = ? THEN 1
+                        WHEN agent_role = 'all' THEN 2
+                    END
+                ", [$agentRole])
+                ->first();
+
+            // 3️⃣ Apply commission if found
+            if ($commissionSetting) {
+
+                $commissionAmount = 0;
+
+                if ($commissionSetting->type === 'percentage') {
+                    $commissionAmount = ($invoice->amount * $commissionSetting->value) / 100;
+                } elseif ($commissionSetting->type === 'flat') {
+                    $commissionAmount = $commissionSetting->value;
+                }
+
+                if ($commissionAmount > 0) {
+
+                    // Find existing commission for the agent
+                    $commission = \App\Models\AgentCommission::where('agent_id', $invoice->agent_id)->first();
+
+                    if ($commission) {
+                        // Update existing commission amount
+                        $commission->increment('amount', $commissionAmount);
+                    } else {
+                        // Create new commission record
+                        $commission = \App\Models\AgentCommission::create([
+                            'agent_id' => $invoice->agent_id,
+                            'amount' => $commissionAmount,
+                        ]);
+                    }
+
+                    // Record commission history
+                    \App\Models\CommissionHistory::create([
+                        'agent_id' => $invoice->agent_id,
+                        'commission_id' => $commission->id,
+                        'estate_id' => $estate->id ?? null,
+                        'description' => "Commission from invoice {$invoice->invoice_number}",
+                        'amount_paid' => $commissionAmount,
+                        'type' => 'credit'
+                    ]);
+                }
+            }
+        }
+
+            $invoice->payment_status = 'payment_verified';
+            $invoice->save();
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | STEP 10 — Notification
+            |--------------------------------------------------------------------------
+            */
+        Notification::send($user, new PropertyAllocatedNotification(
+                $estate,
+                $plots->pluck('id')->toArray(),
+                $invoice->invoice_number
+            ));
+
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Property allocated successfully',
+                'invoice' => $invoice->invoice_number,
+                'estate' => $estate->title,
+                'plots' => $plots->pluck('id')
+            ]);
+
+        } catch (Throwable $e) {
+
+            DB::rollBack();
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Allocation failed',
+                'error' => $e->getMessage(),
+                'line' => $e->getLine(),
+                'file' => $e->getFile(),
+            ], 500);
+        }
+    }
+    
+    /**
+     * @OA\Post(
+     *     path="/api/v1/admin/revoke-property",
+     *     tags={"Admin - Property Management"},
+     *     summary="Revoke allocated plots from a customer",
+     *     security={{"bearerAuth":{}}},
+     *
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"user_id","estate_id","plots"},
+     *             @OA\Property(property="user_id", type="integer", example=25),
+     *             @OA\Property(property="estate_id", type="integer", example=12),
+     *             @OA\Property(
+     *                 property="plots",
+     *                 type="array",
+     *                 @OA\Items(type="integer", example=45)
+     *             ),
+     *             @OA\Property(
+     *                 property="reason",
+     *                 type="string",
+     *                 example="Admin correction"
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=200, description="Property revoked successfully")
+     * )
+     */
+
+    public function revokeProperty(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'user_id' => 'required|integer|exists:users,id',
+            'estate_id' => 'required|integer|exists:estates,id',
+            'plots' => 'required|array|min:1',
+            'plots.*' => 'integer|exists:plots,id',
+            'reason' => 'nullable|string|max:500'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            $customer = User::findOrFail($request->user_id);
+            $estate = Estate::findOrFail($request->estate_id);
+
+            /*
+            |--------------------------------------------------------------------------
+            | LOCK PLOTS (must belong to estate and be sold)
+            |--------------------------------------------------------------------------
+            */
+            $plots = Plot::whereIn('id', $request->plots)
+                ->where('estate_id', $estate->id)
+                ->where('status', 'sold')
+                ->lockForUpdate()
+                ->get();
+
+            if ($plots->count() !== count($request->plots)) {
+                DB::rollBack();
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Some plots are not sold or do not belong to this estate'
+                ], 400);
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | FIND CUSTOMER PROPERTY
+            |--------------------------------------------------------------------------
+            */
+            $customerProperty = CustomerProperty::where('user_id', $customer->id)
+                ->where('estate_id', $estate->id)
+                ->first();
+
+            if (!$customerProperty) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Customer does not own property in this estate'
+                ], 404);
+            }
+
+            $currentPlots = collect($customerProperty->plots);
+
+            // ensure customer owns these plots
+            $diff = collect($request->plots)->diff($currentPlots);
+            if ($diff->isNotEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Customer does not own some of the selected plots'
+                ], 400);
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | UPDATE PLOT STATUS → AVAILABLE
+            |--------------------------------------------------------------------------
+            */
+            foreach ($plots as $plot) {
+                $plot->update(['status' => 'available']);
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | REMOVE PLOTS FROM CUSTOMER PROPERTY
+            |--------------------------------------------------------------------------
+            */
+            $remainingPlots = $currentPlots->diff($request->plots)->values();
+
+            if ($remainingPlots->isEmpty()) {
+                $customerProperty->delete();
+            } else {
+                $customerProperty->update([
+                    'plots' => $remainingPlots
+                ]);
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | UPDATE PURCHASE RECORD
+            |--------------------------------------------------------------------------
+            */
+            $purchase = PlotPurchase::where('user_id', $customer->id)
+                ->where('estate_id', $estate->id)
+                ->first();
+
+            if ($purchase) {
+                $purchasePlots = collect($purchase->plots);
+                $remainingPurchasePlots = $purchasePlots->diff($request->plots)->values();
+
+                if ($remainingPurchasePlots->isEmpty()) {
+                    $purchase->delete();
+                } else {
+                    $purchase->update([
+                        'plots' => $remainingPurchasePlots
+                    ]);
+                }
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Plots revoked successfully',
+                'data' => [
+                    'customer_id' => $customer->id,
+                    'estate_id' => $estate->id,
+                    'revoked_plots' => $request->plots,
+                    'remaining_plots' => $remainingPlots ?? [],
+                    'revoked_at' => now()->toISOString(),
+                    'reason' => $request->reason
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to revoke property',
+                'error' => $e->getMessage()
             ], 500);
         }
     }

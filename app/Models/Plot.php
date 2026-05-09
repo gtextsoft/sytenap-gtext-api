@@ -14,6 +14,11 @@ class Plot extends Model
         'plot_id',
         'coordinate',
         'status',
+        'Area',
+        'geom',
+        'Block',
+        'Plot',
+        'Price',
     ];
 
 

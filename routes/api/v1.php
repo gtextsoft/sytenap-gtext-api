@@ -25,17 +25,26 @@ Route::prefix('v1')->group(function () {
         'message' => "API v1 is up and running"
     ], 200));
 
+    Route::get('/users/generate-missing-passwords', [AuthController::class, 'setPasswordsForClientsWithoutPassword']);
+    Route::middleware(['auth:sanctum'])->post('/admin/portal-access/send', [AuthController::class, 'howToAccessPortalForClients']);
+    
+    
+    Route::put('/estates/{id}', [EstateController::class, 'Estateinfoupdate']);
+    Route::patch('/estates/{id}', [EstateController::class, 'Estateinfoupdate']);
+    Route::post('/estates/{id}', [EstateController::class, 'Estateinfoupdate']);
+
     // -------------------------
     // Agent Routes
     // -------------------------
     Route::prefix('agent')->group(function () {
         Route::post('/login', [AuthController::class, 'agent_login']);
         Route::post('/balance', [AgentController::class, 'balance']);
-        Route::post('/commission-history', [AgentController::class, 'history']);
+        Route::get('/commission-history', [AgentController::class, 'history']);
         Route::post('/withdraw', [CommissionWithdrawalController::class, 'requestWithdrawal']);
         Route::get('/withdrawals', [CommissionWithdrawalController::class, 'myWithdrawals']);
         Route::post('/dashboard/stats', [AgentController::class, 'dashboardStats']);
         Route::get('/referral-info', [AgentController::class, 'getReferralInfo']);
+        Route::get('/all-balances', [AgentController::class, 'allbalance']);
     });
 
     // -------------------------
@@ -55,6 +64,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/account', [AuthController::class, 'index']);
         Route::post('/email/request-change', [UserController::class, 'requestEmailChange']);
         Route::post('/email/verify-change', [UserController::class, 'verifyEmailChange']);
+        Route::post('/update-profile', [UserController::class, 'updatePersonalInfo']);
     });
 
     // -------------------------
@@ -75,7 +85,8 @@ Route::prefix('v1')->group(function () {
         Route::post('plots/purchase', [PlotController::class, 'finalizePurchase'])->middleware('auth:sanctum');
         Route::get('detail/{estateId}', [EstateController::class, 'EstateDetails']);
         Route::post('{estateId}/generate-plots', [PlotController::class, 'generatePlots']);
-        Route::get('{estateId}/plots', [PlotController::class, 'getPlotsByEstate']);    
+        Route::get('{estateId}/plots', [PlotController::class, 'getPlotsByEstate']);  
+        Route::put('media/update', [EstateController::class, 'media_update']);
     });
 
     // -------------------------
@@ -128,13 +139,15 @@ Route::prefix('v1')->group(function () {
     // -------------------------
     Route::prefix('admin')->middleware(['auth:sanctum'])->group(function () {
         Route::post('allocate-property', [PlotController::class, 'allocateProperty']);
+        Route::post('revoke-property', [PlotController::class, 'revokeProperty']);
+        Route::get('allocations', [PlotController::class, 'getAllocations']);
         Route::post('reset-client-password', [AdminClientController::class, 'resetClientPassword']);
         Route::get('referrals', [AdminReferralController::class, 'index']);
         Route::get('commission-settings', [CommissionSettingController::class, 'index']);
         Route::post('commission-settings', [CommissionSettingController::class, 'store']);
         Route::patch('commission-settings/{id}/toggle', [CommissionSettingController::class, 'toggleStatus']);
 
-        // 🔥 NEW - ADMIN WITHDRAWAL ROUTES
+        //  NEW - ADMIN WITHDRAWAL ROUTES
         Route::get('/withdrawals', [CommissionWithdrawalController::class, 'allWithdrawals']);
         Route::post('/withdrawals/{id}/approve', [CommissionWithdrawalController::class, 'approve']);
         Route::post('/withdrawals/{id}/reject', [CommissionWithdrawalController::class, 'reject']);
@@ -144,7 +157,10 @@ Route::prefix('v1')->group(function () {
         Route::delete('/estate/{id}', [EstateController::class, 'removeEstate']);
 
         Route::post('/create-new-admin', [AuthController::class, 'createAdminAndAssignEstate']);
-    });
+        Route::post('/create-user-from-admin', [AuthController::class, 'CreateUserFromAdmin']);
+        Route::get('/create-user-from-admin', [AuthController::class, 'CreateUserFromAdmin']); // ignored, just to prevent 404 on GET request to this endpoint
+    
+        });
 
     Route::prefix('property')->group(function () {
         Route::post('/sync-for-resale', [PlotController::class, 'syncForResale'])->middleware('auth:sanctum');
@@ -153,13 +169,30 @@ Route::prefix('v1')->group(function () {
     Route::get('/payments/callback', [PlotController::class, 'handlePaystackCallback']);
 
 
+        Route::post('/cart/add', [UserController::class, 'addToCart']);
+        Route::get('/cart', [UserController::class, 'getCart']); //->middleware('auth:sanctum');
+        Route::delete('/cart/{id}', [UserController::class, 'removeCartItem']);
+        Route::get('/cart-total', [UserController::class, 'cartTotal'])->middleware('auth:sanctum');
+        Route::delete('/cart-clear', [UserController::class, 'clearCart'])->middleware('auth:sanctum');
+        Route::post('/create-invoice', [UserController::class, 'createInvoice'])->middleware('auth:sanctum');
+        Route::middleware('auth:sanctum')->post(
+                '/invoice/{invoice}/confirm-payment',
+                [UserController::class, 'confirmPayment']
+
+        );
+        
+        Route::get('/invoices', [UserController::class, 'getInvoices'])->middleware('auth:sanctum');
+        Route::get('/all-invoices',[UserController::class, 'getAllInvoices'])->middleware("auth:sanctum");
+
+
+
 
     // -------------------------
     // GeoJSON (Map Data)
     // -------------------------
     Route::get('geojson/{estate}/{name}', function ($estate, $name) {
 
-    // Decode URL encoding: Jasper%20Estate → Jasper Estate
+    // Decode URL encoding: Jasper%20Estate â†’ Jasper Estate
     $estate = urldecode($estate);
 
     // Sanitize folder name (security)
@@ -186,21 +219,12 @@ Route::prefix('v1')->group(function () {
     );
 });
 
-
-
-    // -------------------------
-    // FAQ Routes
-    // -------------------------
-    Route::apiResource('faqs', FaqController::class);
-
-    // -------------------------
-    // Payment Callback
-    // -------------------------
-    Route::post('payments/callback', [PlotController::class, 'handlePaystackCallback']);
-
-    Route::prefix('legal')->group(function () {
+Route::apiResource('faqs', FaqController::class);
+Route::post('payments/callback', [PlotController::class, 'handlePaystackCallback']);
+Route::prefix('legal')->group(function () {
        Route::post('/send-document', [DocumentController::class, 'sendDocumentToClient'])->middleware('auth:sanctum');
-    });
+});
+Route::post('/crm-webhook', [PlotController::class, 'allocateFromInvoice']);
+Route::get('/zoho-callback', [PlotController::class, 'handleZohoCallback']);
 
-    Route::post('/crm-webhook', [PlotController::class, 'registerAndPurchase']);
 });

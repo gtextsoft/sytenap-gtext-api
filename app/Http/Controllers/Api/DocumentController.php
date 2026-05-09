@@ -8,7 +8,7 @@ use App\Models\Document;
 use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 use App\Models\User;
 use App\Notifications\LegalDocumentSentNotification;
-use App\Notifications\ClientSignedDocumentNotification;
+use App\Notifications\ClientDocumentSentNotification;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Log;
 
@@ -350,7 +350,7 @@ class DocumentController extends Controller
     {
         $legal = $request->user();
 
-        if ($legal->account_type !== 'legal' || $legal->account_type !== 'accountant') {
+        if ($legal->account_type->value !== "admin" && $legal->account_type->value !== "accountant" && $legal->account_type->value !== "legal") {
             return response()->json([
                 'success' => false,
                 'message' => 'Access denied. Only legal and account users can send documents.'
@@ -573,7 +573,7 @@ class DocumentController extends Controller
         $client = $request->user();
 
         // Only client can reply
-        if ($client->account_type !== 'client' || $client->account_type !== 'prospect') {
+        if ($client->account_type->value !== "client" && $client->account_type->value !== "prospect") {
             return response()->json([
                 'success' => false,
                 'message' => 'Only clients can send signed documents.'
@@ -617,7 +617,7 @@ class DocumentController extends Controller
         // Notify legal
         Notification::send(
             $document->uploader,
-            new ClientSignedDocumentNotification($signedDocument)
+            new ClientDocumentSentNotification($signedDocument)
         );
 
         return response()->json([

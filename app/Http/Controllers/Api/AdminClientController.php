@@ -89,7 +89,7 @@ class AdminClientController extends Controller {
         $admin = Auth::user();
 
         // Confirm admin privilege
-        if ($admin->account_type !== 'admin') {
+        if ($admin->account_type->value !== 'admin') {
             return response()->json([
                 'success' => false,
                 'message' => 'Access denied. Only admins can reset passwords.'
@@ -102,12 +102,12 @@ class AdminClientController extends Controller {
         $client->password = Hash::make($request->new_password);
         $client->save();
 
-        // Log reset action
-        PasswordResetLog::create([
-            'client_id' => $client->id,
-            'admin_id' => $admin->id,
-            'reset_at' => now(),
-        ]);
+        // // Log reset action
+        // PasswordResetLog::create([
+        //     'client_id' => $client->id,
+        //     'admin_id' => $admin->id,
+        //     'reset_at' => now(),
+        // ]);
 
         // Send new password to client email
         try {

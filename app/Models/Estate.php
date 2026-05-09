@@ -27,6 +27,11 @@ class Estate extends Model
         'rating',
         'status',
         'estate_admin',
+        'geom',
+    ];
+
+    protected $hidden = [
+        'geom', // hide the geometry column
     ];
 
     protected $casts = [
