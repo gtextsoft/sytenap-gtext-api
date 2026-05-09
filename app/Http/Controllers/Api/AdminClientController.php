@@ -6,11 +6,13 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use App\Models\PasswordResetLog;
 use App\Http\Controllers\Controller;
+use App\Traits\AuthorizesPermissions;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 
 class AdminClientController extends Controller {
+    use AuthorizesPermissions;
 
      // Admin resets a client's password using client email
     /**
@@ -86,16 +88,13 @@ class AdminClientController extends Controller {
             'new_password' => 'required|string|min:6',
         ]);
 
-        $admin = Auth::user();
-
-        // Confirm admin privilege
-        if ($admin->account_type->value !== 'admin') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Access denied. Only admins can reset passwords.'
-            ], 403);
+        // Check permission using the new RBAC system
+        $permissionError = $this->checkPermission('reset_client_password');
+        if ($permissionError) {
+            return $permissionError;
         }
 
+        $admin = Auth::user();
         $client = User::where('email', $request->client_email)->first();
 
         // Update password
