@@ -5,11 +5,14 @@ namespace App\Http\Controllers\Api;
 use Illuminate\Http\Request;
 use App\Models\CommissionSetting;
 use App\Http\Controllers\Controller;
+use App\Traits\AuthorizesPermissions;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
+
 class CommissionSettingController extends Controller {
+    use AuthorizesPermissions;
 
 
 /**
@@ -47,14 +50,10 @@ class CommissionSettingController extends Controller {
  */
 public function index(Request $request)
 {
-    $admin = $request->user();
-    Log::error('Authenticated user: ', ['user' => $admin]);
-
-    if ($admin->account_type->value !== "admin") {
-        return response()->json([
-            'success' => false,
-            'message' => 'Access denied.'
-        ], 403);
+    // Check permission using the new RBAC system
+    $permissionError = $this->checkPermission('view_withdrawals');
+    if ($permissionError) {
+        return $permissionError;
     }
 
     $settings = CommissionSetting::orderBy('id', 'desc')->get();
@@ -182,13 +181,10 @@ public function index(Request $request)
 
 public function store(Request $request)
 {
-    $admin = $request->user();
-
-    if ($admin->account_type->value !== "admin") {
-        return response()->json([
-            'success' => false,
-            'message' => 'Access denied.'
-        ], 403);
+    // Check permission using the new RBAC system
+    $permissionError = $this->checkPermission('manage_commission_settings');
+    if ($permissionError) {
+        return $permissionError;
     }
 
     $validator = Validator::make($request->all(), [
@@ -301,12 +297,10 @@ public function store(Request $request)
  */
 public function toggleStatus($id)
 {
-    $admin = Auth::user();
-    if ($admin->account_type !== 'admin') {
-        return response()->json([
-            'success' => false,
-            'message' => 'Access denied.'
-        ], 403);
+    // Check permission using the new RBAC system
+    $permissionError = $this->checkPermission('manage_commission_settings');
+    if ($permissionError) {
+        return $permissionError;
     }
 
     $setting = CommissionSetting::find($id);

@@ -11,7 +11,8 @@ use App\Http\Controllers\Api\AgentController;
 use App\Http\Controllers\Api\EstateController;
 use App\Http\Controllers\Api\AdminClientController;
 use App\Http\Controllers\Api\CommissionSettingController;
-use App\Http\Controllers\Api\CommissionWithdrawalController; 
+use App\Http\Controllers\Api\CommissionWithdrawalController;
+use App\Http\Controllers\Api\RolePermissionController; 
 
 
 // API v1 routes
@@ -226,5 +227,25 @@ Route::prefix('legal')->group(function () {
 });
 Route::post('/crm-webhook', [PlotController::class, 'allocateFromInvoice']);
 Route::get('/zoho-callback', [PlotController::class, 'handleZohoCallback']);
+
+// -------------------------
+// RBAC - Role and Permission Management Routes
+// -------------------------
+Route::prefix('rbac')->middleware('auth:sanctum')->group(function () {
+    // Get all roles and permissions (accessible to all authenticated users)
+    Route::get('roles', [RolePermissionController::class, 'getRoles']);
+    Route::get('permissions', [RolePermissionController::class, 'getPermissions']);
+    
+    // Get user's roles and permissions
+    Route::get('users/{user_id}/roles', [RolePermissionController::class, 'getUserRoles']);
+    
+    // Assign/Remove roles to/from users (requires manage_roles permission)
+    Route::post('users/assign-role', [RolePermissionController::class, 'assignRoleToUser']);
+    Route::post('users/remove-role', [RolePermissionController::class, 'removeRoleFromUser']);
+    
+    // Grant/Revoke permissions to/from roles (requires manage_permissions permission)
+    Route::post('roles/grant-permission', [RolePermissionController::class, 'grantPermissionToRole']);
+    Route::post('roles/revoke-permission', [RolePermissionController::class, 'revokePermissionFromRole']);
+});
 
 });
