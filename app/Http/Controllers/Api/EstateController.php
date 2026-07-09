@@ -2020,6 +2020,7 @@ class EstateController extends Controller
                     'description' => $estate->description,
                     'rating' => $estate->rating,
                     'status' => $estate->status,
+                    'estate_admin' => $estate->estate_admin,
                     'has_certificate_of_occupancy' => $estate->has_cerificate_of_occupancy,
                     'amenities' => $estate->amenities,
                     'map_background_image' => $estate->map_background_image,
